@@ -7,14 +7,15 @@
  *
  * The token and the address come from the environment, by the names Vikt uses:
  *
- *   PORTAINER_URL     where Portainer answers
- *   PORTAINER_TOKEN   an access token (My account, Access tokens)
+ *   PORTAINER_URL     where Portainer answers (or in local.env, D14)
+ *   PORTAINER_TOKEN   an access token (My account, Access tokens); environment only
  *
  * **Nothing here prompts** (rule 3). Either variable missing, it names the
  * variable and exits 2; there is no password path at all. Every line it prints
  * passes through `redact`, so a server that reflects the token into a response
  * or an error page cannot put it on the screen.
  */
+import "./local-config.mjs";
 import { pathToFileURL } from "node:url";
 
 export function requireUrl() {

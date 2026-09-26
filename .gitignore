@@ -1,6 +1,10 @@
-# Local environment and credentials never belong here (rule 3).
+# Local environment and credentials never belong here (rule 3), and neither
+# does anything about the owner's own network (D14): local.env holds the
+# production host's details, local.example.env shows its placeholders.
 .env
 .env.*
+local.env
+.local/
 *.pem
 *.key
 

@@ -340,13 +340,59 @@ checks over key-based SSH). The stack file it sends is `compose.portainer.yaml`
 - **LAN only until published.** Nothing forwards to that port: no router rule,
   no tunnel, no proxy host. Publishing the site is the owner's (rule 1), and when
   it happens the edge terminates TLS and sets HSTS (D4).
-- **The registry credential is the owner's to add.** Vikt's packages are public
-  and its host pulls them anonymously: Portainer has no registries at all. This
+- **The registry credential is the owner's to add.** The other images the
+  production host runs are public and pulled anonymously: Portainer has no
+  registries at all. This
   package is private, so Portainer needs a credential for ghcr.io that can read
   it. `plan` checks for one and stops without it; the script never adds
   credentials. Once a ghcr.io credential exists, Portainer may present it for
-  every ghcr.io pull on this host, Vikt's included, so its expiry matters beyond
-  this site.
+  every ghcr.io pull on this host, other apps' included, so its expiry matters
+  beyond this site.
 - **Rollback is a deploy of the previous tag**:
   `node scripts/stack.mjs deploy v0.1.0 --yes`. The stack's `IMAGE_TAG` changes
   and nothing else does.
+
+## D14. The repository is public, so nothing about the owner's network is in it
+
+*2026-09-27*
+
+The owner made this repository public. It has no licence file yet; that is the
+owner's decision, separately.
+
+Because anyone can read it, it holds **no detail of the owner's network**: no
+internal IP address, host name, SSH user, Portainer address or endpoint id, and
+no name of another app's stack or container on the same host. It describes the
+production host only generically ("the production Docker host").
+
+- **The host's details live in `local.env`**, gitignored, which the scripts
+  read through `scripts/local-config.mjs`: `PORTAINER_URL`,
+  `PORTAINER_ENDPOINT_ID`, `VIKT_HOST`, `WEB_BIND` and `WEB_PORT`. A variable
+  already set in the environment wins. `local.example.env` shows placeholders
+  from 192.0.2.0/24, the range reserved for documentation. Secrets are never
+  read from the file: a secret-looking name in it is ignored, and said so
+  (rule 3).
+- **`scripts/stack.mjs` takes the address and port from it**, so a deploy
+  command names neither (`node scripts/stack.mjs deploy v0.1.0 --yes`), and
+  `scripts/check-page.mjs --deployed` checks the deployed site the same way.
+- **`scripts/guard.mjs`** fails on any private IPv4 address and any Windows
+  profile path in a file about to be committed and, on the owner's workstation,
+  on any string in `.local/private-strings.txt`, a gitignored list of the
+  owner's own addresses, ids and other apps' names. `--history` checks every
+  revision and commit message. It reports where, never what.
+- **Every push is checked** (`.github/workflows/checks.yml`): a gitleaks scan of
+  the whole history, image pinned by digest and findings redacted, and the
+  guard's generic half.
+
+**What the history still holds.** Before this entry, STATE.md (commit `83a9c59`)
+named the host's LAN address, the chosen port, the Portainer environment's name
+and id, the host's OS and Docker versions, and another app's container;
+`scripts/stack.mjs` (`45d3463` to `83a9c59`) used a private address as an
+example; DECISIONS.md and the README (`45d3463` to `83a9c59`) named another app
+as running on the same host; and the README (`2f06283` to `83a9c59`) gave the
+path of the design file on the owner's workstation. No secret is anywhere in the
+history (gitleaks, every commit). The history is not rewritten: that is the
+owner's decision (rule 8).
+
+**Why.** A public repository is read by strangers, and a private address, a host
+name or the list of what else runs beside the site tells an attacker where to
+look. The scripts need those values; they do not need them to be committed.

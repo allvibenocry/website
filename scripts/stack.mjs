@@ -6,9 +6,15 @@
  *   node scripts/stack.mjs host                                   # addresses and ports in use, read-only
  *   node scripts/stack.mjs snapshot out/host-before.json          # every stack and container, read-only
  *   node scripts/stack.mjs compare out/host-before.json out/host-after.json
- *   node scripts/stack.mjs plan   v0.1.0 --bind 192.168.1.30 --port 8090
- *   node scripts/stack.mjs deploy v0.1.0 --bind 192.168.1.30 --port 8090 --yes
- *   node scripts/stack.mjs deploy v0.1.1 --yes                    # later: address and port stay
+ *   node scripts/stack.mjs plan   v0.1.0                          # address and port from local.env
+ *   node scripts/stack.mjs deploy v0.1.0 --yes
+ *   node scripts/stack.mjs deploy v0.1.1 --yes                    # later: the stack's address and port stay
+ *
+ * **The host's details live in local.env** (gitignored; local.example.env
+ * shows the placeholders), never in this public repository (D14): the
+ * address and port (WEB_BIND, WEB_PORT), and PORTAINER_URL, VIKT_HOST and
+ * PORTAINER_ENDPOINT_ID, which may also come from the environment. --bind and
+ * --port override the file for one run.
  *
  * **A rollback is a deploy of the previous version**, nothing else:
  *
@@ -33,6 +39,7 @@
  * environment, secrets included, in its stack listing; this reads names, ids and
  * states from it and nothing else. Nor does it print VIKT_HOST.
  */
+import "./local-config.mjs";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -287,10 +294,14 @@ function steps(version, options, context) {
         const current = new Map((context.existing?.Env ?? []).map((e) => [e.name, e.value]));
         context.env = current;
 
-        const bind = options.bind ?? current.get("WEB_BIND");
-        const port = Number(options.port ?? current.get("WEB_PORT"));
+        // A flag for this run, else what the stack already has, else local.env (D14).
+        const bind = options.bind ?? current.get("WEB_BIND") ?? process.env.WEB_BIND?.trim();
+        const port = Number(options.port ?? current.get("WEB_PORT") ?? process.env.WEB_PORT?.trim());
         if (!bind || !port) {
-          return fail("no address or port for a new stack", "pass --bind <host LAN IPv4> --port <free port>; `node scripts/stack.mjs host` lists both");
+          return fail(
+            "no address or port for a new stack",
+            "WEB_BIND and WEB_PORT in local.env (see local.example.env), or --bind and --port; `node scripts/stack.mjs host` lists the host's addresses and free ports",
+          );
         }
         const view = await hostView(context.endpoint);
         const address = view.addresses.find((a) => a.address === bind);
@@ -497,8 +508,9 @@ try {
     const used = [...new Set([...view.ports.keys(), ...view.published.keys()])].sort((a, b) => a - b);
     out(`TCP ports listening or published: ${used.join(", ")}`);
     const free = [];
-    for (let p = 8090; free.length < 5 && p < 8200; p += 1) if (!view.ports.has(p) && !view.published.has(p)) free.push(p);
-    out(`free from 8090 up: ${free.join(", ")}`);
+    const from = Number(process.env.WEB_PORT) || 8080;
+    for (let p = from; free.length < 5 && p < from + 200; p += 1) if (!view.ports.has(p) && !view.published.has(p)) free.push(p);
+    out(`free from ${from} up: ${free.join(", ")}`);
   } else if (command === "snapshot") {
     const snap = await snapshot(await endpointId());
     printSnapshot(snap);

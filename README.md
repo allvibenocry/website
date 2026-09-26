@@ -26,6 +26,8 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 | `.github/workflows/release.yml` | On a version tag: builds, tests and pushes the image to GHCR. |
 | `scripts/stack.mjs` | Plans and deploys the Portainer stack, and snapshots the host before and after. |
 | `scripts/portainer.mjs` | The one way the scripts talk to Portainer: token by name, never a prompt. |
+| `scripts/local-config.mjs`, `local.example.env` | The production host's details, read from the gitignored `local.env` ([D14](DECISIONS.md#d14-the-repository-is-public-so-nothing-about-the-owners-network-is-in-it)). |
+| `scripts/guard.mjs` | Fails on anything about the owner's network in a tracked file; `--history` checks every revision. |
 | `scripts/csp.mjs` | Writes `nginx/csp.conf` from the page's inline script and style; `--check` fails when they disagree. |
 | `scripts/check-page.mjs` | Loads the page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
@@ -109,7 +111,7 @@ stack runs exactly that tag
    command. Afterwards, check the live site the way a browser sees it:
 
    ```sh
-   node scripts/check-page.mjs http://<host>:<port>/    # the address in STATE.md, "Live"
+   node scripts/check-page.mjs --deployed    # the address and port in local.env
    ```
 
 4. **Record** what is live in `STATE.md`.
@@ -127,21 +129,24 @@ be deployed this way. `git tag --list 'v*'` lists them.
 
 ## What deploying needs
 
-In the workstation's environment, by name (never on a command line, never in
-this repository), the same variables Vikt's scripts use:
+This repository is public, so nothing about the network it is deployed on is
+in it ([D14](DECISIONS.md#d14-the-repository-is-public-so-nothing-about-the-owners-network-is-in-it)).
+The host's details go in **`local.env`**, which is gitignored: copy
+`local.example.env` to `local.env` and fill it in. A variable already set in
+the environment wins over the file.
 
-| Variable | What |
-|---|---|
-| `PORTAINER_URL` | Where Portainer answers. |
-| `PORTAINER_TOKEN` | A Portainer access token (My account, Access tokens). `node scripts/portainer.mjs check` proves it works. |
-| `VIKT_HOST` | `user@host` of the Docker host, with a key-based SSH login. Used only to read which addresses and ports are in use; every SSH call has `BatchMode=yes`, so a missing key fails instead of prompting. |
-| `PORTAINER_ENDPOINT_ID` | Only if Portainer ever has more than one environment. |
+| Setting | Where | What |
+|---|---|---|
+| `PORTAINER_URL` | `local.env` or environment | Where Portainer answers. |
+| `PORTAINER_TOKEN` | **environment only** | A Portainer access token (My account, Access tokens). `node scripts/portainer.mjs check` proves it works. A secret: never in a file, never on a command line (rule 3). |
+| `VIKT_HOST` | `local.env` or environment | `user@host` of the Docker host, with a key-based SSH login. Used only to read which addresses and ports are in use; every SSH call has `BatchMode=yes`, so a missing key fails instead of prompting. |
+| `PORTAINER_ENDPOINT_ID` | `local.env` or environment | Only if Portainer ever has more than one environment. |
+| `WEB_BIND`, `WEB_PORT` | `local.env` or environment | The host's LAN IPv4 address and the port the site is published on. `node scripts/stack.mjs host` lists the host's addresses and free ports. The first deploy reads them; later deploys keep the stack's. |
 
 And `gh`, logged in, to read the release workflow's result.
 
-The first deploy also needs the stack's address and port, which later deploys
-keep: `node scripts/stack.mjs host` lists the host's addresses and the ports in
-use, and the first deploy takes `--bind <LAN IPv4> --port <free port>`.
+`node scripts/guard.mjs` checks, before every commit, that none of this has
+found its way into a tracked file.
 
 ### The registry credential
 
@@ -158,8 +163,8 @@ owner, in Portainer, never by a script:
   notice
 
 Once it exists, Portainer may present it for every ghcr.io pull on that host,
-Vikt's included: when the token expires, Vikt's next deploy may fail to pull
-too.
+other apps' included: when the token expires, their next deploy may fail to
+pull too.
 
 ## How this repository is worked on
 
@@ -189,6 +194,6 @@ or behaviour changes; only technical changes described in a brief are made.
 6. **Every image deployed to production has a fixed version tag**, so a rollback
    is redeploying the previous tag. `latest` is never deployed.
 7. **The original design file stays where it is**
-   (`C:\Dev\AllVibeNoCry\index.html` on the owner's workstation). This
+   (outside this repository, on the owner's workstation). This
    repository works on a copy.
 8. **Reports keep what was run and observed apart from what was only built.**

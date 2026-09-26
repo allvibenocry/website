@@ -7,6 +7,7 @@
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --shots out/after
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --full out/after-full
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --json out/report.json
+ *   node scripts/check-page.mjs --deployed              # the production site, from local.env (D14)
  *
  * One run, at desktop and at mobile width:
  *
@@ -32,6 +33,7 @@
  * Windows paths. It runs with a throwaway profile and without `--remote-allow-
  * origins`, so the debugging port answers only this process on loopback.
  */
+import "./local-config.mjs";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -296,7 +298,15 @@ async function fullShot(cdp, dir, viewport, scheme) {
 /* ------------------------------------------------------------------- main -- */
 
 function parse(argv) {
-  const [url, ...rest] = argv;
+  let [url, ...rest] = argv;
+  // The deployed site, at the address and port in local.env, which this public
+  // repository never names (D14).
+  if (url === "--deployed") {
+    const bind = process.env.WEB_BIND?.trim();
+    const port = process.env.WEB_PORT?.trim();
+    if (!bind || !port) throw new Error("--deployed needs WEB_BIND and WEB_PORT in local.env (see local.example.env)");
+    url = `http://${bind}:${port}/`;
+  }
   const options = {};
   for (let i = 0; i < rest.length; i += 1) {
     if (rest[i] === "--shots") options.shots = rest[(i += 1)];
