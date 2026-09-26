@@ -96,7 +96,7 @@ stack runs exactly that tag
 
    The workflow checks the CSP against the page, builds the image, runs and
    checks it, pushes `ghcr.io/allvibenocry/website:v0.1.1` and `:sha-<commit>`,
-   reads both back, and checks that the package is still private. Nothing is
+   reads both back, and checks that the package is public. Nothing is
    pushed if any check fails.
 
 3. **Deploy.** `plan` changes nothing; `deploy --yes` deploys:
@@ -148,23 +148,14 @@ And `gh`, logged in, to read the release workflow's result.
 `node scripts/guard.mjs` checks, before every commit, that none of this has
 found its way into a tracked file.
 
-### The registry credential
+### The image is public
 
-The image is private, so Portainer needs a credential to pull it. Vikt's images
-are public and Portainer pulls them anonymously, so it has none; `plan` stops at
-"Portainer can pull the private image" until one exists. It is added by the
-owner, in Portainer, never by a script:
-
-- **Registries → Add registry → Custom registry**
-- **Registry URL**: `ghcr.io`, **Authentication** on
-- **Username**: a GitHub account that can read the `allvibenocry/website` package
-- **Password**: a *classic* personal access token with only the `read:packages`
-  scope (GHCR does not take fine-grained tokens), with an expiry you will
-  notice
-
-Once it exists, Portainer may present it for every ghcr.io pull on that host,
-other apps' included: when the token expires, their next deploy may fail to
-pull too.
+`ghcr.io/allvibenocry/website` is a public package, and Portainer pulls it
+anonymously, with no registry credential
+([D15](DECISIONS.md#d15-the-image-package-is-public-and-pulled-without-credentials)).
+The image holds only what the site serves publicly anyway, and no secret.
+`plan` checks the version can be pulled without credentials and prints its
+digest; the release workflow fails if the package is not public.
 
 ## How this repository is worked on
 

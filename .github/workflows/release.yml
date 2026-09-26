@@ -27,10 +27,11 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/allvibenocry/website
-  # What the package's visibility must be (the setup brief: it stays private).
-  # The last step proves it, and fails the release otherwise. Publishing the
-  # package is a decision; making it is changing this line to `public`.
-  PACKAGE_VISIBILITY: private
+  # What the package's visibility must be: public (D15), because the production
+  # host pulls it anonymously, with no registry credential. The last step
+  # proves it with an anonymous pull, and fails the release otherwise, so a
+  # package that has become private again is found here, not at the deploy.
+  PACKAGE_VISIBILITY: public
 
 jobs:
   image:
@@ -139,7 +140,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Vikt's check turned around (D12). A package on GHCR has a visibility of
+      # Vikt's check (Vikt D160; D12, D15). A package on GHCR has a visibility of
       # its own; this asks the registry the way an anonymous puller would, with
       # no credential, and fails unless the answer matches PACKAGE_VISIBILITY.
       - name: The package's visibility is what it should be

@@ -323,25 +323,39 @@ function steps(version, options, context) {
       },
     },
     {
-      name: "Portainer can pull the private image",
+      name: "the image can be pulled without credentials",
       /**
-       * The package is private (the setup brief), and Vikt's images are public
-       * and pulled anonymously: this environment has no registry credentials of
-       * its own (D13). Adding them is the owner's, never this script's.
+       * The package is public and the host pulls it anonymously, with no
+       * registry credential in Portainer (D15). So this asks GHCR the way the
+       * host will: an anonymous pull token, then the version's manifest, and
+       * reports the digest it resolves to (Vikt D160: ask the question the
+       * deploy will ask).
        */
       async run() {
-        const registries = await must("/api/registries");
-        const ghcr = registries.filter((r) => /^(https?:\/\/)?ghcr\.io\/?$/i.test(r.URL ?? "") && r.Authentication);
-        if (ghcr.length === 0) {
+        const repository = IMAGE.replace(/^ghcr\.io\//, "");
+        const grant = await fetch(`https://ghcr.io/token?scope=repository:${repository}:pull&service=ghcr.io`);
+        const token = grant.ok ? (await grant.json()).token : null;
+        const manifest = token
+          ? await fetch(`https://ghcr.io/v2/${repository}/manifests/${version}`, {
+              method: "HEAD",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: [
+                  "application/vnd.oci.image.index.v1+json",
+                  "application/vnd.oci.image.manifest.v1+json",
+                  "application/vnd.docker.distribution.manifest.list.v2+json",
+                  "application/vnd.docker.distribution.manifest.v2+json",
+                ].join(", "),
+              },
+            })
+          : null;
+        if (!manifest?.ok) {
           return fail(
-            `Portainer has ${registries.length} registr${registries.length === 1 ? "y" : "ies"} and none for ghcr.io with credentials, ` +
-              `so ${IMAGE}:${version}, which is private, cannot be pulled`,
-            "the owner adds a registry in Portainer (Registries, Add registry): URL ghcr.io, authentication on,\n" +
-              "a GitHub username, and a classic personal access token with only the read:packages scope from\n" +
-              "an account that can read allvibenocry/website's package (README, \"The registry credential\")",
+            `${IMAGE}:${version} cannot be pulled anonymously: token endpoint ${grant.status}, manifest ${manifest?.status ?? "not asked"}`,
+            "the package is public (GitHub, the package's settings, Change visibility) and the tag exists (D15)",
           );
         }
-        return ok(`registry ${ghcr.map((r) => `"${r.Name}" (id ${r.Id})`).join(", ")} for ghcr.io, with credentials`);
+        return ok(`${IMAGE}:${version} is anonymously pullable, digest ${manifest.headers.get("docker-content-digest")}`);
       },
     },
     {

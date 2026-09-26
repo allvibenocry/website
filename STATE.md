@@ -13,7 +13,7 @@ runs on are in `local.env`, which is gitignored (see `local.example.env`).
 | | |
 |---|---|
 | Version released | `v0.1.0`, commit `e46eb09` |
-| Image | `ghcr.io/allvibenocry/website:v0.1.0` = `:sha-e46eb090ada7246791664e8a50bbe6062bcc1442`, digest `sha256:04dd874272c1da490344776e825eb6debf22fb42635d82f356a12123634a7f72` |
+| Image | `ghcr.io/allvibenocry/website:v0.1.0` = `:sha-e46eb090ada7246791664e8a50bbe6062bcc1442`, digest `sha256:04dd874272c1da490344776e825eb6debf22fb42635d82f356a12123634a7f72`; public, pulled without credentials (D15) |
 | Production host | the production Docker host, managed by Portainer (x86_64) |
 | Stack | `allvibenocry-website`: not created |
 
@@ -22,9 +22,12 @@ runs on are in `local.env`, which is gitignored (see `local.example.env`).
 The second website brief:
 
 1. Public repository hygiene: secrets and details of the owner's network.
-   **Done with this commit.** No secrets in any tracked file or in the history;
+   **Done.** No secrets in any tracked file or in the history;
    the network details are out of the tracked files and in `local.env`.
-2. The public image package, and the release workflow asserting it.
+2. The public image package, and the release workflow asserting it. **Done.**
+   An anonymous pull of both tags resolves to the digest above; the workflow
+   now fails a release if the package is not public; `stack.mjs` checks the
+   same way.
 3. The deploy of `v0.1.0` to the production host, LAN only.
 4. This file and DECISIONS.md.
 
@@ -64,4 +67,4 @@ The second website brief:
 Items 1 to 4 of the first brief are done. Item 5, the first deploy, stopped at
 its step 6 because the image package was then private and Portainer had no
 credential for it; nothing on the host changed. The package is public now
-(the second brief, item 2).
+(D15), and no credential is needed.

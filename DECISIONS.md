@@ -396,3 +396,35 @@ owner's decision (rule 8).
 **Why.** A public repository is read by strangers, and a private address, a host
 name or the list of what else runs beside the site tells an attacker where to
 look. The scripts need those values; they do not need them to be committed.
+
+## D15. The image package is public, and pulled without credentials
+
+*2026-09-27. Supersedes the private-package parts of D12 (the workflow asserting
+"private") and D13 (the registry credential in Portainer), whose text stays as
+it was written.*
+
+The owner made `ghcr.io/allvibenocry/website` public in GitHub's package
+settings. **No registry is added to Portainer**: the production host pulls the
+image anonymously.
+
+- **Checked the way the host will pull it**: an anonymous pull token, then the
+  manifests of `v0.1.0` and `sha-e46eb090ada7246791664e8a50bbe6062bcc1442`, both
+  `200` and both
+  `sha256:04dd874272c1da490344776e825eb6debf22fb42635d82f356a12123634a7f72`,
+  the digest the release workflow read back when it pushed them.
+- **The release workflow asserts it** (`PACKAGE_VISIBILITY: public`), so a
+  future release fails if the package is not public, before any deploy could
+  find out. The step was run locally against the live registry: it passes with
+  `public` and fails with the old `private`.
+- **`scripts/stack.mjs` asks the same question** as its step 6, "the image can
+  be pulled without credentials", and prints the digest the version resolves
+  to, where it used to look for a registry credential in Portainer.
+
+**Why.**
+- **Private protected nothing.** The image holds only what the site serves
+  publicly anyway (the page, the fonts, the nginx configuration) and no secret.
+- **A credential in Portainer would reach beyond this site.** Portainer may
+  present a ghcr.io credential for every ghcr.io pull on the host, so a token
+  that expired or was revoked could break other apps' deploys.
+- **The token itself was the risk.** A classic token with `read:packages` is
+  broad (every package the account can read) and has to be rotated.
