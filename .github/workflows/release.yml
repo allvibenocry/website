@@ -82,18 +82,20 @@ jobs:
           echo "health: $(docker inspect -f '{{.State.Health.Status}}' site)"
           [ "$(docker inspect -f '{{.State.Health.Status}}' site)" = healthy ]
 
-          curl -sS -D page.txt -o /dev/null -H 'Accept-Encoding: gzip' http://127.0.0.1:8080/
-          cat page.txt
-          grep -qi '^content-security-policy: default-src .none.' page.txt
-          grep -qi '^x-content-type-options: nosniff' page.txt
-          grep -qi '^referrer-policy: no-referrer' page.txt
-          grep -qi '^permissions-policy: ' page.txt
-          grep -qi '^cache-control: no-cache' page.txt
-          grep -qi '^content-encoding: gzip' page.txt
+          # Scratch files outside the checkout, so nothing can be left in it.
+          page="$RUNNER_TEMP/page.txt"
+          curl -sS -D "$page" -o /dev/null -H 'Accept-Encoding: gzip' http://127.0.0.1:8080/
+          cat "$page"
+          grep -qi '^content-security-policy: default-src .none.' "$page"
+          grep -qi '^x-content-type-options: nosniff' "$page"
+          grep -qi '^referrer-policy: no-referrer' "$page"
+          grep -qi '^permissions-policy: ' "$page"
+          grep -qi '^cache-control: no-cache' "$page"
+          grep -qi '^content-encoding: gzip' "$page"
 
           font=$(ls site/fonts/*.woff2 | head -1 | sed 's#^site##')
-          curl -sS -D font.txt -o /dev/null "http://127.0.0.1:8080${font}"
-          grep -qi '^cache-control: public, max-age=31536000, immutable' font.txt
+          curl -sS -D "$RUNNER_TEMP/font.txt" -o /dev/null "http://127.0.0.1:8080${font}"
+          grep -qi '^cache-control: public, max-age=31536000, immutable' "$RUNNER_TEMP/font.txt"
 
           [ "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/favicon.ico)" = 204 ]
 
@@ -144,11 +146,11 @@ jobs:
         run: |
           set -euo pipefail
           repo="${IMAGE#ghcr.io/}"
-          code=$(curl -s -o token.json -w '%{http_code}' \
+          code=$(curl -s -o "$RUNNER_TEMP/token.json" -w '%{http_code}' \
             "https://ghcr.io/token?scope=repository:${repo}:pull&service=ghcr.io")
           status=none
           if [ "$code" = 200 ]; then
-            token=$(jq -r '.token // empty' token.json)
+            token=$(jq -r '.token // empty' "$RUNNER_TEMP/token.json")
             status=$(curl -s -o /dev/null -w '%{http_code}' \
               -H "Authorization: Bearer $token" \
               -H 'Accept: application/vnd.oci.image.index.v1+json' \
