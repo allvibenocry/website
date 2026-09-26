@@ -317,8 +317,10 @@ checks over key-based SSH). The stack file it sends is `compose.portainer.yaml`
 **as it is at the release tag**, so what runs is always a released file.
 
 - **Plan before deploy, stop at the first failure** (rule 4). `plan` and
-  `deploy` run the same steps: the tag exists; its release workflow is green,
-  which is the proof the image exists; the stack file at the tag reads its three
+  `deploy` run the same steps: the tag exists; its release workflow is green
+  **and built the tag's own commit**, which is the proof the image exists (the
+  workstation's `gh` token cannot read packages, and needs no scope that could);
+  the stack file at the tag reads its three
   variables; the address and port are right; Portainer can pull the image. Then
   `deploy --yes` creates or updates the stack, waits for the container to be
   healthy on the new image, and asks the site for its page.

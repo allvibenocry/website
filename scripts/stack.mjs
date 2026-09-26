@@ -237,13 +237,15 @@ function steps(version, options, context) {
           return fail(`${version} is not vMAJOR.MINOR.PATCH`, "deploy a version tag; `latest` and branches are never deployed (rule 6)");
         }
         const remoteTag = local("git", ["ls-remote", "--tags", "origin", `refs/tags/${version}`]);
-        const sha = remoteTag.out.split(/\s+/)[0];
-        if (remoteTag.code !== 0 || !/^[0-9a-f]{40}$/.test(sha ?? "")) {
+        if (remoteTag.code !== 0 || !/^[0-9a-f]{40}\s/.test(remoteTag.out)) {
           return fail(`${version} is not a tag on origin`, `git tag ${version} && git push origin ${version}`);
         }
         local("git", ["fetch", "--quiet", "origin", "tag", version]);
-        context.commit = sha;
-        return ok(`${version} is ${sha.slice(0, 7)} on origin`);
+        /* The commit, not the tag object: an annotated tag has its own sha. */
+        const commit = local("git", ["rev-parse", `${version}^{commit}`]).out;
+        if (!/^[0-9a-f]{40}$/.test(commit)) return fail(`${version} could not be resolved to a commit`);
+        context.commit = commit;
+        return ok(`${version} is on origin, at commit ${commit.slice(0, 7)}`);
       },
     },
     {
@@ -259,7 +261,10 @@ function steps(version, options, context) {
         if (run.status !== "completed" || run.conclusion !== "success") {
           return fail(`run ${run.databaseId} for ${version} is ${run.status}/${run.conclusion}`, `gh run view ${run.databaseId} --repo ${REPO} --log-failed`);
         }
-        return ok(`run ${run.databaseId} succeeded, so ${IMAGE}:${version} and :sha-${run.headSha.slice(0, 7)}… were pushed and read back`);
+        if (run.headSha !== context.commit) {
+          return fail(`run ${run.databaseId} built ${run.headSha.slice(0, 7)}, but ${version} is ${context.commit.slice(0, 7)}`, "the tag was moved after its image was built; release a new version instead");
+        }
+        return ok(`run ${run.databaseId} built ${run.headSha.slice(0, 7)} and succeeded, so ${IMAGE}:${version} and :sha-${run.headSha.slice(0, 7)}… were pushed and read back`);
       },
     },
     {
