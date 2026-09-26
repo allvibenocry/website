@@ -1,0 +1,11 @@
+# LF everywhere, on every checkout (D6).
+#
+# The Content-Security-Policy carries SHA-256 hashes of the page's inline
+# <script> and <style>, and a hash covers exact bytes. This workstation has
+# core.autocrlf=true, so without this line a Windows checkout would hold CRLF
+# while the image built in CI holds LF, and the header built from one would
+# refuse the page served from the other.
+* text=auto eol=lf
+
+*.woff2 binary
+*.png binary

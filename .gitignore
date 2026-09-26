@@ -1,0 +1,19 @@
+# Local environment and credentials never belong here (rule 3).
+.env
+.env.*
+*.pem
+*.key
+
+# Tooling
+node_modules/
+npm-debug.log*
+
+# Screenshots and reports from local checks
+/out/
+/scratch/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
