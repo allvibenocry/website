@@ -107,7 +107,10 @@ stack runs exactly that tag
    ```
 
    The deploy lists the host's stacks and containers before and after, and fails
-   if anything other than this stack changed. It ends by printing the rollback
+   if anything other than this stack changed; another app's container that was
+   already restarting on its own, and only restarted again, is noted instead
+   ([D16](DECISIONS.md#d16-a-container-that-was-already-restarting-on-its-own-is-noted-not-counted)).
+   It ends by printing the rollback
    command. Afterwards, check the live site the way a browser sees it:
 
    ```sh

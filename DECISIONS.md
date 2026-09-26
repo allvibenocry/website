@@ -428,3 +428,26 @@ image anonymously.
   that expired or was revoked could break other apps' deploys.
 - **The token itself was the risk.** A classic token with `read:packages` is
   broad (every package the account can read) and has to be rotated.
+
+## D16. A container that was already restarting on its own is noted, not counted
+
+*2026-09-27. Refines the before-and-after check of D13.*
+
+One container on the production host that is not this site's was already
+restarting repeatedly before any of this work. `compare` would have failed a
+deploy of this site every time that container happened to restart during it.
+
+`compare` now reports such a container as a **note** ("restarted on its own"),
+not as a change, but only when all of this holds: it belongs to something other
+than this stack; its restart count was already above zero before the run and is
+higher after; nothing about it differs except its start time, its restart count
+and its state; and its state is running or restarting both times. It is the
+same container on the same image. Anything else about any other container,
+including a first restart, a new image, a stop or a removal, is still a change,
+and still fails the deploy.
+
+**Why.** Rule 2 asks to show that nothing here changed anything else. A
+container restarting on its own, as it did before, is not something this
+deploy did, and it is not to be touched; hiding it would be wrong, and so would
+calling it a change. In the first deploy (`v0.1.0`) it did not restart, so the
+note did not appear.
