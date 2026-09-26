@@ -200,8 +200,23 @@ function compare(before, after) {
     if (!b) bucket.containers.push(`container ${name}: added (${a.image}, ${a.state}/${a.health})`);
     else if (!a) bucket.containers.push(`container ${name}: removed`);
     else {
-      const changed = fields.filter((f) => b[f] !== a[f]).map((f) => `${f} ${b[f]} -> ${a[f]}`);
-      if (changed.length > 0) bucket.containers.push(`container ${name}: ${changed.join(", ")}`);
+      const differing = fields.filter((f) => b[f] !== a[f]);
+      const changed = differing.map((f) => `${f} ${b[f]} -> ${a[f]}`);
+      /*
+        A container that was already restarting on its own before this run,
+        and has only restarted again (the same container, the same image, a
+        later start and a higher count), is noted, not counted: nothing here
+        did it, and nothing here touches it. Anything else is a change.
+      */
+      const restartedOnItsOwn =
+        bucket === others &&
+        b.restarts > 0 &&
+        a.restarts > b.restarts &&
+        differing.every((f) => f === "started" || f === "restarts" || f === "state") &&
+        ["running", "restarting"].includes(a.state) &&
+        ["running", "restarting"].includes(b.state);
+      if (restartedOnItsOwn) notes.push(`container ${name}: restarted on its own (restarts ${b.restarts} -> ${a.restarts}); it was already restarting before, and was not touched`);
+      else if (changed.length > 0) bucket.containers.push(`container ${name}: ${changed.join(", ")}`);
       else if (b.health !== a.health) notes.push(`container ${name}: health ${b.health} -> ${a.health} (same container, not restarted)`);
     }
   }

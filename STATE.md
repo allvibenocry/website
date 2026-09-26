@@ -28,7 +28,9 @@ The second website brief:
    An anonymous pull of both tags resolves to the digest above; the workflow
    now fails a release if the package is not public; `stack.mjs` checks the
    same way.
-3. The deploy of `v0.1.0` to the production host, LAN only.
+3. The deploy of `v0.1.0` to the production host, LAN only. **Done.** The stack
+   runs, healthy, with its limits; check-page against it is clean at both widths;
+   nothing else on the host changed.
 4. This file and DECISIONS.md.
 
 ## What works
