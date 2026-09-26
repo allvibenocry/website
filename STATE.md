@@ -16,12 +16,13 @@ Nothing yet. The site is not deployed anywhere and not published.
   origin contacted, all five font faces loaded.
 - `site/fonts/OFL.txt`: the OFL 1.1 text and each family's copyright notice.
 - `scripts/check-page.mjs`: the browser check.
-
-## Known
-
-- Browsers ask for `/favicon.ico` on their own. The page declares no icon, so
-  any plain static server answers 404 and the console logs it; the original
-  file did the same. The container will answer it (item 3).
+- The container (D9–D11): `docker compose up -d --build` runs it on this
+  workstation, healthy, read-only, as uid 101, with the headers and the CSP.
+  Under that CSP headless Edge reports no console error, no CSP violation, no
+  failed request and no request to another origin, at desktop and mobile width;
+  behaviour and pixels match the original as in D8. The container log stays
+  empty.
+- `scripts/csp.mjs`: the policy, generated from the page and checkable.
 
 ## In progress
 
@@ -29,11 +30,11 @@ The first setup, in six items:
 
 1. Repository, README, DECISIONS, STATE. **Done.**
 2. Fonts out of the HTML; the page moves to `site/`. **Done.**
-3. Container: unprivileged nginx, read-only, security headers, local compose file.
+3. Container: unprivileged nginx, read-only, security headers, local compose file. **Done.**
 4. Image on GHCR, `v0.1.0` plus the commit as a second tag, package private.
 5. Portainer stack `allvibenocry-website` on the production host, LAN only.
 6. This file and `DECISIONS.md` updated with what is live.
 
 ## Next
 
-Item 3.
+Item 4.

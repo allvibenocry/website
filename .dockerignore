@@ -1,0 +1,4 @@
+# The image holds what is served and how, and nothing else.
+*
+!site/
+!nginx/

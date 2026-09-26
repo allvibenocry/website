@@ -166,3 +166,103 @@ outside the regions where the original also varies between runs; full-page
 screenshots with reduced motion identical except for at most 1/255 in one
 colour channel on 1 pixel (desktop) and 100 of 24 million pixels (mobile, dark),
 which is rounding in the GPU's blending and repeats at the raster tile height.
+
+## D9. How the container runs nginx
+
+*2026-09-26*
+
+- **Base image**: `nginxinc/nginx-unprivileged:1.30.5-alpine`, pinned by version
+  and by index digest (D3). 1.30 is nginx's stable branch.
+- **nginx is started directly** (`ENTRYPOINT ["nginx"]`), not through the
+  image's `docker-entrypoint.sh`. Its scripts rewrite files under `/etc/nginx`
+  at start, which a read-only filesystem refuses, and none of what they do is
+  wanted here.
+- **One configuration file of our own** replaces the image's `nginx.conf` and
+  does not include `conf.d/`, so nothing in the base image can add a server
+  block or a log line. The configuration and the site are copied in owned by
+  root, so nginx's own user (uid 101) could not change them even on a writable
+  filesystem.
+- **At run time**: read-only root filesystem, an 8 MB tmpfs at `/tmp` for the pid
+  file and nginx's temp directories (the only paths it writes), all Linux
+  capabilities dropped (a non-root process on port 8080 needs none),
+  `no-new-privileges`, 64 MB of memory, 64 processes, one worker. The local
+  compose file uses exactly the settings of the production stack, so a local run
+  tests what production runs.
+- **Caching**: a font file's name carries its content hash (D7), so it is sent
+  with `Cache-Control: public, max-age=31536000, immutable`. Everything else,
+  the page first, with `no-cache`: the browser revalidates on every visit, the
+  ETag makes that a 304 when nothing changed, and a release is seen at once.
+- **gzip** for text (the page goes from 85 kB to 22 kB); woff2 is already
+  compressed and is sent as it is.
+- **`/favicon.ico` answers 204 No Content.** Browsers request it on their own;
+  the page declares no icon, so a plain 404 was logged in the console on every
+  first visit, by the original file too. 204 shows exactly what the page showed
+  before (no icon) without the error.
+- **Only files are served**: a directory is a 404 and there is no listing; any
+  method other than GET and HEAD is a 405.
+- **The health check lives in the image** (`wget --spider` on `/` every 30 s),
+  so every way of running it, local or Portainer, has the same one. Healthy
+  means the page is served, not only that nginx answers.
+
+## D10. The security headers, and what the CSP allows
+
+*2026-09-26*
+
+Every response, errors included, carries:
+
+- `Content-Security-Policy`, allowing only same-origin resources:
+  `default-src 'none'`, then only what the page uses. `script-src` is the
+  SHA-256 of the one inline script, with no `'unsafe-inline'`; `font-src 'self'`
+  for the five fonts; `img-src data:` for the one image, a check mark that is an
+  SVG data URI in the CSS (inline, not a request); `form-action 'self'`,
+  `base-uri 'none'`, and `frame-ancestors 'none'`, which is what stops the page
+  being framed. Nothing else, so no fetch, no frame, no worker and no plugin can
+  load at all.
+- `X-Content-Type-Options: nosniff`.
+- `Referrer-Policy: no-referrer`: following one of the page's links to GitHub
+  tells GitHub nothing about where the visitor came from.
+- `Permissions-Policy` switching off camera, microphone, geolocation, payment,
+  USB and the motion sensors. Only features Chromium recognises are named,
+  because it logs an unknown one as a console error.
+
+**Styles, and why not a hash for everything.** The `<style>` element is allowed
+by its hash (`style-src-elem`). The page also has 26 `style=""` attributes, each
+setting a CSS custom property such as `--i:3` or `--at:24%`; they are allowed
+with `style-src-attr 'unsafe-inline'`. Hashing them would need
+`'unsafe-hashes'` and 23 separate hashes that change with any copy edit, to guard
+against CSS in an attribute, which cannot run code and which only markup
+injection could add, while the page has no input that reaches its markup. A
+`style-src 'unsafe-inline'` line is kept for browsers older than
+`style-src-elem` (Safari before 15.4, Firefox before 108), which would otherwise
+refuse the attributes; current browsers ignore it for styles. The script's
+behaviour needed no change: it only sets styles through the CSSOM, which a CSP
+does not restrict.
+
+**The policy is generated, and checked.** `scripts/csp.mjs` hashes the inline
+script and style of `site/index.html` and writes `nginx/csp.conf`; with
+`--check` it fails when the two disagree, and the release workflow runs that
+before building an image. It also refuses an external script, an inline event
+handler or a `javascript:` URL, which the policy would block in the browser
+without anything failing at build time.
+
+**Not set:** HSTS, which belongs to the edge (D4); `X-Frame-Options`, which
+`frame-ancestors` supersedes in every browser the page otherwise supports.
+
+## D11. Nothing about a visitor is logged
+
+*2026-09-26*
+
+There is no access log, and nginx's error log is at `emerg`.
+
+**Why.** Rule 5 says the web server does not log visitor IP addresses. The
+access log was the obvious place, and it is off rather than reformatted: nothing
+here would read it. The error log is the less obvious one: every message nginx
+writes while handling a request, at any level, ends with `client: <address>`,
+including a 404's "open() failed" at `error` and resource exhaustion at `crit`.
+`emerg` is the level at which nginx refuses to start, which is the message worth
+having; whether it is serving is answered by the health check (D9). The
+container's log is therefore empty in normal operation, which was observed.
+
+**Instead.** An access log in a format without `$remote_addr`. Rejected for now:
+it would still hold the user agent and the referrer, and nobody reads it. If
+traffic numbers are ever wanted, that is a decision of its own.

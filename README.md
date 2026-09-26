@@ -19,25 +19,49 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 | `site/` | Everything the web server serves, and nothing else. |
 | `site/index.html` | The page, with inline CSS and inline JavaScript. |
 | `site/fonts/` | The three font families as `.woff2` files named by their content hash, and `OFL.txt` with their copyright notices and licence ([D2](DECISIONS.md#d2-fonts-served-as-separate-self-hosted-files-not-embedded-in-the-html), [D7](DECISIONS.md#d7-font-files-named-by-their-content-linked-relatively-and-preloaded)). |
+| `Dockerfile`, `.dockerignore` | The image: the pinned unprivileged nginx with `site/` and `nginx/` copied in, nothing else ([D9](DECISIONS.md#d9-how-the-container-runs-nginx)). |
+| `nginx/` | The whole nginx configuration: `nginx.conf`, the security headers in `headers.conf`, and `csp.conf`, which is generated ([D10](DECISIONS.md#d10-the-security-headers-and-what-the-csp-allows), [D11](DECISIONS.md#d11-nothing-about-a-visitor-is-logged)). |
+| `compose.yaml` | Runs the image locally, with the production stack's hardening. |
+| `scripts/csp.mjs` | Writes `nginx/csp.conf` from the page's inline script and style; `--check` fails when they disagree. |
 | `scripts/check-page.mjs` | Loads the page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
 
 ## Running it locally
 
-The page loads its fonts from `fonts/`, and browsers refuse fonts from `file://`
-URLs, so it has to be served over HTTP. Any static file server on `site/` does:
+The way production runs it, with its headers, its Content-Security-Policy and
+its read-only filesystem (needs Docker):
 
 ```sh
-python -m http.server 8000 --directory site    # then open http://localhost:8000/
+docker compose up -d --build      # then open http://localhost:8080/
+docker compose ps                 # "healthy" after a few seconds
+docker compose down
 ```
 
-To check it the way a visitor's browser sees it (needs Node 22 and Edge or
-Chrome; set `BROWSER` to use another Chromium):
+`WEB_PORT=8081 docker compose up -d --build` if 8080 is taken.
+
+**After changing `site/index.html`**, regenerate the policy, or the browser will
+refuse the page's own script or style:
 
 ```sh
-node scripts/check-page.mjs http://localhost:8000/                    # report only
-node scripts/check-page.mjs http://localhost:8000/ --shots out/shots  # and screenshots
+node scripts/csp.mjs              # rewrites nginx/csp.conf; commit it with the page
+```
+
+To check the page the way a visitor's browser sees it (needs Node 22 and Edge or
+Chrome; set `BROWSER` to use another Chromium). It exits 1 on any console error,
+CSP violation, failed request or request to another origin:
+
+```sh
+node scripts/check-page.mjs http://localhost:8080/                    # report only
+node scripts/check-page.mjs http://localhost:8080/ --shots out/shots  # and screenshots
+```
+
+Without Docker, any static file server on `site/` shows the page, though
+without the headers (browsers refuse fonts from `file://`, so opening the file
+directly does not work):
+
+```sh
+python -m http.server 8000 --directory site
 ```
 
 ## Releasing and rolling back

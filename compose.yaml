@@ -1,0 +1,28 @@
+# The site on this machine, built from this checkout (README, "Running it locally").
+#
+#   docker compose up -d --build     # then open http://localhost:8080/
+#   docker compose down
+#
+# The same hardening as the production stack in compose.portainer.yaml, so a
+# local run is a test of what production runs rather than of something easier.
+name: allvibenocry-website-local
+
+services:
+  web:
+    build: .
+    image: allvibenocry-website:local
+    # Loopback only: this is for looking at, not for serving.
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    # Read-only root filesystem; nginx writes only its pid file and temp
+    # directories, all under /tmp (nginx/nginx.conf).
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    pids_limit: 64
+    # The health check is the image's own (Dockerfile).
