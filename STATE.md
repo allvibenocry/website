@@ -23,6 +23,9 @@ Nothing yet. The site is not deployed anywhere and not published.
   behaviour and pixels match the original as in D8. The container log stays
   empty.
 - `scripts/csp.mjs`: the policy, generated from the page and checkable.
+- The release workflow, the production stack file and the deploy scripts
+  (D12, D13). The stack file was run locally from a locally tagged image:
+  healthy, with its limits; without its variables it refuses to start.
 
 ## In progress
 

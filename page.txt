@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Server: nginx
+Date: Sat, 26 Sep 2026 21:02:51 GMT
+Content-Type: text/html; charset=utf-8
+Last-Modified: Sat, 26 Sep 2026 20:43:13 GMT
+Transfer-Encoding: chunked
+Connection: keep-alive
+Vary: Accept-Encoding
+ETag: W/"6ab82e61-14cf3"
+Cache-Control: no-cache
+X-Content-Type-Options: nosniff
+Referrer-Policy: no-referrer
+Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+Content-Security-Policy: default-src 'none'; script-src 'sha256-eKsmLziv8agj5UoEFroKAkGSR4NrBnn1xUUENtztDxs='; style-src-elem 'sha256-Wu7d882jPZ0v2Hmqhu1mTL82S+OMSQJdkIiH8wSWF30='; style-src-attr 'unsafe-inline'; style-src 'unsafe-inline'; font-src 'self'; img-src data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
+Content-Encoding: gzip
+

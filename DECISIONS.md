@@ -266,3 +266,85 @@ container's log is therefore empty in normal operation, which was observed.
 **Instead.** An access log in a format without `$remote_addr`. Rejected for now:
 it would still hold the user agent and the referrer, and nobody reads it. If
 traffic numbers are ever wanted, that is a decision of its own.
+
+## D12. The image is built in GitHub Actions, on a version tag, and tested before it is pushed
+
+*2026-09-26*
+
+Pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds the
+image, runs it the way the stack runs it, checks it, and only then pushes it to
+`ghcr.io/allvibenocry/website` under two tags: **`vX.Y.Z`** and
+**`sha-<full commit>`**. It then reads both tags back from the registry and checks
+that they are one image, and checks that the package is still private.
+
+**Why, following Vikt.**
+- **No credential on the workstation.** The job pushes with its own
+  `GITHUB_TOKEN`, scoped to `packages: write` for this repository. The
+  workstation's `gh` token does not even have a packages scope, and does not
+  need one.
+- **The version tag is what the stack pins**, so a rollback is the previous tag
+  (rule 6). The commit tag traces any image back to its source. The image tag
+  keeps the `v` (Vikt's drop it) so that the git tag, the image tag and the
+  stack's `IMAGE_TAG` are one string: `v0.1.0` everywhere.
+- **No `latest`, ever.** Nothing may deploy it, so nothing pushes it.
+
+**Where it differs from Vikt, and why.**
+- **The image that was tested is the image that is pushed.** It is built once
+  with `docker build`, run read-only with the stack's limits, asked for its
+  headers, its gzip, its font caching and its favicon, and its log must be empty
+  (D11); then that same image is tagged and pushed. Vikt's workflow uses
+  `docker/build-push-action` and `docker/metadata-action`; this uses the Docker
+  CLI, so the only third-party action in a job that can write to the registry
+  production pulls from is `actions/checkout`, **pinned by commit**.
+- **The CSP is checked against the page before anything is built**
+  (`node scripts/csp.mjs --check`, D10).
+- **The visibility check is Vikt's turned around.** Vikt proves its packages
+  are anonymously pullable because its host pulls them anonymously. This package
+  must stay private, so the same anonymous request must fail. The expected
+  answer is one line in the workflow (`PACKAGE_VISIBILITY`), so making the
+  package public later is a visible decision, not a check someone deletes.
+- **amd64 only**: the production host is x86_64 (read from Docker on it), and
+  that is what GitHub's runner builds.
+
+## D13. The Portainer stack: created through the API, bound to one LAN address
+
+*2026-09-26*
+
+The stack `allvibenocry-website` is created and updated only by
+`scripts/stack.mjs`, through the Portainer API, with the credential variables
+Vikt uses (`PORTAINER_URL`, `PORTAINER_TOKEN`, and `VIKT_HOST` for read-only
+checks over key-based SSH). The stack file it sends is `compose.portainer.yaml`
+**as it is at the release tag**, so what runs is always a released file.
+
+- **Plan before deploy, stop at the first failure** (rule 4). `plan` and
+  `deploy` run the same steps: the tag exists; its release workflow is green,
+  which is the proof the image exists; the stack file at the tag reads its three
+  variables; the address and port are right; Portainer can pull the image. Then
+  `deploy --yes` creates or updates the stack, waits for the container to be
+  healthy on the new image, and asks the site for its page.
+- **Before and after** (rule 2). `deploy` snapshots every stack and container
+  on the host through Portainer (ids, images, states, start times, restart
+  counts; never a stack's variables), deploys, snapshots again, and fails if
+  anything that is not this stack changed.
+- **Bound to the host's LAN IPv4 address, not to all addresses.** An unaddressed
+  published port is also published on IPv6, and a host with a global IPv6
+  address is reachable from the internet without any router forward. This host
+  has none today (checked), and the explicit IPv4 bind keeps that from mattering
+  if it ever gets one. `plan` refuses an address that is not the host's own or
+  not private.
+- **A port checked free**: not listened on by anything on the host (read with
+  `ss` over SSH, so processes outside Docker count too) and not published by any
+  container.
+- **LAN only until published.** Nothing forwards to that port: no router rule,
+  no tunnel, no proxy host. Publishing the site is the owner's (rule 1), and when
+  it happens the edge terminates TLS and sets HSTS (D4).
+- **The registry credential is the owner's to add.** Vikt's packages are public
+  and its host pulls them anonymously: Portainer has no registries at all. This
+  package is private, so Portainer needs a credential for ghcr.io that can read
+  it. `plan` checks for one and stops without it; the script never adds
+  credentials. Once a ghcr.io credential exists, Portainer may present it for
+  every ghcr.io pull on this host, Vikt's included, so its expiry matters beyond
+  this site.
+- **Rollback is a deploy of the previous tag**:
+  `node scripts/stack.mjs deploy v0.1.0 --yes`. The stack's `IMAGE_TAG` changes
+  and nothing else does.

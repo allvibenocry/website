@@ -1,0 +1,36 @@
+# The production stack, for Portainer (D5, D13). Deployed by scripts/stack.mjs,
+# never by pasting: the stack file sent is this file as it is at the release tag.
+#
+# Stack variables, all required, none with a default:
+#
+#   IMAGE_TAG   the version to run, e.g. v0.1.0. Never `latest` (rule 6): a
+#               rollback is setting the previous version and redeploying.
+#   WEB_BIND    the host's LAN IPv4 address. An address, not 0.0.0.0 and not
+#               empty: Docker publishes an unaddressed port on IPv6 as well, and
+#               a host with a global IPv6 address would then be reachable from
+#               the internet with no router forward at all (D13).
+#   WEB_PORT    the host port, checked free on the host before the first deploy.
+#
+# Same hardening as compose.yaml, so a local run tests this.
+services:
+  web:
+    image: ghcr.io/allvibenocry/website:${IMAGE_TAG:?set IMAGE_TAG to a version, e.g. v0.1.0}
+    restart: unless-stopped
+    ports:
+      - "${WEB_BIND:?set WEB_BIND to the host's LAN IPv4 address}:${WEB_PORT:?set WEB_PORT to a free host port}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    pids_limit: 64
+    # The container writes nothing in normal operation (D11); bounded anyway.
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
+    # The health check is the image's own (Dockerfile): wget on / every 30 s.

@@ -22,6 +22,10 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 | `Dockerfile`, `.dockerignore` | The image: the pinned unprivileged nginx with `site/` and `nginx/` copied in, nothing else ([D9](DECISIONS.md#d9-how-the-container-runs-nginx)). |
 | `nginx/` | The whole nginx configuration: `nginx.conf`, the security headers in `headers.conf`, and `csp.conf`, which is generated ([D10](DECISIONS.md#d10-the-security-headers-and-what-the-csp-allows), [D11](DECISIONS.md#d11-nothing-about-a-visitor-is-logged)). |
 | `compose.yaml` | Runs the image locally, with the production stack's hardening. |
+| `compose.portainer.yaml` | The production stack: the image at `IMAGE_TAG`, bound to `WEB_BIND:WEB_PORT`. |
+| `.github/workflows/release.yml` | On a version tag: builds, tests and pushes the image to GHCR. |
+| `scripts/stack.mjs` | Plans and deploys the Portainer stack, and snapshots the host before and after. |
+| `scripts/portainer.mjs` | The one way the scripts talk to Portainer: token by name, never a prompt. |
 | `scripts/csp.mjs` | Writes `nginx/csp.conf` from the page's inline script and style; `--check` fails when they disagree. |
 | `scripts/check-page.mjs` | Loads the page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
@@ -64,12 +68,98 @@ directly does not work):
 python -m http.server 8000 --directory site
 ```
 
-## Releasing and rolling back
+## Releasing a new version
 
-Not built yet. The plan
-([D5](DECISIONS.md#d5-deployed-the-same-way-as-vikt-lan-only-until-published)):
-a version tag `vX.Y.Z` builds an image on GHCR, a Portainer stack runs that exact
-tag, and a rollback is deploying the previous tag again.
+A version is a git tag `vX.Y.Z`. The tag builds the image, and the Portainer
+stack runs exactly that tag
+([D5](DECISIONS.md#d5-deployed-the-same-way-as-vikt-lan-only-until-published),
+[D12](DECISIONS.md#d12-the-image-is-built-in-github-actions-on-a-version-tag-and-tested-before-it-is-pushed),
+[D13](DECISIONS.md#d13-the-portainer-stack-created-through-the-api-bound-to-one-lan-address)).
+
+1. **Change, check, commit, push.** After any change to `site/index.html`:
+
+   ```sh
+   node scripts/csp.mjs                              # the policy follows the page
+   docker compose up -d --build                      # look at it on http://localhost:8080/
+   node scripts/check-page.mjs http://localhost:8080/   # must end "clean"
+   git commit -am "…" && git push
+   ```
+
+2. **Tag.** The next version, never reusing one:
+
+   ```sh
+   git tag v0.1.1 && git push origin v0.1.1
+   gh run watch --repo allvibenocry/website          # the release workflow for the tag
+   ```
+
+   The workflow checks the CSP against the page, builds the image, runs and
+   checks it, pushes `ghcr.io/allvibenocry/website:v0.1.1` and `:sha-<commit>`,
+   reads both back, and checks that the package is still private. Nothing is
+   pushed if any check fails.
+
+3. **Deploy.** `plan` changes nothing; `deploy --yes` deploys:
+
+   ```sh
+   node scripts/stack.mjs plan v0.1.1
+   node scripts/stack.mjs deploy v0.1.1 --yes
+   ```
+
+   The deploy lists the host's stacks and containers before and after, and fails
+   if anything other than this stack changed. It ends by printing the rollback
+   command. Afterwards, check the live site the way a browser sees it:
+
+   ```sh
+   node scripts/check-page.mjs http://<host>:<port>/    # the address in STATE.md, "Live"
+   ```
+
+4. **Record** what is live in `STATE.md`.
+
+## Rolling back
+
+Deploy the previous tag. Nothing else changes:
+
+```sh
+node scripts/stack.mjs deploy v0.1.0 --yes
+```
+
+Every version ever released is still on GHCR under its tag, so any of them can
+be deployed this way. `git tag --list 'v*'` lists them.
+
+## What deploying needs
+
+In the workstation's environment, by name (never on a command line, never in
+this repository), the same variables Vikt's scripts use:
+
+| Variable | What |
+|---|---|
+| `PORTAINER_URL` | Where Portainer answers. |
+| `PORTAINER_TOKEN` | A Portainer access token (My account, Access tokens). `node scripts/portainer.mjs check` proves it works. |
+| `VIKT_HOST` | `user@host` of the Docker host, with a key-based SSH login. Used only to read which addresses and ports are in use; every SSH call has `BatchMode=yes`, so a missing key fails instead of prompting. |
+| `PORTAINER_ENDPOINT_ID` | Only if Portainer ever has more than one environment. |
+
+And `gh`, logged in, to read the release workflow's result.
+
+The first deploy also needs the stack's address and port, which later deploys
+keep: `node scripts/stack.mjs host` lists the host's addresses and the ports in
+use, and the first deploy takes `--bind <LAN IPv4> --port <free port>`.
+
+### The registry credential
+
+The image is private, so Portainer needs a credential to pull it. Vikt's images
+are public and Portainer pulls them anonymously, so it has none; `plan` stops at
+"Portainer can pull the private image" until one exists. It is added by the
+owner, in Portainer, never by a script:
+
+- **Registries → Add registry → Custom registry**
+- **Registry URL**: `ghcr.io`, **Authentication** on
+- **Username**: a GitHub account that can read the `allvibenocry/website` package
+- **Password**: a *classic* personal access token with only the `read:packages`
+  scope (GHCR does not take fine-grained tokens), with an expiry you will
+  notice
+
+Once it exists, Portainer may present it for every ghcr.io pull on that host,
+Vikt's included: when the token expires, Vikt's next deploy may fail to pull
+too.
 
 ## How this repository is worked on
 
