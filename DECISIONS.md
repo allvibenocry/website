@@ -36,7 +36,7 @@ the copyright notices of each family ship with them in `site/fonts/OFL.txt`.
 
 **Why.**
 - **The page stays small and editable.** Embedded as base64 the fonts were about
-  250 kB of a 320 kB file, so every copy edit meant scrolling past them and
+  235 kB of a 320 kB file, so every copy edit meant scrolling past them and
   every visit re-downloaded them.
 - **Fonts are cached.** A separate file can carry a long, immutable cache
   lifetime while the page itself is revalidated on every visit.
@@ -113,3 +113,56 @@ inline script and style (D4), and a hash covers exact bytes. The workstation has
 `core.autocrlf=true`, so without this a Windows checkout would hold CRLF while
 the image built in CI holds LF, and a policy computed from one would block the
 page served from the other.
+
+## D7. Font files named by their content, linked relatively, and preloaded
+
+*2026-09-26*
+
+The five font files (one variable Bricolage Grotesque, Atkinson Hyperlegible
+Next 400 and 700, Atkinson Hyperlegible Mono 400 and 600) were extracted byte for
+byte from the page's data URIs. Each is named `<family>-<weight>.<hash>.woff2`,
+where `<hash>` is the first eight hex digits of the file's SHA-256, and the
+`@font-face` rules point at them as `url(fonts/…)`. The `<head>` preloads all
+five.
+
+**Why.**
+- **A content hash in the name makes the file immutable**, so it can be cached
+  for a year (D3's server sends it so): a changed font is a new name, and the
+  page that names it is never cached.
+- **Relative, not `/fonts/…`**, so the page works wherever it is mounted, and the
+  URL is same-origin by construction.
+- **Preloaded**, because a data URI was available the moment the CSS was parsed,
+  and a file is not until it is requested. Preloading starts all five downloads
+  while the head is still being read, which keeps the first paint as close as
+  possible to the embedded version. All five faces are used on the first screen
+  of the page, so none is fetched for nothing (they total 176 kB, about 60 kB
+  less than their base64 did).
+- **The copyright notices in `OFL.txt` were read from the fonts' own name
+  tables** and checked against each family's `OFL.txt` in the Google Fonts
+  repository: they agree word for word. None declares a Reserved Font Name. The
+  licence text is copied verbatim from those files.
+
+The page's only other change is its CSS comment, which said the fonts were
+embedded.
+
+## D8. "Nothing visible changed" is measured, against a noise floor
+
+*2026-09-26*
+
+A change that must not be visible is checked in a real browser, not by eye:
+`scripts/check-page.mjs` loads the page in headless Edge (or Chrome) at desktop
+(1440×900) and mobile (390×844, 2×) width, exercises every interactive part,
+records what each part left on the page, lists every request by origin, every
+console message and every CSP violation, and takes screenshots. The old and new
+versions are then compared pixel by pixel, and **the original is also compared
+with itself**, run twice.
+
+**Why.** The page has five animations that never stop and a hero that differs
+between two loads of the same file, so "the screenshots differ" means nothing
+until it is known how much the original differs from itself. A comparison that
+knows the noise floor can say exactly what changed. For the font extraction
+(D7) the result was: behaviour identical; every section screenshot identical
+outside the regions where the original also varies between runs; full-page
+screenshots with reduced motion identical except for at most 1/255 in one
+colour channel on 1 pixel (desktop) and 100 of 24 million pixels (mobile, dark),
+which is rounding in the GPU's blending and repeats at the raster tile height.

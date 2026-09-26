@@ -16,16 +16,29 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 
 | Path | What it is |
 |---|---|
-| `index.html` | The page: one self-contained file with inline CSS, inline JavaScript and three embedded fonts. A copy of the finished design. |
-| `README.md` | This file. |
+| `site/` | Everything the web server serves, and nothing else. |
+| `site/index.html` | The page, with inline CSS and inline JavaScript. |
+| `site/fonts/` | The three font families as `.woff2` files named by their content hash, and `OFL.txt` with their copyright notices and licence ([D2](DECISIONS.md#d2-fonts-served-as-separate-self-hosted-files-not-embedded-in-the-html), [D7](DECISIONS.md#d7-font-files-named-by-their-content-linked-relatively-and-preloaded)). |
+| `scripts/check-page.mjs` | Loads the page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
 
-The layout changes as the setup proceeds: see `STATE.md`.
-
 ## Running it locally
 
-For now the page is a single self-contained file: open `index.html` in a browser.
+The page loads its fonts from `fonts/`, and browsers refuse fonts from `file://`
+URLs, so it has to be served over HTTP. Any static file server on `site/` does:
+
+```sh
+python -m http.server 8000 --directory site    # then open http://localhost:8000/
+```
+
+To check it the way a visitor's browser sees it (needs Node 22 and Edge or
+Chrome; set `BROWSER` to use another Chromium):
+
+```sh
+node scripts/check-page.mjs http://localhost:8000/                    # report only
+node scripts/check-page.mjs http://localhost:8000/ --shots out/shots  # and screenshots
+```
 
 ## Releasing and rolling back
 
