@@ -229,7 +229,10 @@ function printComparison({ mine, others, notes }) {
   for (const line of m.length ? m : ["no change"]) out(`  ${line}`);
   out("everything else on the host:");
   const o = [...others.stacks, ...others.containers];
-  for (const line of o.length ? o : ["no change: same stacks, same containers, same ids, images, start times and restart counts"]) out(`  ${line}`);
+  const unchanged = notes.length
+    ? "no change apart from the notes below: same stacks, same containers, same ids and images"
+    : "no change: same stacks, same containers, same ids, images, start times and restart counts";
+  for (const line of o.length ? o : [unchanged]) out(`  ${line}`);
   for (const line of notes) out(`  note: ${line}`);
   return o.length === 0;
 }
