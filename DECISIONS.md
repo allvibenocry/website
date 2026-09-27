@@ -600,3 +600,60 @@ repository supports, at least as Planned (the product's D33).
 - Unlike the Under the hood page and its fact sheet (D17), nothing checks the
   main page against this file mechanically: the main page's copy is final, and
   the list is for the people who decide it.
+
+## D22. Phones and tablets: the four steps as cards, and what else was fixed
+
+*2026-09-28*
+
+Every section of both pages was looked at 360, 390, 430 and 768 px wide, before
+and after, and what did not look right was fixed.
+
+- **The four steps, at 900 px and below, are one card per step**: the step's
+  text, then its own scene in a card of its own. The sticky stage above the
+  steps cut its scene off at the top and the bottom on a phone, and left long
+  empty stretches between the steps. The script moves each scene into its
+  step, and back into the stage above 900 px; without a script, narrow screens
+  keep the stage. **Each scene plays when it comes into view**, and stops when
+  it leaves; with reduced motion, every scene shows its end state at once.
+  **The progress rail is gone from the cards**: the cards need the width (at
+  360 px the rail would leave them 254 px), and beside a card it had nothing to
+  show progress along.
+- **The desktop keeps the sticky stage, unchanged.** On a desktop the script
+  does nothing at load, and it acts on a change of width only once the change
+  has settled (150 ms). The block-by-block comparison found why that matters:
+  a headless browser taking a full-page picture shrinks its window to 1 by 1
+  pixel for a moment, the phone layout switched in and out, and the one scene
+  moved back into the stage was drawn with greyscale instead of subpixel
+  anti-aliasing. Found by taking the same picture of eleven variants of the
+  page, and by recording every width the script saw.
+- **The navigation**: between 821 and 1099 px the links get a row of their own,
+  each on one line, instead of breaking inside a link (item 3 of the third
+  brief); below 381 px the button's text no longer breaks.
+- **The gates**: on a phone the station's minimum width reached back to the
+  third gate, which disappeared behind it with its label. At 480 px and below
+  the gates close up.
+- **The problem section's notes**: on a tablet, two side by side instead of one
+  narrow column with a third of the width empty.
+- **The "Tried by you" stamp** sits below the browser in a card, where it no
+  longer covers the address.
+- **Under the hood's diagrams** were 10 to 12 px on a phone. Their words are
+  larger now, with some labels shorter or on two lines, and on a phone the
+  diagram's card reaches nearer the screen's edges: at least 12.4 px at 360 px,
+  13.5 at 390. Below 980 px a diagram is at most 560 px wide, instead of the
+  whole column.
+- **Not changed:** the words on the laptop's screen in the hardware section,
+  about 5 px at 360. It is a picture of a screen with a text alternative, and
+  its words repeat the copy beside it.
+
+**How it was looked at.** `scripts/gallery.mjs` cuts every section out of
+check-page's full-page pictures, taken with reduced motion, so that every
+scene shows its end state. Pictures of one section at a time are not used for
+this: a section taller than the screen is drawn in one go, the browser counts
+every card in it as in view, and the scenes restart as the picture is taken. On
+a desktop the same kind of picture can catch the stage switching scenes, when
+drawing it fires the page's scroll handler; the full-page pictures, which do
+not, are what the comparison relies on.
+
+`check-page --widths all` checks both pages at 1440, 390, 360, 430 and 768 px,
+and on the main page's cards that every scene plays in view and none at the
+top.

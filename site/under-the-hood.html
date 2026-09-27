@@ -73,6 +73,8 @@ a{color:inherit}
 .nav-links a:not(.btn):hover,.nav-links a[aria-current="page"]{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
 .nav .btn{min-height:42px;padding:0 18px;font-family:var(--display);font-weight:700;font-size:1.02rem}
 @media (max-width:820px){.nav-links a:not(.btn){display:none}}
+/* The narrowest phones: the brand and the button, each on one line */
+@media (max-width:380px){.nav{gap:12px}.nav .btn{padding:0 14px;white-space:nowrap}}
 /* Between phone and desktop the links do not fit beside the brand and the button: they get a row of their own, each on one line */
 @media (min-width:821px) and (max-width:1099px){
   .nav{flex-wrap:wrap;row-gap:6px}
@@ -130,11 +132,15 @@ code{font-family:var(--mono);font-size:.9em;background:rgba(246,241,255,.09);bor
 /* A statement beside its diagram */
 .split{display:grid;gap:44px;align-items:start}
 @media (min-width:980px){.split{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:64px}}
+/* In one column a diagram is as wide as it needs to be to read, and no wider */
+@media (max-width:979px){.split > figure{max-width:560px}}
 figure{margin:0}
 .dia{background:var(--panel);border:3px solid var(--text);border-radius:24px;padding:clamp(12px,2vw,20px);box-shadow:7px 7px 0 var(--text)}
 @media (min-width:980px){.dia{box-shadow:10px 10px 0 var(--text)}}
 .dia svg{display:block;width:100%;height:auto}
 .dia figcaption{margin:14px 4px 2px;color:var(--muted);font-size:.95rem;line-height:1.45}
+/* On a phone a diagram takes the whole width it can, so that its words stay readable */
+@media (max-width:640px){.dia{margin-inline:calc(10px - var(--pad));padding:10px 8px 12px;border-radius:20px;box-shadow:5px 5px 0 var(--text)}.dia figcaption{margin:12px 6px 2px}}
 .dia text{font-family:var(--body)}
 .dia .b{font-weight:700}
 .dia .d{font-family:var(--display);font-weight:800}
@@ -298,7 +304,7 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
       </ul>
 
       <figure class="dia" data-fact="S1 S2 S3 S4 S6 S7 S9 S12 S14 I1 I5 I6 I7 B4">
-        <svg viewBox="0 0 360 668" role="img" aria-labelledby="host-t host-d">
+        <svg viewBox="0 0 360 702" role="img" aria-labelledby="host-t host-d">
           <title id="host-t">A host, from the outside in</title>
           <desc id="host-d">A browser on the home network reaches the machine on two ports: 8100 for prod and 8101 for dev. The machine runs Debian 13 on x86-64. nginx is the one way in: it listens on IPv4 only, passes each request to its app on the host's loopback, and prod's door refuses Docker's own address ranges. Docker Engine with Compose runs two stacks for a project, prod and dev, each with its own app, its own PostgreSQL 18, its own networks, volume and secret, with a wall between them. The allvibe command-line tool and a daily systemd timer run on the machine, which also holds the host key. Encrypted backups go to a backup disk off the machine. The recovery key is kept by the owner.</desc>
           <defs>
@@ -306,67 +312,67 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
             <marker id="ahk" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1B1530"/></marker>
           </defs>
           <!-- a browser on the home network -->
-          <rect x="36" y="6" width="288" height="44" rx="12" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
-          <circle cx="54" cy="28" r="3" fill="#1B1530"/><circle cx="64" cy="28" r="3" fill="#1B1530"/><circle cx="74" cy="28" r="3" fill="#1B1530"/>
-          <text x="90" y="33" font-size="13.5" class="ink b">A browser on the home network</text>
-          <line x1="128" y1="50" x2="128" y2="93" stroke="#F6F1FF" stroke-width="3"/>
-          <line x1="292" y1="50" x2="292" y2="93" stroke="#F6F1FF" stroke-width="3"/>
-          <text x="120" y="80" text-anchor="end" font-size="13" class="lt m">:8100 prod</text>
-          <text x="284" y="80" text-anchor="end" font-size="13" class="lt m">:8101 dev</text>
+          <rect x="36" y="6" width="288" height="46" rx="12" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="180" y="35" text-anchor="middle" font-size="15" class="ink b">A browser on the home network</text>
+          <line x1="128" y1="52" x2="128" y2="93" stroke="#F6F1FF" stroke-width="3"/>
+          <line x1="292" y1="52" x2="292" y2="93" stroke="#F6F1FF" stroke-width="3"/>
+          <text x="120" y="80" text-anchor="end" font-size="14.5" class="lt m">:8100 prod</text>
+          <text x="284" y="80" text-anchor="end" font-size="14.5" class="lt m">:8101 dev</text>
           <!-- the machine -->
-          <rect x="4" y="92" width="352" height="474" rx="18" fill="#DCD7E6" stroke="#1B1530" stroke-width="3"/>
+          <rect x="4" y="92" width="352" height="506" rx="18" fill="#DCD7E6" stroke="#1B1530" stroke-width="3"/>
           <line x1="128" y1="92" x2="128" y2="124" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
           <line x1="292" y1="92" x2="292" y2="124" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
           <!-- the proxy -->
-          <rect x="18" y="128" width="324" height="72" rx="12" fill="#FF4D94" stroke="#1B1530" stroke-width="3"/>
-          <text x="32" y="151" font-size="15" class="ink d">nginx, the one way in</text>
-          <text x="32" y="170" font-size="12.5" class="ink">IPv4 only; apps on loopback only</text>
-          <text x="32" y="188" font-size="12.5" class="ink">prod's door refuses Docker's ranges</text>
+          <rect x="18" y="128" width="324" height="80" rx="12" fill="#FF4D94" stroke="#1B1530" stroke-width="3"/>
+          <text x="32" y="154" font-size="17" class="ink d">nginx, the one way in</text>
+          <text x="32" y="176" font-size="14" class="ink">IPv4 only; apps on loopback only</text>
+          <text x="32" y="196" font-size="14" class="ink">prod's door refuses Docker's ranges</text>
           <!-- Docker, and the two stacks -->
-          <rect x="16" y="214" width="328" height="232" rx="12" fill="none" stroke="#1B1530" stroke-width="2.5" stroke-dasharray="7 5"/>
-          <line x1="128" y1="200" x2="128" y2="276" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
-          <line x1="292" y1="200" x2="292" y2="276" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
-          <rect x="26" y="226" width="144" height="188" rx="12" fill="#00A650" stroke="#1B1530" stroke-width="3"/>
-          <rect x="190" y="226" width="144" height="188" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
-          <text x="38" y="252" font-size="17" class="ink d">prod</text>
-          <text x="202" y="252" font-size="17" class="ink d">dev</text>
-          <rect x="36" y="278" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="98" y="303" text-anchor="middle" font-size="13" class="ink b">app, Node.js 24</text>
-          <rect x="36" y="328" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="98" y="353" text-anchor="middle" font-size="13" class="ink b">PostgreSQL 18</text>
-          <text x="38" y="388" font-size="12.5" class="ink">own networks,</text>
-          <text x="38" y="404" font-size="12.5" class="ink">volume and secret</text>
-          <rect x="200" y="278" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="262" y="303" text-anchor="middle" font-size="13" class="ink b">app, Node.js 24</text>
-          <rect x="200" y="328" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="262" y="353" text-anchor="middle" font-size="13" class="ink b">PostgreSQL 18</text>
-          <text x="202" y="388" font-size="12.5" class="ink">own networks,</text>
-          <text x="202" y="404" font-size="12.5" class="ink">volume and secret</text>
+          <rect x="16" y="222" width="328" height="248" rx="12" fill="none" stroke="#1B1530" stroke-width="2.5" stroke-dasharray="7 5"/>
+          <line x1="128" y1="208" x2="128" y2="282" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
+          <line x1="292" y1="208" x2="292" y2="282" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
+          <rect x="26" y="234" width="144" height="204" rx="12" fill="#00A650" stroke="#1B1530" stroke-width="3"/>
+          <rect x="190" y="234" width="144" height="204" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <text x="38" y="262" font-size="19" class="ink d">prod</text>
+          <text x="202" y="262" font-size="19" class="ink d">dev</text>
+          <rect x="33" y="284" width="130" height="42" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="98" y="310" text-anchor="middle" font-size="14.5" class="ink b">app, Node.js 24</text>
+          <rect x="33" y="336" width="130" height="42" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="98" y="362" text-anchor="middle" font-size="14.5" class="ink b">PostgreSQL 18</text>
+          <text x="37" y="404" font-size="14" class="ink">own networks,</text>
+          <text x="37" y="423" font-size="14" class="ink">volume, secret</text>
+          <rect x="197" y="284" width="130" height="42" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="262" y="310" text-anchor="middle" font-size="14.5" class="ink b">app, Node.js 24</text>
+          <rect x="197" y="336" width="130" height="42" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="262" y="362" text-anchor="middle" font-size="14.5" class="ink b">PostgreSQL 18</text>
+          <text x="201" y="404" font-size="14" class="ink">own networks,</text>
+          <text x="201" y="423" font-size="14" class="ink">volume, secret</text>
           <!-- the wall between them -->
-          <line x1="180" y1="232" x2="180" y2="408" stroke="#D62B26" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="180" cy="320" r="11" fill="#D62B26" stroke="#1B1530" stroke-width="2.5"/>
-          <path d="M175 315l10 10M185 315l-10 10" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
-          <text x="30" y="436" font-size="13" class="ink b">Docker Engine and Compose</text>
+          <line x1="180" y1="240" x2="180" y2="432" stroke="#D62B26" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="180" cy="336" r="11" fill="#D62B26" stroke="#1B1530" stroke-width="2.5"/>
+          <path d="M175 331l10 10M185 331l-10 10" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+          <text x="30" y="459" font-size="14.5" class="ink b">Docker Engine and Compose</text>
           <!-- the tool, the timer, the host key -->
-          <rect x="18" y="458" width="158" height="50" rx="10" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
-          <text x="97" y="479" text-anchor="middle" font-size="14" class="ink m b">allvibe</text>
-          <text x="97" y="497" text-anchor="middle" font-size="12.5" class="ink">TypeScript, Node.js 20</text>
-          <rect x="184" y="458" width="158" height="50" rx="10" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
-          <text x="263" y="479" text-anchor="middle" font-size="14" class="ink b">systemd timer</text>
-          <text x="263" y="497" text-anchor="middle" font-size="12.5" class="ink">backup, daily at 03:30</text>
-          <rect x="18" y="518" width="158" height="34" rx="10" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
-          <circle cx="38" cy="535" r="6" fill="none" stroke="#1B1530" stroke-width="2.5"/><path d="M44 535h14M53 535v5M58 535v4" stroke="#1B1530" stroke-width="2.5" stroke-linecap="round"/>
-          <text x="68" y="540" font-size="13" class="ink b">host key</text>
-          <text x="342" y="542" text-anchor="end" font-size="15" class="ink d">Debian 13, x86-64</text>
+          <rect x="18" y="482" width="158" height="54" rx="10" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="97" y="505" text-anchor="middle" font-size="15.5" class="ink m b">allvibe</text>
+          <text x="97" y="526" text-anchor="middle" font-size="14" class="ink">TypeScript, Node 20</text>
+          <rect x="184" y="482" width="158" height="54" rx="10" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="263" y="505" text-anchor="middle" font-size="15.5" class="ink b">systemd timer</text>
+          <text x="263" y="526" text-anchor="middle" font-size="14" class="ink">backups at 03:30</text>
+          <rect x="18" y="546" width="158" height="38" rx="10" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <circle cx="38" cy="565" r="6" fill="none" stroke="#1B1530" stroke-width="2.5"/><path d="M44 565h14M53 565v5M58 565v4" stroke="#1B1530" stroke-width="2.5" stroke-linecap="round"/>
+          <text x="68" y="570" font-size="14.5" class="ink b">host key</text>
+          <text x="342" y="572" text-anchor="end" font-size="17" class="ink d">Debian 13, x86-64</text>
           <!-- off the machine -->
-          <line x1="97" y1="566" x2="97" y2="596" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah)"/>
-          <text x="110" y="587" font-size="12.5" class="lt">encrypted backups</text>
-          <rect x="18" y="598" width="200" height="62" rx="12" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
-          <text x="32" y="623" font-size="14" class="ink b">Backup disk</text>
-          <text x="32" y="645" font-size="12.5" class="ink">USB or NAS, off the machine</text>
-          <rect x="228" y="598" width="128" height="62" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
-          <text x="292" y="623" text-anchor="middle" font-size="14" class="ink b">Recovery key</text>
-          <text x="292" y="645" text-anchor="middle" font-size="12.5" class="ink">kept by the owner</text>
+          <line x1="97" y1="598" x2="97" y2="626" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah)"/>
+          <text x="110" y="618" font-size="14" class="lt">encrypted backups</text>
+          <rect x="18" y="628" width="200" height="70" rx="12" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="32" y="651" font-size="15.5" class="ink b">Backup disk</text>
+          <text x="32" y="670" font-size="14" class="ink">a USB disk or a NAS,</text>
+          <text x="32" y="688" font-size="14" class="ink">off the machine</text>
+          <rect x="226" y="628" width="130" height="70" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <text x="291" y="657" text-anchor="middle" font-size="15.5" class="ink b">Recovery key</text>
+          <text x="291" y="679" text-anchor="middle" font-size="14" class="ink">with the owner</text>
         </svg>
         <figcaption>One host, with one project. Each further project adds its own prod and dev stacks, and its own pair of ports.</figcaption>
       </figure>
@@ -427,7 +433,7 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
         </ol>
       </div>
       <figure class="dia" data-fact="R1 R2 R3 R4 R5 R6 R7 R8 R9">
-        <svg class="pipe" viewBox="0 0 360 690" role="img" aria-labelledby="pipe-t pipe-d">
+        <svg class="pipe" viewBox="0 0 360 722" role="img" aria-labelledby="pipe-t pipe-d">
           <title id="pipe-t">The 13 steps of a release</title>
           <desc id="pipe-d">Thirteen steps in a column, in four groups. Checks: dev runs the commit; the recovery key is confirmed. Backup: the backup disk is off the machine; prod's database is running; an encrypted backup is written. Restore check: the backup to check; it is whole and decrypts; it is restored into a scratch copy; the app's health check passes on the copy. Release: prod is built from the commit; prod is deployed; prod answers its smoke check; the release is tagged and recorded. Any step that fails stops the release there. If step 11 or 12 fails, prod goes back to the version before, automatically, with its data kept.</desc>
           <defs><marker id="ahr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FF6B66"/></marker></defs>
@@ -435,44 +441,45 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
           <rect x="54" y="99" width="302" height="126" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
           <rect x="54" y="231" width="302" height="170" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
           <rect x="54" y="407" width="302" height="170" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
-          <text x="346" y="37" text-anchor="end" font-size="12.5" class="b" fill="#FF8DBA">checks</text>
-          <text x="346" y="125" text-anchor="end" font-size="12.5" class="b" fill="#FFD84D">backup</text>
-          <text x="346" y="257" text-anchor="end" font-size="12.5" class="b" fill="#86EBA9">restore check</text>
-          <text x="346" y="433" text-anchor="end" font-size="12.5" class="b" fill="#FF8DBA">release</text>
+          <text x="346" y="37" text-anchor="end" font-size="14" class="b" fill="#FF8DBA">checks</text>
+          <text x="346" y="125" text-anchor="end" font-size="14" class="b" fill="#FFD84D">backup</text>
+          <text x="346" y="257" text-anchor="end" font-size="14" class="b" fill="#86EBA9">restore check</text>
+          <text x="346" y="433" text-anchor="end" font-size="14" class="b" fill="#FF8DBA">release</text>
           <line x1="30" y1="32" x2="30" y2="560" stroke="#F6F1FF" stroke-opacity=".25" stroke-width="4" stroke-linecap="round"/>
-          <g class="nd"><circle cx="30" cy="32" r="15"/><text x="30" y="37" text-anchor="middle" font-size="13" class="b">1</text></g>
-          <g class="nd"><circle cx="30" cy="76" r="15"/><text x="30" y="81" text-anchor="middle" font-size="13" class="b">2</text></g>
-          <g class="nd"><circle cx="30" cy="120" r="15"/><text x="30" y="125" text-anchor="middle" font-size="13" class="b">3</text></g>
-          <g class="nd"><circle cx="30" cy="164" r="15"/><text x="30" y="169" text-anchor="middle" font-size="13" class="b">4</text></g>
-          <g class="nd"><circle cx="30" cy="208" r="15"/><text x="30" y="213" text-anchor="middle" font-size="13" class="b">5</text></g>
-          <g class="nd"><circle cx="30" cy="252" r="15"/><text x="30" y="257" text-anchor="middle" font-size="13" class="b">6</text></g>
-          <g class="nd"><circle cx="30" cy="296" r="15"/><text x="30" y="301" text-anchor="middle" font-size="13" class="b">7</text></g>
-          <g class="nd"><circle cx="30" cy="340" r="15"/><text x="30" y="345" text-anchor="middle" font-size="13" class="b">8</text></g>
-          <g class="nd"><circle cx="30" cy="384" r="15"/><text x="30" y="389" text-anchor="middle" font-size="13" class="b">9</text></g>
-          <g class="nd"><circle cx="30" cy="428" r="15"/><text x="30" y="433" text-anchor="middle" font-size="12" class="b">10</text></g>
-          <g class="nd"><circle cx="30" cy="472" r="15"/><text x="30" y="477" text-anchor="middle" font-size="12" class="b">11</text></g>
-          <g class="nd"><circle cx="30" cy="516" r="15"/><text x="30" y="521" text-anchor="middle" font-size="12" class="b">12</text></g>
-          <g class="nd"><circle cx="30" cy="560" r="15"/><text x="30" y="565" text-anchor="middle" font-size="12" class="b">13</text></g>
-          <text x="66" y="37" font-size="13.5" class="lt">Dev runs the commit</text>
-          <text x="66" y="81" font-size="13.5" class="lt">Recovery key confirmed</text>
-          <text x="66" y="125" font-size="13.5" class="lt">Backup disk off the machine</text>
-          <text x="66" y="169" font-size="13.5" class="lt">Prod's database running</text>
-          <text x="66" y="213" font-size="13.5" class="lt">Encrypted backup written</text>
-          <text x="66" y="257" font-size="13.5" class="lt">The backup to check</text>
-          <text x="66" y="301" font-size="13.5" class="lt">Whole, and it decrypts</text>
-          <text x="66" y="345" font-size="13.5" class="lt">Restored into a scratch copy</text>
-          <text x="66" y="389" font-size="13.5" class="lt">App's health check on the copy</text>
-          <text x="66" y="433" font-size="13.5" class="lt">Prod built from the commit</text>
-          <text x="66" y="477" font-size="13.5" class="lt">Prod deployed</text>
-          <text x="66" y="521" font-size="13.5" class="lt">Prod answers its smoke check</text>
-          <text x="66" y="565" font-size="13.5" class="lt">Tagged and recorded</text>
+          <g class="nd"><circle cx="30" cy="32" r="15"/><text x="30" y="37" text-anchor="middle" font-size="14" class="b">1</text></g>
+          <g class="nd"><circle cx="30" cy="76" r="15"/><text x="30" y="81" text-anchor="middle" font-size="14" class="b">2</text></g>
+          <g class="nd"><circle cx="30" cy="120" r="15"/><text x="30" y="125" text-anchor="middle" font-size="14" class="b">3</text></g>
+          <g class="nd"><circle cx="30" cy="164" r="15"/><text x="30" y="169" text-anchor="middle" font-size="14" class="b">4</text></g>
+          <g class="nd"><circle cx="30" cy="208" r="15"/><text x="30" y="213" text-anchor="middle" font-size="14" class="b">5</text></g>
+          <g class="nd"><circle cx="30" cy="252" r="15"/><text x="30" y="257" text-anchor="middle" font-size="14" class="b">6</text></g>
+          <g class="nd"><circle cx="30" cy="296" r="15"/><text x="30" y="301" text-anchor="middle" font-size="14" class="b">7</text></g>
+          <g class="nd"><circle cx="30" cy="340" r="15"/><text x="30" y="345" text-anchor="middle" font-size="14" class="b">8</text></g>
+          <g class="nd"><circle cx="30" cy="384" r="15"/><text x="30" y="389" text-anchor="middle" font-size="14" class="b">9</text></g>
+          <g class="nd"><circle cx="30" cy="428" r="15"/><text x="30" y="433" text-anchor="middle" font-size="13" class="b">10</text></g>
+          <g class="nd"><circle cx="30" cy="472" r="15"/><text x="30" y="477" text-anchor="middle" font-size="13" class="b">11</text></g>
+          <g class="nd"><circle cx="30" cy="516" r="15"/><text x="30" y="521" text-anchor="middle" font-size="13" class="b">12</text></g>
+          <g class="nd"><circle cx="30" cy="560" r="15"/><text x="30" y="565" text-anchor="middle" font-size="13" class="b">13</text></g>
+          <text x="66" y="37" font-size="15" class="lt">Dev runs the commit</text>
+          <text x="66" y="81" font-size="15" class="lt">Recovery key confirmed</text>
+          <text x="66" y="125" font-size="15" class="lt">Backup disk off the machine</text>
+          <text x="66" y="169" font-size="15" class="lt">Prod's database running</text>
+          <text x="66" y="213" font-size="15" class="lt">Encrypted backup written</text>
+          <text x="66" y="257" font-size="15" class="lt">The backup to check</text>
+          <text x="66" y="301" font-size="15" class="lt">Whole, and it decrypts</text>
+          <text x="66" y="345" font-size="15" class="lt">Restored into a scratch copy</text>
+          <text x="66" y="389" font-size="15" class="lt">App's health check on the copy</text>
+          <text x="66" y="433" font-size="15" class="lt">Prod built from the commit</text>
+          <text x="66" y="477" font-size="15" class="lt">Prod deployed</text>
+          <text x="66" y="521" font-size="15" class="lt">Prod answers its smoke check</text>
+          <text x="66" y="565" font-size="15" class="lt">Tagged and recorded</text>
           <!-- a failure at 11 or 12: back, automatically -->
           <path d="M6 516H14" fill="none" stroke="#FF6B66" stroke-width="3" stroke-dasharray="6 4"/>
-          <path d="M14 472H6V626H50" fill="none" stroke="#FF6B66" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#ahr)"/>
-          <rect x="54" y="598" width="302" height="56" rx="12" fill="#D62B26" stroke="#1B1530" stroke-width="3"/>
-          <text x="68" y="621" font-size="13.5" class="wh b">11 or 12 fails: back to the version</text>
-          <text x="68" y="641" font-size="13.5" class="wh b">before, automatically, data kept</text>
-          <text x="54" y="680" font-size="12.5" class="mu">Any step that fails stops the release there.</text>
+          <path d="M14 472H6V638H50" fill="none" stroke="#FF6B66" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#ahr)"/>
+          <rect x="54" y="598" width="302" height="80" rx="12" fill="#D62B26" stroke="#1B1530" stroke-width="3"/>
+          <text x="68" y="623" font-size="15" class="wh b">11 or 12 fails: back to</text>
+          <text x="68" y="643" font-size="15" class="wh b">the version before,</text>
+          <text x="68" y="663" font-size="15" class="wh b">automatically, data kept</text>
+          <text x="54" y="708" font-size="14" class="mu">Any step that fails stops the release.</text>
         </svg>
         <figcaption>What <code>allvibe release</code> prints, one line per step, in this order.</figcaption>
       </figure>
@@ -514,53 +521,56 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
         </ul>
       </div>
       <figure class="dia" data-fact="B4 B5 B6 B8 B9 B10 B11">
-        <svg viewBox="0 0 360 640" role="img" aria-labelledby="bk-t bk-d">
+        <svg viewBox="0 0 360 736" role="img" aria-labelledby="bk-t bk-d">
           <title id="bk-t">How a backup is written, and how it is checked</title>
-          <desc id="bk-d">Top: prod's PostgreSQL runs pg_dump in its custom format, streamed into age, which encrypts to the host key and the recovery key. On the backup disk, off the machine, the file is written under a temporary name ending in .partial, flushed, then renamed, and a manifest is written last. Bottom: the restore check, on its own internal network. The checksum matches; the whole file is decrypted with the host key; it is restored into a scratch PostgreSQL of the same image; the backed-up version of the app answers its health check on the copy; the entry count is reported beside prod's; and everything it made is removed. Prod is not touched.</desc>
+          <desc id="bk-d">Top: prod's PostgreSQL runs pg_dump in its custom format, streamed into age, which encrypts to the host key and the recovery key. On the backup disk, off the machine, the file is written under a temporary name ending in .partial, flushed, then renamed, and a manifest is written last. Bottom: the restore check, on its own internal network. The checksum matches; the whole file is decrypted with the host key; it is restored into a scratch PostgreSQL of the same image; the version of the app the backup came from answers its own health check on the copy; its entry count is reported beside the count prod had when the backup was taken; and everything it made is removed. Prod is not touched.</desc>
           <defs>
             <marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#F6F1FF"/></marker>
             <marker id="ahk2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1B1530"/></marker>
           </defs>
           <!-- written -->
-          <rect x="6" y="8" width="156" height="72" rx="12" fill="#00A650" stroke="#1B1530" stroke-width="3"/>
-          <text x="84" y="34" text-anchor="middle" font-size="14" class="ink b">prod's database</text>
-          <text x="84" y="53" text-anchor="middle" font-size="12.5" class="ink">pg_dump, in its</text>
-          <text x="84" y="69" text-anchor="middle" font-size="12.5" class="ink">custom format</text>
-          <line x1="162" y1="44" x2="194" y2="44" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
-          <rect x="198" y="8" width="156" height="72" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
-          <text x="276" y="33" text-anchor="middle" font-size="17" class="ink d">age</text>
-          <text x="276" y="53" text-anchor="middle" font-size="12.5" class="ink">to the host key and</text>
-          <text x="276" y="69" text-anchor="middle" font-size="12.5" class="ink">the recovery key</text>
-          <line x1="276" y1="80" x2="276" y2="116" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
-          <text x="266" y="104" text-anchor="end" font-size="12.5" class="lt">streamed, encrypted</text>
-          <rect x="6" y="120" width="348" height="190" rx="14" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
-          <text x="20" y="145" font-size="14" class="ink b">Backup disk, off the machine</text>
-          <path d="M22 158h18l8 8v26h-26z" fill="#FFE1EE" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
-          <text x="62" y="172" font-size="12.5" class="ink m">…dump.age.partial</text>
-          <text x="62" y="188" font-size="12.5" class="ink">written, then flushed</text>
-          <line x1="35" y1="196" x2="35" y2="208" stroke="#1B1530" stroke-width="2.5" marker-end="url(#ahk2)"/>
-          <path d="M22 212h18l8 8v26h-26z" fill="#DDF3E5" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
-          <text x="62" y="226" font-size="12.5" class="ink m">…dump.age</text>
-          <text x="62" y="242" font-size="12.5" class="ink">renamed when complete</text>
-          <path d="M22 258h18l8 8v26h-26z" fill="#FFF1BF" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
-          <text x="62" y="272" font-size="12.5" class="ink m">…json</text>
-          <text x="62" y="288" font-size="12.5" class="ink">the manifest, written last</text>
+          <rect x="6" y="8" width="156" height="78" rx="12" fill="#00A650" stroke="#1B1530" stroke-width="3"/>
+          <text x="84" y="35" text-anchor="middle" font-size="15.5" class="ink b">prod's database</text>
+          <text x="84" y="56" text-anchor="middle" font-size="14" class="ink">pg_dump, in its</text>
+          <text x="84" y="74" text-anchor="middle" font-size="14" class="ink">custom format</text>
+          <line x1="162" y1="47" x2="194" y2="47" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
+          <rect x="198" y="8" width="156" height="78" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <text x="276" y="35" text-anchor="middle" font-size="19" class="ink d">age</text>
+          <text x="276" y="56" text-anchor="middle" font-size="14" class="ink">to the host key and</text>
+          <text x="276" y="74" text-anchor="middle" font-size="14" class="ink">the recovery key</text>
+          <line x1="276" y1="86" x2="276" y2="120" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
+          <text x="266" y="109" text-anchor="end" font-size="14" class="lt">streamed, encrypted</text>
+          <rect x="6" y="122" width="348" height="206" rx="14" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="20" y="149" font-size="15.5" class="ink b">Backup disk, off the machine</text>
+          <path d="M22 162h18l8 8v26h-26z" fill="#FFE1EE" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="62" y="177" font-size="14" class="ink m">…dump.age.partial</text>
+          <text x="62" y="195" font-size="14" class="ink">written, then flushed</text>
+          <line x1="35" y1="200" x2="35" y2="212" stroke="#1B1530" stroke-width="2.5" marker-end="url(#ahk2)"/>
+          <path d="M22 216h18l8 8v26h-26z" fill="#DDF3E5" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="62" y="231" font-size="14" class="ink m">…dump.age</text>
+          <text x="62" y="249" font-size="14" class="ink">renamed when complete</text>
+          <path d="M22 266h18l8 8v26h-26z" fill="#FFF1BF" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="62" y="281" font-size="14" class="ink m">…json</text>
+          <text x="62" y="299" font-size="14" class="ink">the manifest, written last</text>
           <!-- checked -->
-          <line x1="180" y1="310" x2="180" y2="370" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
-          <rect x="6" y="330" width="348" height="302" rx="14" fill="none" stroke="#F6F1FF" stroke-width="2.5" stroke-dasharray="7 5"/>
-          <text x="20" y="356" font-size="16" class="lt d">Restore check</text>
-          <text x="340" y="356" text-anchor="end" font-size="12.5" class="mu">prod is not touched</text>
-          <rect x="20" y="372" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="34" y="395" font-size="13" class="ink">The checksum matches</text>
-          <rect x="20" y="418" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="34" y="441" font-size="13" class="ink">The whole file decrypts, with the host key</text>
-          <rect x="20" y="464" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="34" y="487" font-size="13" class="ink">Scratch PostgreSQL, same image, restored</text>
-          <rect x="20" y="510" width="320" height="36" rx="9" fill="#00A650" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="34" y="533" font-size="13" class="ink b">The backed-up app answers its health check</text>
-          <rect x="20" y="556" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
-          <text x="34" y="579" font-size="13" class="ink">Entry count, beside prod's at backup time</text>
-          <text x="20" y="617" font-size="12.5" class="mu">Then everything it made is removed.</text>
+          <line x1="180" y1="328" x2="180" y2="394" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
+          <rect x="6" y="350" width="348" height="378" rx="14" fill="none" stroke="#F6F1FF" stroke-width="2.5" stroke-dasharray="7 5"/>
+          <text x="20" y="378" font-size="18" class="lt d">Restore check</text>
+          <text x="340" y="378" text-anchor="end" font-size="14" class="mu">prod is not touched</text>
+          <rect x="20" y="396" width="320" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="421" font-size="14.5" class="ink">The checksum matches</text>
+          <rect x="20" y="446" width="320" height="56" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="469" font-size="14.5" class="ink">The whole file decrypts,</text>
+          <text x="34" y="489" font-size="14.5" class="ink">with the host key</text>
+          <rect x="20" y="512" width="320" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="537" font-size="14.5" class="ink">Restored into scratch PostgreSQL</text>
+          <rect x="20" y="562" width="320" height="56" rx="9" fill="#00A650" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="585" font-size="14.5" class="ink b">The version the backup came from</text>
+          <text x="34" y="605" font-size="14.5" class="ink b">answers its own health check</text>
+          <rect x="20" y="628" width="320" height="56" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="651" font-size="14.5" class="ink">Its entry count, beside the count</text>
+          <text x="34" y="671" font-size="14.5" class="ink">prod had when the backup was taken</text>
+          <text x="20" y="712" font-size="14" class="mu">Then everything it made is removed.</text>
         </svg>
         <figcaption>One backup file and its manifest on the disk, and the check that reads it back.</figcaption>
       </figure>

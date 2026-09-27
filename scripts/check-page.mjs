@@ -77,13 +77,18 @@ const PAGES = {
     settle: 6000,
     exercise: exerciseMain,
     sections: [
-      ["1-hero", "header.hero"],
-      ["2-four-steps", "#how"],
-      ["3-try-to-break-it", "#break"],
-      ["4-where-it-belongs", "#where"],
-      ["5-laptop", "#hardware"],
-      ["6-comparison", "#compare"],
-      ["7-footer", "footer"],
+      ["01-hero", "header.hero"],
+      ["02-problem", "section[aria-labelledby=problem-h]"],
+      ["03-four-steps", "#how"],
+      ["04-try-to-break-it", "#break"],
+      ["05-where-it-belongs", "#where"],
+      ["06-laptop", "#hardware"],
+      ["07-safety", "section[aria-labelledby=safe-h]"],
+      ["08-open-source", "section[aria-labelledby=open-h]"],
+      ["09-teams", "#enterprise"],
+      ["10-comparison", "#compare"],
+      ["11-waitlist", "#waitlist"],
+      ["12-footer", "footer"],
     ],
   },
   "/under-the-hood": {
@@ -268,6 +273,21 @@ async function exerciseMain(cdp) {
     activeSeen.add(await evaluate(cdp, "[...document.querySelectorAll('.step')].findIndex(s => s.classList.contains('is-active'))"));
   }
   did.stepsActivatedWhileScrolling = [...activeSeen].sort();
+
+  /* On narrow screens each step is a card with its own scene, which plays when
+     it comes into view: scrolled to, each must be playing; at the top of the
+     page, none. On a desktop there are no cards, and this is null. */
+  did.scenesPlayInView = await evaluate(cdp, "document.querySelector('.flow.cards') ? [] : null");
+  if (did.scenesPlayInView) {
+    for (let i = 0; i < 4; i += 1) {
+      await evaluate(cdp, `document.querySelectorAll('.scene')[${i}].scrollIntoView({ block: 'center' })`);
+      await sleep(1600);
+      did.scenesPlayInView.push(await evaluate(cdp, `document.querySelectorAll('.scene')[${i}].classList.contains('is-active')`));
+    }
+    await evaluate(cdp, "scrollTo(0, 0)");
+    await sleep(800);
+    did.scenesPlayingAtTheTop = await evaluate(cdp, "document.querySelectorAll('.scene.is-active').length");
+  }
 
   /* The headline replays the tear. */
   await evaluate(cdp, "scrollTo(0, 0)");
@@ -558,6 +578,8 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   /* Under the hood, the release steps must be dim until seen, and all lit after. */
   const steps = did.releaseStepsAfterInView;
   const notLit = steps && (!did.releaseStepsBeforeInView.dim || steps.dim || steps.lit !== steps.of) ? 1 : 0;
+  /* On the main page's cards, every scene plays in view, and none at the top. */
+  const notPlaying = did.scenesPlayInView ? did.scenesPlayInView.filter((playing) => !playing).length + (did.scenesPlayingAtTheTop ? 1 : 0) : 0;
 
   const run = {
     document: seen.document,
@@ -577,7 +599,7 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   };
   const bad =
     elsewhere.length + seen.failed.length + errors.length + seen.exceptions.length + csp.length +
-    checks.dashes.length + checks.unnamedDrawings.length + notLit;
+    checks.dashes.length + checks.unnamedDrawings.length + notLit + notPlaying;
 
   const out = (line) => process.stdout.write(`${line}\n`);
   out(`\n== ${page.name}, ${viewport} (${VIEWPORTS[viewport].width}x${VIEWPORTS[viewport].height})`);
@@ -596,6 +618,7 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   out(`fonts           ${fonts.join("; ")}`);
   out(`behaviour       ${JSON.stringify(did)}`);
   if (notLit) out("release steps   NOT lit up as they should be: dim until seen, then all lit");
+  if (notPlaying) out("scenes          NOT playing as they should: each in view, none at the top");
   if (run.shots.length > 0) out(`screenshots     ${run.shots.length} in ${path.dirname(run.shots[0])}`);
   return { run, bad };
 }

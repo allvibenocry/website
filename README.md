@@ -40,6 +40,7 @@ So a deploy is public at once, and a new version is looked at locally first.
 | `scripts/csp.mjs` | Writes `nginx/csp.conf`, one policy per page, from each page's inline script and style; `--check` fails when they disagree. |
 | `scripts/facts.mjs` | Fails unless every statement on the technical page is in its fact sheet with the same words and status, and no page has an en or em dash. |
 | `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
+| `scripts/gallery.mjs` | Every section of both pages, before and after, at every phone and tablet width, as a local page to look at ([D22](DECISIONS.md#d22-phones-and-tablets-the-four-steps-as-cards-and-what-else-was-fixed)). |
 | `scripts/compare-shots.mjs` | Compares two sets of those screenshots pixel by pixel, block by block where something moved, against the noise of the page compared with itself. |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
@@ -82,6 +83,7 @@ another origin, or en or em dash:
 node scripts/check-page.mjs http://localhost:8080/                    # every page, report only
 node scripts/check-page.mjs http://localhost:8080/under-the-hood      # one page
 node scripts/check-page.mjs http://localhost:8080/ --page main        # the main page alone
+node scripts/check-page.mjs http://localhost:8080/ --widths all       # also at 360, 430 and 768 px
 node scripts/check-page.mjs http://localhost:8080/ --shots out/shots  # and screenshots
 ```
 
