@@ -5,6 +5,7 @@
  *
  *   node scripts/check-page.mjs http://127.0.0.1:8080/                  # every page
  *   node scripts/check-page.mjs http://127.0.0.1:8080/under-the-hood    # one page
+ *   node scripts/check-page.mjs http://127.0.0.1:8080/ --page main      # the main page alone
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --shots out/after
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --full out/after-full
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --json out/report.json
@@ -47,6 +48,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { decode, encode } from "./compare-shots.mjs";
 
 const VIEWPORTS = {
   desktop: { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false },
@@ -400,19 +402,44 @@ async function sectionShots(cdp, dir, viewport, page) {
 async function fullShot(cdp, dir, viewport, scheme, page) {
   await sleep(1500);
   const { cssContentSize } = await cdp.send("Page.getLayoutMetrics");
-  const shot = await cdp.send("Page.captureScreenshot", {
-    format: "png",
-    captureBeyondViewport: true,
-    clip: { x: 0, y: 0, width: cssContentSize.width, height: cssContentSize.height, scale: 1 },
-  });
+  const width = Math.round(cssContentSize.width);
+  const height = Math.round(cssContentSize.height);
+  /* In slices, put together. Taken in one piece, a page taller than the
+     browser draws at once (about 16 000 device pixels: the mobile main page at
+     2x is 31 000) comes back with its top repeated where its bottom should be. */
+  const slice = Math.floor(8000 / VIEWPORTS[viewport].deviceScaleFactor);
+  const parts = [];
+  for (let y = 0; y < height; y += slice) {
+    const shot = await cdp.send("Page.captureScreenshot", {
+      format: "png",
+      captureBeyondViewport: true,
+      clip: { x: 0, y, width, height: Math.min(slice, height - y), scale: 1 },
+    });
+    parts.push(decode(Buffer.from(shot.data, "base64")));
+  }
+  const pixelWidth = parts[0].width;
+  const rgb = Buffer.alloc(pixelWidth * parts.reduce((sum, p) => sum + p.height, 0) * 3);
+  let row = 0;
+  for (const part of parts) {
+    for (let y = 0; y < part.height; y += 1) {
+      for (let x = 0; x < pixelWidth; x += 1) {
+        const i = (y * part.width + x) * part.channels;
+        const o = ((row + y) * pixelWidth + x) * 3;
+        rgb[o] = part.pixels[i];
+        rgb[o + 1] = part.pixels[i + 1];
+        rgb[o + 2] = part.pixels[i + 2];
+      }
+    }
+    row += part.height;
+  }
   const file = path.join(dir, `${page.prefix}full-${viewport}-${scheme}.png`);
-  writeFileSync(file, Buffer.from(shot.data, "base64"));
+  writeFileSync(file, encode(pixelWidth, row, rgb));
   /* Where each landmark is, beside the picture: a comparison can then line up
      the parts of two pages that moved, instead of calling everything below a
      change different. */
   const boxes = await evaluate(
     cdp,
-    `(() => { const seen = new Map(); return [...document.querySelectorAll('header, footer, nav, section, [id], .nav-links, .foot-links, .foot-top, .foot-bottom, .open > *, .dusk, .band')].map(el => {
+    `(() => { const seen = new Map(); return [...document.querySelectorAll('header, footer, nav, section, [id], .nav-links, .foot-links, .foot-top, .foot-bottom, .open > *, .cta-row, .dusk, .band')].map(el => {
       const base = el.tagName.toLowerCase() + (el.id ? '#' + el.id : el.classList.length ? '.' + [...el.classList].join('.') : '');
       const n = seen.get(base) ?? 0; seen.set(base, n + 1);
       const r = el.getBoundingClientRect();
@@ -440,12 +467,15 @@ function parse(argv) {
     if (rest[i] === "--shots") options.shots = rest[(i += 1)];
     else if (rest[i] === "--full") options.full = rest[(i += 1)];
     else if (rest[i] === "--json") options.json = rest[(i += 1)];
+    // "main" rather than "/": Git Bash rewrites a lone "/" into a Windows path.
+    else if (rest[i] === "--page") options.page = rest[(i += 1)] === "main" ? "/" : `/${rest[i].replace(/^\/+/, "")}`;
     else throw new Error(`unknown option ${rest[i]}`);
   }
-  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--shots dir] [--full dir] [--json file]");
-  // The root is the whole site; any other path is that one page.
+  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood] [--shots dir] [--full dir] [--json file]");
+  // The root is the whole site, or the one page --page names; any other path is
+  // that one page.
   const where = new URL(url);
-  const paths = where.pathname === "/" ? Object.keys(PAGES) : [where.pathname.replace(/\/$/, "")];
+  const paths = options.page ? [options.page] : where.pathname === "/" ? Object.keys(PAGES) : [where.pathname.replace(/\/$/, "")];
   for (const p of paths) if (!PAGES[p]) throw new Error(`no page ${p}; the pages are ${Object.keys(PAGES).join(" and ")}`);
   return { url, origin: where.origin, paths, options };
 }

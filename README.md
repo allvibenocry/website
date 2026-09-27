@@ -37,6 +37,7 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 | `scripts/csp.mjs` | Writes `nginx/csp.conf`, one policy per page, from each page's inline script and style; `--check` fails when they disagree. |
 | `scripts/facts.mjs` | Fails unless every statement on the technical page is in its fact sheet with the same words and status, and no page has an en or em dash. |
 | `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
+| `scripts/compare-shots.mjs` | Compares two sets of those screenshots pixel by pixel, block by block where something moved, against the noise of the page compared with itself. |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
 
@@ -77,7 +78,21 @@ another origin, or en or em dash:
 ```sh
 node scripts/check-page.mjs http://localhost:8080/                    # every page, report only
 node scripts/check-page.mjs http://localhost:8080/under-the-hood      # one page
+node scripts/check-page.mjs http://localhost:8080/ --page main        # the main page alone
 node scripts/check-page.mjs http://localhost:8080/ --shots out/shots  # and screenshots
+```
+
+To show that a change left the rest of a page as it was, take screenshots of
+the version before twice (the page's own noise) and of the new one once, and
+compare them. `--changed` names the boxes (from the `.boxes.json` beside each
+full-page screenshot) where the change was meant to be:
+
+```sh
+node scripts/check-page.mjs http://localhost:8089/ --page main --shots out/a --full out/a-full
+node scripts/check-page.mjs http://localhost:8089/ --page main --shots out/b --full out/b-full
+node scripts/check-page.mjs http://localhost:8080/ --page main --shots out/new --full out/new-full
+node scripts/compare-shots.mjs out/a-full out/new-full --noise out/b-full --changed div.nav-links
+node scripts/compare-shots.mjs out/a out/new --noise out/b
 ```
 
 Without Docker, any static file server on `site/` shows the pages, though
