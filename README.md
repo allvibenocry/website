@@ -13,8 +13,11 @@ data. The product lives in its own repository,
 repository holds only the website, so the two can have separate lifecycles and
 separate visibility ([D1](DECISIONS.md#d1-a-separate-repository-for-the-website)).
 
-The site is not published yet. Publishing it on allvibenocry.com (Cloudflare,
-DNS, tunnel) is done by hand, by the owner, and nothing in this repository does it.
+The site is published on [allvibenocry.com](https://allvibenocry.com). The owner
+published it, by hand, and nothing in this repository does that or configures
+anything in front of the production host
+([D20](DECISIONS.md#d20-the-site-is-published-by-the-owner-a-deploy-is-public-at-once)).
+So a deploy is public at once, and a new version is looked at locally first.
 
 ## What is here
 

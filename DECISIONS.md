@@ -505,3 +505,75 @@ each page run the other's script.
 other's script and style); the page at `/under-the-hood/` as a directory index
 (two addresses for one page, or a redirect the other way); the diagrams as
 images (a request each, and no text a screen reader could read).
+
+## D18. Full-page screenshots are taken in slices; D8's mobile comparison saw half the page
+
+*2026-09-27. Corrects the evidence of D8, whose text stays as it was written.*
+
+`check-page --full` took each full page as one picture. The main page at
+mobile width is 15 500 CSS pixels tall, 31 000 device pixels at 2x, and a
+picture that tall comes back from headless Edge with its top repeated where its
+bottom should be: the hero, the four steps and "Try to break it" twice, and
+never the laptop, the night sections or the footer. Desktop, at 14 400 pixels,
+was whole. So **D8's mobile full-page result ("100 of 24 million pixels,
+mobile, dark") compared the top half of the page with itself, twice**. The
+section screenshots of the same comparison did cover every section at mobile
+width, and were within the noise.
+
+Found while comparing the main page before and after its new links (D19): the
+page's own boxes put the comparison table where the picture showed the four
+steps.
+
+**Now** a full page is taken in slices of 8 000 device pixels, one picture per
+slice, and put together into one. The mobile main page taken that way shows
+every section once, in order, and its boxes match it.
+
+**Why it matters.** A comparison that cannot see a part of the page proves
+nothing about that part, and said otherwise. The same lesson as the product's
+mistake 5: a check has to be able to fail the way the real thing fails, and
+here it could not.
+
+## D19. The main page links to Under the hood, and is otherwise the same
+
+*2026-09-27*
+
+"Under the hood" is in the main page's navigation (after "For teams"), its
+footer (before "GitHub"), and its open source section, as a second outlined
+button beside "Follow on GitHub", the two in the hero's own `cta-row`.
+
+- **Markup only.** No style and no script changed, so the page's policy
+  (D10, D17) is byte for byte `v0.1.0`'s, and so are its response headers.
+- **Measured against `v0.1.0` itself**, the released image run beside the new
+  build, with `scripts/compare-shots.mjs` and D8's noise floor, the before
+  version taken twice:
+  - behaviour, requests and headers: identical, at both widths;
+  - full pages with reduced motion, block by block: identical outside the
+    three links, except rounding at 1 or 2/255, which the page also shows
+    against itself, and, at mobile, the anti-aliasing of the waitlist button's
+    two rounded ends (188 edge pixels, at most 31/255) after it moved down
+    with everything below the new row of buttons;
+  - section screenshots: differences only in the navigation's row and the
+    footer's links on desktop, a taller footer on mobile, where its links wrap
+    onto a third row, and the hero's headline, which never stops moving.
+- **The navigation wraps between 821 and about 1024 px**, where `v0.1.0`'s
+  already wrapped between 821 and 900. Mending that needs a CSS change on the
+  main page, which the brief ruled out; it is in STATE.md under Known.
+
+**Why these three places.** The navigation and the footer are where a visitor
+looks for another page; the open source section is where a developer is,
+already, reading about the code. A button beside "Follow on GitHub" says the
+same kind of thing in the same way, with nothing new to style.
+
+## D20. The site is published, by the owner; a deploy is public at once
+
+*2026-09-27. Supersedes the "LAN only until published" parts of D5 and D13,
+whose text stays as it was written.*
+
+The owner published `v0.1.0` on allvibenocry.com (rule 1). How, and through
+what, is the owner's and is not recorded here (D14). Nothing in this repository
+configures the edge, the DNS or anything in front of the production host.
+
+**What follows.** A deploy is public the moment it is healthy. So a new version
+is reviewed by the owner in the local container before it is released, and
+releasing and deploying are a brief of their own: `v0.2.0` is ready and waits
+for that (STATE.md).
