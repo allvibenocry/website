@@ -577,3 +577,26 @@ configures the edge, the DNS or anything in front of the production host.
 is reviewed by the owner in the local container before it is released, and
 releasing and deploying are a brief of their own: `v0.2.0` is ready and waits
 for that (STATE.md).
+
+## D21. The main page's claims have sources too
+
+*2026-09-27. After the architect's review of the Under the hood page.*
+
+`docs/main-page-claims.md` lists every statement the main page makes about the
+product, each with its source in the product repository (a file and a decision,
+or a roadmap entry), pinned to the product commit it was read at, and one
+status, Built or Planned. The main page may never claim more than the product
+repository supports, at least as Planned (the product's D33).
+
+- **The six promises** the product did not have (a key vault, the control panel
+  at `allvibe.local`, an installer on a USB stick, disk health warnings, a
+  monthly check-up, moving to a new computer) stay on the page: they are now
+  the product's roadmap entries, and Planned.
+- **What still has no source** is listed there, not given one: which AI agent
+  and whose key; the plan with a test per step; inviting people; the team
+  version; and who the project is by. So are the claims that are supported
+  with a gap between the words and the repository. Changing the page for them
+  is the architect's and the owner's decision.
+- Unlike the Under the hood page and its fact sheet (D17), nothing checks the
+  main page against this file mechanically: the main page's copy is final, and
+  the list is for the people who decide it.
