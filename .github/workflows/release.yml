@@ -56,8 +56,12 @@ jobs:
           fi
 
       # A page whose own header would block its script must never be built.
-      - name: The CSP matches the page
+      - name: The CSP matches the pages
         run: node scripts/csp.mjs --check
+
+      # Nor one that says something its fact sheet does not (D17).
+      - name: The pages say only what they may
+        run: node scripts/facts.mjs
 
       - name: Build
         run: |
@@ -99,6 +103,23 @@ jobs:
           grep -qi '^cache-control: public, max-age=31536000, immutable' "$RUNNER_TEMP/font.txt"
 
           [ "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/favicon.ico)" = 204 ]
+
+          # Under the hood (D17): at its clean URL, as HTML, with a policy of
+          # its own that is not the main page's; the two other ways of writing
+          # the address redirect to it, naming only the path.
+          uth="$RUNNER_TEMP/uth.txt"
+          curl -sS -D "$uth" -o /dev/null http://127.0.0.1:8080/under-the-hood
+          cat "$uth"
+          head -1 "$uth" | grep -q ' 200'
+          grep -qi '^content-type: text/html' "$uth"
+          grep -qi '^content-security-policy: default-src .none.' "$uth"
+          grep -qi '^x-content-type-options: nosniff' "$uth"
+          [ "$(grep -i '^content-security-policy:' "$uth")" != "$(grep -i '^content-security-policy:' "$page")" ]
+          for other in /under-the-hood/ /under-the-hood.html; do
+            curl -sS -D "$RUNNER_TEMP/redirect.txt" -o /dev/null "http://127.0.0.1:8080${other}"
+            head -1 "$RUNNER_TEMP/redirect.txt" | grep -q ' 301'
+            tr -d '\r' < "$RUNNER_TEMP/redirect.txt" | grep -qi '^location: /under-the-hood$'
+          done
 
           # Nothing about a visitor is logged (D11): after all of the above,
           # the container's log is empty.

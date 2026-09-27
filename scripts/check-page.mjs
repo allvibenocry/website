@@ -1,33 +1,41 @@
 #!/usr/bin/env node
 /**
- * Load the page in a real headless browser and report what a visitor's browser
- * sees (D8).
+ * Load the site's pages in a real headless browser and report what a visitor's
+ * browser sees (D8).
  *
- *   node scripts/check-page.mjs http://127.0.0.1:8080/
+ *   node scripts/check-page.mjs http://127.0.0.1:8080/                  # every page
+ *   node scripts/check-page.mjs http://127.0.0.1:8080/under-the-hood    # one page
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --shots out/after
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --full out/after-full
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --json out/report.json
  *   node scripts/check-page.mjs --deployed              # the production site, from local.env (D14)
  *
- * One run, at desktop and at mobile width:
+ * The site's root means every page: the main page and /under-the-hood (D17).
+ * For each, at desktop and at mobile width:
  *
  *  - every request the page makes, grouped by origin, and any that failed;
  *  - every console message and uncaught exception, and every Content-Security-
  *    Policy violation, both as the browser logs it and as the page's own
  *    `securitypolicyviolation` event reports it;
- *  - the main document's response headers;
- *  - every interactive part of the page, exercised: the scroll-driven steps, the
- *    headline replay, both "ship" buttons, the laptop and the routes replays,
- *    and the waitlist form. What each one left on the page is recorded, so two
- *    runs can be compared for behaviour and not only for looks.
+ *  - the document's response headers;
+ *  - every interactive part of the page, exercised. On the main page: the
+ *    scroll-driven steps, the headline replay, both "ship" buttons, the laptop
+ *    and the routes replays, and the waitlist form. Under the hood: the release
+ *    steps, which light up once when they come into view, the headings, and
+ *    every diagram's text alternative. What each one left on the page is
+ *    recorded, so two runs can be compared for behaviour and not only for looks;
+ *  - no en or em dash anywhere in the page's text or its text alternatives.
  *
  * `--shots` saves one screenshot per section and width after its animations
  * have settled. `--full` saves full-page screenshots with reduced motion, light
- * and dark, which are deterministic and so can be compared pixel for pixel.
+ * and dark, which are deterministic and so can be compared pixel for pixel. The
+ * main page's files keep the names they had when it was the only page; the
+ * other page's start with its name.
  *
  * Exit 1 when anything a visitor should never meet happened: a console error, a
- * CSP violation, an exception, a failed request, or any request to an origin
- * other than the page's own (rule 5).
+ * CSP violation, an exception, a failed request, any request to an origin other
+ * than the page's own (rule 5), a dash in the copy, a diagram without a text
+ * alternative, or release steps that did not light up.
  *
  * The browser is `BROWSER` if set, else Edge, else Chrome at their usual
  * Windows paths. It runs with a throwaway profile and without `--remote-allow-
@@ -45,16 +53,49 @@ const VIEWPORTS = {
   mobile: { width: 390, height: 844, deviceScaleFactor: 2, mobile: true },
 };
 
-/** The sections the setup brief names, by the element that holds each one. */
-const SECTIONS = [
-  ["1-hero", "header.hero"],
-  ["2-four-steps", "#how"],
-  ["3-try-to-break-it", "#break"],
-  ["4-where-it-belongs", "#where"],
-  ["5-laptop", "#hardware"],
-  ["6-comparison", "#compare"],
-  ["7-footer", "footer"],
-];
+/**
+ * The site's pages, by path. Each has its sections (by the element that holds
+ * each one, as the briefs name them), how it is exercised, how long a section
+ * takes to settle before its screenshot, and the prefix of its files.
+ */
+const PAGES = {
+  "/": {
+    name: "main page",
+    prefix: "",
+    settle: 6000,
+    exercise: exerciseMain,
+    sections: [
+      ["1-hero", "header.hero"],
+      ["2-four-steps", "#how"],
+      ["3-try-to-break-it", "#break"],
+      ["4-where-it-belongs", "#where"],
+      ["5-laptop", "#hardware"],
+      ["6-comparison", "#compare"],
+      ["7-footer", "footer"],
+    ],
+  },
+  "/under-the-hood": {
+    name: "under the hood",
+    prefix: "uth-",
+    settle: 2500,
+    exercise: exerciseUnderTheHood,
+    sections: [
+      ["01-header", "header.head"],
+      ["02-labels", "#labels"],
+      ["03-stack", "#stack"],
+      ["04-isolation", "#isolation"],
+      ["05-release", "#release"],
+      ["06-backups", "#backups"],
+      ["07-rollback", "#rollback"],
+      ["08-keys", "#keys"],
+      ["09-offsite", "#offsite"],
+      ["10-limits", "#limits"],
+      ["11-rules", "#rules"],
+      ["12-source", "#source"],
+      ["13-footer", "footer"],
+    ],
+  },
+};
 
 /* ------------------------------------------------------------ the browser -- */
 
@@ -199,10 +240,10 @@ async function until(cdp, expression, ms) {
 }
 
 /**
- * Every interactive part of the page, in order, and what each one left behind.
- * The result is plain data, so two runs compare with a JSON equality.
+ * Every interactive part of the main page, in order, and what each one left
+ * behind. The result is plain data, so two runs compare with a JSON equality.
  */
-async function exercise(cdp) {
+async function exerciseMain(cdp) {
   const did = {};
 
   /* The scroll-driven steps: scroll the whole page, half a screen at a time. */
@@ -259,12 +300,86 @@ async function exercise(cdp) {
   return did;
 }
 
+/**
+ * Under the hood: the release steps light up once, when they come into view
+ * (and not before); the headings; and what each diagram says to someone who
+ * cannot see it. Plain data, like the main page's.
+ */
+async function exerciseUnderTheHood(cdp) {
+  const did = {};
+  const lit = "[...document.querySelectorAll('.pipe .nd circle')].filter(c => getComputedStyle(c).fill === 'rgb(0, 166, 80)').length";
+
+  await evaluate(cdp, "scrollTo(0, 0)");
+  did.releaseStepsBeforeInView = await evaluate(cdp, `({ dim: document.querySelector('.pipe').classList.contains('dim'), lit: ${lit} })`);
+  const height = await evaluate(cdp, "document.documentElement.scrollHeight");
+  const step = await evaluate(cdp, "Math.round(innerHeight / 2)");
+  for (let y = 0; y <= height; y += step) {
+    await evaluate(cdp, `scrollTo(0, ${y})`);
+    await sleep(120);
+  }
+  await evaluate(cdp, "document.querySelector('.pipe').scrollIntoView({ block: 'center' })");
+  await sleep(2600);
+  did.releaseStepsAfterInView = await evaluate(cdp, `({ dim: document.querySelector('.pipe').classList.contains('dim'), lit: ${lit}, of: document.querySelectorAll('.pipe .nd').length })`);
+
+  did.headings = await evaluate(
+    cdp,
+    "({ h1: [...document.querySelectorAll('h1')].map(h => h.textContent.trim()), h2: [...document.querySelectorAll('h2')].map(h => h.textContent.trim()) })",
+  );
+  did.diagrams = await evaluate(
+    cdp,
+    `[...document.querySelectorAll('svg:not([aria-hidden="true"])')].map(svg => {
+      const text = (ids) => (ids ?? '').split(/\\s+/).filter(Boolean).map(id => document.getElementById(id)?.textContent.trim() ?? '');
+      const [name = '', description = ''] = text(svg.getAttribute('aria-labelledby'));
+      return { role: svg.getAttribute('role'), name, descriptionWords: description.split(/\\s+/).filter(Boolean).length };
+    })`,
+  );
+  did.labels = await evaluate(
+    cdp,
+    `(() => { const n = (s) => document.querySelectorAll('[data-fact] .badge.' + s).length;
+      return { statements: document.querySelectorAll('[data-fact]:not(figure)').length, built: n('b-built'), verifiedOnHardware: n('b-hw'), planned: n('b-planned') }; })()`,
+  );
+  did.navCurrent = await evaluate(cdp, "[...document.querySelectorAll('[aria-current=page]')].map(a => a.getAttribute('href'))");
+  return did;
+}
+
+/**
+ * Checks every page must pass, whatever it is: no en or em dash in its text or
+ * in any text alternative (the owner's rule for copy on the site), and, for
+ * every drawing that is not hidden from assistive technology, a name and a
+ * description.
+ */
+async function pageChecks(cdp) {
+  return evaluate(
+    cdp,
+    `(() => {
+      const dash = /[\\u2013\\u2014]/;
+      const dashes = [];
+      const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (node.parentElement && node.parentElement.closest('script, style')) continue;
+        if (dash.test(node.nodeValue)) dashes.push(node.nodeValue.trim().slice(0, 80));
+      }
+      for (const el of document.querySelectorAll('[aria-label], [title], [alt], [placeholder], meta[name="description"]')) {
+        for (const attribute of ['aria-label', 'title', 'alt', 'placeholder', 'content']) {
+          const value = el.getAttribute(attribute);
+          if (value && dash.test(value)) dashes.push(attribute + ': ' + value.slice(0, 80));
+        }
+      }
+      const unnamed = [...document.querySelectorAll('svg[role="img"]')]
+        .filter(svg => !(svg.getAttribute('aria-label') || (svg.getAttribute('aria-labelledby') ?? '').split(/\\s+/).some(id => document.getElementById(id)?.textContent.trim())))
+        .map(svg => svg.outerHTML.slice(0, 60));
+      return { dashes, unnamedDrawings: unnamed };
+    })()`,
+  );
+}
+
 /** One screenshot per section, each after its animations have settled. */
-async function sectionShots(cdp, dir, viewport) {
+async function sectionShots(cdp, dir, viewport, page) {
   const saved = [];
-  for (const [name, selector] of SECTIONS) {
+  for (const [name, selector] of page.sections) {
     await evaluate(cdp, `scrollTo(0, document.querySelector('${selector}').getBoundingClientRect().top + scrollY)`);
-    await sleep(6000);
+    await sleep(page.settle);
     const box = await evaluate(
       cdp,
       `(() => { const r = document.querySelector('${selector}').getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: r.height }; })()`,
@@ -274,7 +389,7 @@ async function sectionShots(cdp, dir, viewport) {
       captureBeyondViewport: true,
       clip: { ...box, scale: 1 },
     });
-    const file = path.join(dir, `${viewport}-${name}.png`);
+    const file = path.join(dir, `${page.prefix}${viewport}-${name}.png`);
     writeFileSync(file, Buffer.from(shot.data, "base64"));
     saved.push(file);
   }
@@ -282,7 +397,7 @@ async function sectionShots(cdp, dir, viewport) {
 }
 
 /** The whole page, with reduced motion: deterministic, for a pixel comparison. */
-async function fullShot(cdp, dir, viewport, scheme) {
+async function fullShot(cdp, dir, viewport, scheme, page) {
   await sleep(1500);
   const { cssContentSize } = await cdp.send("Page.getLayoutMetrics");
   const shot = await cdp.send("Page.captureScreenshot", {
@@ -290,8 +405,21 @@ async function fullShot(cdp, dir, viewport, scheme) {
     captureBeyondViewport: true,
     clip: { x: 0, y: 0, width: cssContentSize.width, height: cssContentSize.height, scale: 1 },
   });
-  const file = path.join(dir, `full-${viewport}-${scheme}.png`);
+  const file = path.join(dir, `${page.prefix}full-${viewport}-${scheme}.png`);
   writeFileSync(file, Buffer.from(shot.data, "base64"));
+  /* Where each landmark is, beside the picture: a comparison can then line up
+     the parts of two pages that moved, instead of calling everything below a
+     change different. */
+  const boxes = await evaluate(
+    cdp,
+    `(() => { const seen = new Map(); return [...document.querySelectorAll('header, footer, nav, section, [id], .nav-links, .foot-links, .foot-top, .foot-bottom, .open > *, .dusk, .band')].map(el => {
+      const base = el.tagName.toLowerCase() + (el.id ? '#' + el.id : el.classList.length ? '.' + [...el.classList].join('.') : '');
+      const n = seen.get(base) ?? 0; seen.set(base, n + 1);
+      const r = el.getBoundingClientRect();
+      return { key: n ? base + ':' + n : base, x: Math.round(r.left + scrollX), y: Math.round(r.top + scrollY), width: Math.round(r.width), height: Math.round(r.height) };
+    }); })()`,
+  );
+  writeFileSync(file.replace(/\.png$/, ".boxes.json"), `${JSON.stringify(boxes, null, 1)}\n`);
   return file;
 }
 
@@ -315,113 +443,137 @@ function parse(argv) {
     else throw new Error(`unknown option ${rest[i]}`);
   }
   if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--shots dir] [--full dir] [--json file]");
-  return { url, options };
+  // The root is the whole site; any other path is that one page.
+  const where = new URL(url);
+  const paths = where.pathname === "/" ? Object.keys(PAGES) : [where.pathname.replace(/\/$/, "")];
+  for (const p of paths) if (!PAGES[p]) throw new Error(`no page ${p}; the pages are ${Object.keys(PAGES).join(" and ")}`);
+  return { url, origin: where.origin, paths, options };
+}
+
+/** One page at one width: everything the browser reported, and every check. */
+async function checkOne(browser, url, origin, page, viewport, options) {
+  const cdp = await connect(browser.port);
+  const seen = { requests: [], failed: [], log: [], console: [], exceptions: [], document: null };
+  cdp.on("Network.requestWillBeSent", ({ request, type }) => seen.requests.push({ url: request.url, type }));
+  cdp.on("Network.loadingFailed", ({ errorText, blockedReason, type }) => seen.failed.push({ errorText, blockedReason, type }));
+  cdp.on("Network.responseReceived", ({ type, response }) => {
+    if (type === "Document") seen.document = { status: response.status, headers: response.headers };
+  });
+  cdp.on("Log.entryAdded", ({ entry }) => seen.log.push({ level: entry.level, source: entry.source, text: entry.text, url: entry.url }));
+  cdp.on("Runtime.consoleAPICalled", ({ type, args }) => seen.console.push({ type, text: args.map((a) => a.value ?? a.description).join(" ") }));
+  cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => seen.exceptions.push(exceptionDetails.exception?.description ?? exceptionDetails.text));
+
+  await cdp.send("Page.enable");
+  await cdp.send("Runtime.enable");
+  await cdp.send("Log.enable");
+  await cdp.send("Network.enable");
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  /* The page's own view of CSP violations, beside the browser's log. */
+  await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+    source:
+      "window.__csp = []; document.addEventListener('securitypolicyviolation', e => " +
+      "window.__csp.push({ directive: e.effectiveDirective, blocked: e.blockedURI, sample: e.sample }), true);",
+  });
+
+  /* Light, explicitly: headless follows the OS, and this box runs dark. */
+  const { fonts } = await open(cdp, url, viewport, [{ name: "prefers-color-scheme", value: "light" }]);
+  const did = await page.exercise(cdp);
+  const checks = await pageChecks(cdp);
+  const shots = options.shots ? await sectionShots(cdp, options.shots, viewport, page) : [];
+  const csp = await evaluate(cdp, "window.__csp");
+
+  const full = [];
+  if (options.full) {
+    for (const scheme of ["light", "dark"]) {
+      await open(cdp, url, viewport, [
+        { name: "prefers-reduced-motion", value: "reduce" },
+        { name: "prefers-color-scheme", value: scheme },
+      ]);
+      full.push(await fullShot(cdp, options.full, viewport, scheme, page));
+    }
+    await cdp.send("Emulation.setEmulatedMedia", { features: [] });
+  }
+  cdp.close();
+
+  const byOrigin = {};
+  for (const { url: requested } of seen.requests) {
+    const at = /^(data|blob):/.test(requested) ? requested.slice(0, requested.indexOf(":") + 1) : new URL(requested).origin;
+    byOrigin[at] = (byOrigin[at] ?? 0) + 1;
+  }
+  const elsewhere = Object.keys(byOrigin).filter((at) => at !== origin && !/^(data|blob):$/.test(at));
+  const errors = [
+    ...seen.log.filter((entry) => entry.level === "error"),
+    ...seen.console.filter((entry) => entry.type === "error"),
+  ];
+  /* Under the hood, the release steps must be dim until seen, and all lit after. */
+  const steps = did.releaseStepsAfterInView;
+  const notLit = steps && (!did.releaseStepsBeforeInView.dim || steps.dim || steps.lit !== steps.of) ? 1 : 0;
+
+  const run = {
+    document: seen.document,
+    requestsByOrigin: byOrigin,
+    requests: seen.requests.map((r) => `${r.type} ${r.url.startsWith("data:") ? r.url.slice(0, 40) + "…" : r.url}`),
+    otherOrigins: elsewhere,
+    failedRequests: seen.failed,
+    consoleErrors: errors,
+    consoleOther: [...seen.log.filter((entry) => entry.level !== "error"), ...seen.console.filter((entry) => entry.type !== "error")],
+    exceptions: seen.exceptions,
+    cspViolations: csp,
+    dashes: checks.dashes,
+    unnamedDrawings: checks.unnamedDrawings,
+    fonts,
+    behaviour: did,
+    shots: [...shots, ...full],
+  };
+  const bad =
+    elsewhere.length + seen.failed.length + errors.length + seen.exceptions.length + csp.length +
+    checks.dashes.length + checks.unnamedDrawings.length + notLit;
+
+  const out = (line) => process.stdout.write(`${line}\n`);
+  out(`\n== ${page.name}, ${viewport} (${VIEWPORTS[viewport].width}x${VIEWPORTS[viewport].height})`);
+  out(`document        ${seen.document?.status ?? "?"}`);
+  out(`requests        ${Object.entries(byOrigin).map(([k, v]) => `${k} x${v}`).join(", ")}`);
+  out(`other origins   ${elsewhere.length === 0 ? "none" : elsewhere.join(", ")}`);
+  out(`failed          ${seen.failed.length === 0 ? "none" : JSON.stringify(seen.failed)}`);
+  out(`console errors  ${errors.length === 0 ? "none" : ""}`);
+  for (const entry of errors) out(`  ${entry.source ?? entry.type}: ${entry.text}`);
+  out(`console other   ${run.consoleOther.length === 0 ? "none" : ""}`);
+  for (const entry of run.consoleOther) out(`  ${entry.level ?? entry.type}: ${entry.text}`);
+  out(`exceptions      ${seen.exceptions.length === 0 ? "none" : seen.exceptions.join("\n")}`);
+  out(`CSP violations  ${csp.length === 0 ? "none" : JSON.stringify(csp)}`);
+  out(`dashes          ${checks.dashes.length === 0 ? "none" : JSON.stringify(checks.dashes)}`);
+  out(`drawings        ${checks.unnamedDrawings.length === 0 ? "every one named" : `unnamed: ${JSON.stringify(checks.unnamedDrawings)}`}`);
+  out(`fonts           ${fonts.join("; ")}`);
+  out(`behaviour       ${JSON.stringify(did)}`);
+  if (notLit) out("release steps   NOT lit up as they should be: dim until seen, then all lit");
+  if (run.shots.length > 0) out(`screenshots     ${run.shots.length} in ${path.dirname(run.shots[0])}`);
+  return { run, bad };
 }
 
 async function main() {
-  const { url, options } = parse(process.argv.slice(2));
-  const origin = new URL(url).origin;
+  const { url, origin, paths, options } = parse(process.argv.slice(2));
   for (const dir of [options.shots, options.full]) if (dir) mkdirSync(dir, { recursive: true });
 
   const browser = await launch();
-  const report = { url, origin, runs: {} };
+  const report = { url, origin, pages: {} };
   let problems = 0;
 
   try {
-    for (const viewport of Object.keys(VIEWPORTS)) {
-      const cdp = await connect(browser.port);
-      const seen = { requests: [], failed: [], log: [], console: [], exceptions: [], document: null };
-      cdp.on("Network.requestWillBeSent", ({ request, type }) => seen.requests.push({ url: request.url, type }));
-      cdp.on("Network.loadingFailed", ({ errorText, blockedReason, type }) => seen.failed.push({ errorText, blockedReason, type }));
-      cdp.on("Network.responseReceived", ({ type, response }) => {
-        if (type === "Document") seen.document = { status: response.status, headers: response.headers };
-      });
-      cdp.on("Log.entryAdded", ({ entry }) => seen.log.push({ level: entry.level, source: entry.source, text: entry.text, url: entry.url }));
-      cdp.on("Runtime.consoleAPICalled", ({ type, args }) => seen.console.push({ type, text: args.map((a) => a.value ?? a.description).join(" ") }));
-      cdp.on("Runtime.exceptionThrown", ({ exceptionDetails }) => seen.exceptions.push(exceptionDetails.exception?.description ?? exceptionDetails.text));
-
-      await cdp.send("Page.enable");
-      await cdp.send("Runtime.enable");
-      await cdp.send("Log.enable");
-      await cdp.send("Network.enable");
-      await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
-      /* The page's own view of CSP violations, beside the browser's log. */
-      await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-        source:
-          "window.__csp = []; document.addEventListener('securitypolicyviolation', e => " +
-          "window.__csp.push({ directive: e.effectiveDirective, blocked: e.blockedURI, sample: e.sample }), true);",
-      });
-
-      /* Light, explicitly: headless follows the OS, and this box runs dark. */
-      const { fonts } = await open(cdp, url, viewport, [{ name: "prefers-color-scheme", value: "light" }]);
-      const did = await exercise(cdp);
-      const shots = options.shots ? await sectionShots(cdp, options.shots, viewport) : [];
-      const csp = await evaluate(cdp, "window.__csp");
-
-      const full = [];
-      if (options.full) {
-        for (const scheme of ["light", "dark"]) {
-          await open(cdp, url, viewport, [
-            { name: "prefers-reduced-motion", value: "reduce" },
-            { name: "prefers-color-scheme", value: scheme },
-          ]);
-          full.push(await fullShot(cdp, options.full, viewport, scheme));
-        }
-        await cdp.send("Emulation.setEmulatedMedia", { features: [] });
+    for (const p of paths) {
+      const pageUrl = new URL(p, origin).href;
+      report.pages[p] = { url: pageUrl, runs: {} };
+      for (const viewport of Object.keys(VIEWPORTS)) {
+        const { run, bad } = await checkOne(browser, pageUrl, origin, PAGES[p], viewport, options);
+        report.pages[p].runs[viewport] = run;
+        problems += bad;
       }
-      cdp.close();
-
-      const byOrigin = {};
-      for (const { url: requested } of seen.requests) {
-        const where = /^(data|blob):/.test(requested) ? requested.slice(0, requested.indexOf(":") + 1) : new URL(requested).origin;
-        byOrigin[where] = (byOrigin[where] ?? 0) + 1;
-      }
-      const elsewhere = Object.keys(byOrigin).filter((where) => where !== origin && !/^(data|blob):$/.test(where));
-      const errors = [
-        ...seen.log.filter((entry) => entry.level === "error"),
-        ...seen.console.filter((entry) => entry.type === "error"),
-      ];
-
-      const run = {
-        document: seen.document,
-        requestsByOrigin: byOrigin,
-        requests: seen.requests.map((r) => `${r.type} ${r.url.startsWith("data:") ? r.url.slice(0, 40) + "…" : r.url}`),
-        otherOrigins: elsewhere,
-        failedRequests: seen.failed,
-        consoleErrors: errors,
-        consoleOther: [...seen.log.filter((entry) => entry.level !== "error"), ...seen.console.filter((entry) => entry.type !== "error")],
-        exceptions: seen.exceptions,
-        cspViolations: csp,
-        fonts,
-        behaviour: did,
-        shots: [...shots, ...full],
-      };
-      report.runs[viewport] = run;
-
-      const bad = elsewhere.length + seen.failed.length + errors.length + seen.exceptions.length + csp.length;
-      problems += bad;
-
-      process.stdout.write(`\n== ${viewport} (${VIEWPORTS[viewport].width}x${VIEWPORTS[viewport].height})\n`);
-      process.stdout.write(`document        ${seen.document?.status ?? "?"}\n`);
-      process.stdout.write(`requests        ${Object.entries(byOrigin).map(([k, v]) => `${k} x${v}`).join(", ")}\n`);
-      process.stdout.write(`other origins   ${elsewhere.length === 0 ? "none" : elsewhere.join(", ")}\n`);
-      process.stdout.write(`failed          ${seen.failed.length === 0 ? "none" : JSON.stringify(seen.failed)}\n`);
-      process.stdout.write(`console errors  ${errors.length === 0 ? "none" : ""}\n`);
-      for (const entry of errors) process.stdout.write(`  ${entry.source ?? entry.type}: ${entry.text}\n`);
-      process.stdout.write(`console other   ${run.consoleOther.length === 0 ? "none" : ""}\n`);
-      for (const entry of run.consoleOther) process.stdout.write(`  ${entry.level ?? entry.type}: ${entry.text}\n`);
-      process.stdout.write(`exceptions      ${seen.exceptions.length === 0 ? "none" : seen.exceptions.join("\n")}\n`);
-      process.stdout.write(`CSP violations  ${csp.length === 0 ? "none" : JSON.stringify(csp)}\n`);
-      process.stdout.write(`fonts           ${fonts.join("; ")}\n`);
-      process.stdout.write(`behaviour       ${JSON.stringify(did)}\n`);
-      if (run.shots.length > 0) process.stdout.write(`screenshots     ${run.shots.length} in ${path.dirname(run.shots[0])}\n`);
     }
   } finally {
     await browser.close();
   }
 
   if (options.json) writeFileSync(options.json, `${JSON.stringify(report, null, 2)}\n`);
-  process.stdout.write(`\n${problems === 0 ? "clean: no errors, no violations, no other origins" : `${problems} problem(s)`}\n`);
+  process.stdout.write(`\n${problems === 0 ? `clean: ${paths.length} page(s), both widths: no errors, no violations, no other origins, no dashes` : `${problems} problem(s)`}\n`);
   if (problems > 0) process.exitCode = 1;
 }
 

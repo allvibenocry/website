@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Under the hood: how All vibe no cry is built</title>
+<meta name="description" content="How All vibe no cry is built, what has been tested and where, and what it does not protect against. Every statement is labelled Built, Verified on hardware or Planned.">
+<link rel="preload" href="fonts/bricolage-grotesque-variable.a756882d.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-next-400.5cb240a4.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-next-700.0dbe07ed.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-mono-400.87b5b94c.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-mono-600.a52c1396.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* The main page's design system (site/index.html): the same fonts, colour tokens and components. Fonts self-hosted in fonts/ (SIL Open Font License 1.1, see fonts/OFL.txt). No third-party requests. */
+@font-face{font-family:'AVNC Display';font-style:normal;font-weight:200 800;font-stretch:75% 100%;font-display:swap;src:url(fonts/bricolage-grotesque-variable.a756882d.woff2) format('woff2');}
+@font-face{font-family:'AVNC Body';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-next-400.5cb240a4.woff2) format('woff2');}
+@font-face{font-family:'AVNC Body';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-next-700.0dbe07ed.woff2) format('woff2');}
+@font-face{font-family:'AVNC Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-mono-400.87b5b94c.woff2) format('woff2');}
+@font-face{font-family:'AVNC Mono';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/atkinson-hyperlegible-mono-600.a52c1396.woff2) format('woff2');}
+
+:root{
+  --ink:#1B1530; --pink:#FF4D94; --pink-soft:#FFE1EE; --sun:#FFC400; --sun-soft:#FFF1BF;
+  --go:#00A650; --go-soft:#DDF3E5; --stop:#D62B26; --plastic:#DCD7E6;
+  --text:var(--ink); --muted:#564E6C; --line:rgba(27,21,48,.16); --panel:#FFFFFF;
+  --hero-bg:var(--pink); --hero-ink:var(--ink); --night:#1B1530; --btn-bg:var(--ink); --btn-ink:#FFFFFF;
+  --display:"AVNC Display","Arial Black",system-ui,sans-serif;
+  --body:"AVNC Body",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"AVNC Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --max:1180px; --pad:clamp(20px,5vw,48px);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --text:#F6F1FF; --muted:#BCB3D0; --line:rgba(246,241,255,.18); --panel:#221B36;
+    --hero-bg:#2B1238; --hero-ink:#FFD6E7; --btn-bg:#FF4D94; --btn-ink:#1B1530;
+    --pink-soft:#3B1F35; --sun-soft:#3A3217; --go-soft:#13301F; --plastic:#4A4460;
+  }
+}
+:root[data-theme="dark"]{
+  --text:#F6F1FF; --muted:#BCB3D0; --line:rgba(246,241,255,.18); --panel:#221B36;
+  --hero-bg:#2B1238; --hero-ink:#FFD6E7; --btn-bg:#FF4D94; --btn-ink:#1B1530;
+  --pink-soft:#3B1F35; --sun-soft:#3A3217; --go-soft:#13301F; --plastic:#4A4460;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 24px)}
+body{
+  margin:0; font-family:var(--body); font-size:1.0625rem; line-height:1.55; color:var(--text);
+  background:var(--hero-bg);
+  -webkit-font-smoothing:antialiased; overflow-x:clip;
+}
+img,svg{max-width:100%}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--sun);outline-offset:3px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-80px;z-index:9;background:var(--sun);color:var(--ink);border:2.5px solid var(--ink);border-radius:10px;padding:8px 14px;font-weight:700;text-decoration:none}
+.skip:focus{top:12px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 24px;border-radius:999px;
+  font:700 1rem/1 var(--body);text-decoration:none;cursor:pointer;border:2.5px solid transparent;background:var(--btn-bg);color:var(--btn-ink);
+  transition:transform .15s ease}
+.btn:active{transform:translateY(2px)}
+
+/* ---------- The pink band: the main page's navigation, and the title ---------- */
+.head{background:var(--hero-bg);color:var(--hero-ink)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px var(--pad);max-width:var(--max);margin:0 auto;width:100%}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.3rem;letter-spacing:-.03em;text-decoration:none}
+.brand svg{width:22px;height:28px}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a:not(.btn){text-decoration:none;font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
+.nav-links a:not(.btn):hover,.nav-links a[aria-current="page"]{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+.nav .btn{min-height:42px;padding:0 18px;font-family:var(--display);font-weight:700;font-size:1.02rem}
+@media (max-width:820px){.nav-links a:not(.btn){display:none}}
+.head-inner{max-width:var(--max);margin:0 auto;padding:clamp(8px,2vw,24px) var(--pad) clamp(40px,6vw,72px)}
+.kicker{margin:0 0 12px;font-family:var(--display);font-weight:700;font-size:clamp(1rem,1.5vw,1.15rem);letter-spacing:-.01em;max-width:44ch}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(3.2rem,12vw,8rem);line-height:.88;letter-spacing:-.05em;margin:0 0 .28em}
+.head-lead{margin:0;font-size:clamp(1.15rem,1.7vw,1.4rem);line-height:1.45;max-width:38ch}
+
+/* ---------- The night, as on the main page ---------- */
+.night{background:var(--night);color:var(--text);
+  --text:#F6F1FF; --muted:#C6BEDB; --line:rgba(246,241,255,.16); --panel:#251E3D; --btn-bg:#FF4D94; --btn-ink:#1B1530}
+.section{max-width:var(--max);margin:0 auto;padding:clamp(64px,9vw,120px) var(--pad) 0}
+.section:last-child{padding-bottom:clamp(72px,10vw,130px)}
+h2{font-family:var(--display);font-weight:800;letter-spacing:-.04em;line-height:.98;font-size:clamp(2.2rem,5.2vw,3.8rem);margin:0 0 .4em;max-width:16ch;text-wrap:balance}
+h3{font-family:var(--display);font-weight:800;font-size:clamp(1.3rem,2.2vw,1.65rem);letter-spacing:-.025em;line-height:1.1;margin:44px 0 16px}
+.lead{font-size:clamp(1.1rem,1.5vw,1.3rem);color:var(--muted);max-width:52ch;margin:0 0 32px}
+.section p{max-width:68ch}
+code{font-family:var(--mono);font-size:.9em;background:rgba(246,241,255,.09);border-radius:6px;padding:.08em .38em;overflow-wrap:anywhere}
+
+/* A statement and its label */
+.facts{list-style:none;margin:0;padding:0;display:grid;gap:16px;max-width:70ch}
+.facts > li{margin:0}
+.badge{display:inline-block;margin:0 .55em .12em 0;padding:3px 10px 4px;border-radius:999px;border:2px solid var(--ink);
+  font:700 .78rem/1.15 var(--body);letter-spacing:.01em;white-space:nowrap;vertical-align:.1em}
+.b-built{background:var(--go);color:var(--ink)}
+.b-hw{background:var(--sun);color:var(--ink)}
+.b-planned{background:transparent;color:var(--text);border-color:currentColor}
+.refs{font-family:var(--mono);font-size:.82rem;white-space:nowrap;color:var(--muted)}
+.refs a{color:var(--muted);text-underline-offset:3px}
+.refs a:hover{color:var(--text)}
+.fact-p{margin:0 0 16px;max-width:70ch}
+
+/* The legend */
+.legend{margin:28px 0 0;padding:0;display:grid;gap:18px;max-width:70ch}
+.legend div{display:grid;gap:6px}
+.legend dt{margin:0}
+.legend dt .badge{font-size:.9rem;padding:4px 12px 5px;margin:0}
+.legend dd{margin:0;color:var(--muted)}
+@media (min-width:640px){.legend div{grid-template-columns:230px minmax(0,1fr);align-items:baseline;gap:18px}}
+
+/* On this page */
+.toc{margin:40px 0 0;padding:20px 22px 16px;border:3px solid var(--text);border-radius:22px;background:var(--panel);max-width:70ch}
+.toc-title{margin:0 0 10px;font-family:var(--display);font-weight:800;font-size:1.2rem;letter-spacing:-.02em}
+.toc ol{margin:0;padding:0 0 0 1.4em;columns:2 220px;column-gap:32px}
+.toc li{padding:3px 0;break-inside:avoid}
+.toc a{font-weight:700;text-decoration:none}
+.toc a:hover{text-decoration:underline;text-underline-offset:4px}
+
+/* A statement beside its diagram */
+.split{display:grid;gap:44px;align-items:start}
+@media (min-width:980px){.split{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:64px}}
+figure{margin:0}
+.dia{background:var(--panel);border:3px solid var(--text);border-radius:24px;padding:clamp(12px,2vw,20px);box-shadow:7px 7px 0 var(--text)}
+@media (min-width:980px){.dia{box-shadow:10px 10px 0 var(--text)}}
+.dia svg{display:block;width:100%;height:auto}
+.dia figcaption{margin:14px 4px 2px;color:var(--muted);font-size:.95rem;line-height:1.45}
+.dia text{font-family:var(--body)}
+.dia .b{font-weight:700}
+.dia .d{font-family:var(--display);font-weight:800}
+.dia .m{font-family:var(--mono)}
+.dia .ink{fill:#1B1530}
+.dia .lt{fill:#F6F1FF}
+.dia .mu{fill:#C6BEDB}
+.dia .wh{fill:#FFFFFF}
+
+/* The release, step by step */
+.steps{list-style:none;margin:32px 0 0;padding:0;display:grid;gap:14px;max-width:70ch}
+.steps li{display:grid;grid-template-columns:4.6em minmax(0,1fr);gap:14px;align-items:start}
+.steps .n{display:inline-grid;place-items:center;justify-self:start;min-width:2.2em;min-height:32px;padding:2px 8px;border-radius:999px;background:var(--sun);color:var(--ink);border:2.5px solid var(--ink);
+  font:700 .9rem/1.1 var(--body);text-align:center}
+
+/* What was probed */
+.probe-wrap{overflow-x:auto;margin:10px 0 0;max-width:760px}
+.probes{width:100%;border-collapse:collapse;font-size:.98rem}
+.probes caption{text-align:left;margin:0 0 10px;color:var(--text)}
+.probes th,.probes td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.probes thead th{font-family:var(--display);font-weight:800;font-size:1.05rem;border-bottom:2.5px solid var(--text)}
+.probes tbody th{font-weight:400}
+.probes td{font-family:var(--mono);font-size:.92rem}
+
+/* Worth reading twice */
+.callout{margin:28px 0 0;padding:18px 22px;border:3px solid var(--sun);border-radius:20px;max-width:70ch}
+.callout p{margin:0}
+
+/* The limits */
+.limits{list-style:none;margin:0;padding:0;display:grid;gap:22px;max-width:70ch}
+.limits h3{margin:0 0 6px;font-size:clamp(1.2rem,2vw,1.45rem)}
+.limits p{margin:0}
+
+/* The house rules, quoted */
+.rules{list-style:none;counter-reset:r;margin:0;padding:0;display:grid;gap:22px;max-width:74ch}
+.rules > li{counter-increment:r;position:relative;padding-left:52px}
+.rules > li::before{content:counter(r);position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;background:var(--sun);color:var(--ink);border:2.5px solid var(--ink);
+  display:grid;place-items:center;font:800 1.05rem/1 var(--display)}
+.rules blockquote{margin:0}
+.rules blockquote p{margin:0}
+.kept{margin:8px 0 0;color:var(--muted);font-size:.96rem}
+.after-rules{margin-top:36px}
+
+/* Read the source */
+.links{list-style:none;margin:0;padding:0;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.links a{display:block;height:100%;padding:18px 20px;border:3px solid var(--text);border-radius:20px;background:var(--panel);text-decoration:none}
+.links a:hover b{text-decoration:underline;text-underline-offset:4px}
+.links b{display:block;font-family:var(--mono);font-weight:600;font-size:1.02rem;margin-bottom:4px}
+.links span{color:var(--muted);font-size:.98rem}
+
+/* The footer, as on the main page */
+footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display)}
+.foot{max-width:var(--max);margin:0 auto;padding:clamp(40px,6vw,64px) var(--pad) 28px}
+.foot-top{display:flex;flex-wrap:wrap;gap:24px 40px;justify-content:space-between;align-items:center}
+.foot-links{display:flex;flex-wrap:wrap;gap:12px 28px}
+.foot-links a{text-decoration:none;font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
+.foot-links a:hover,.foot-links a[aria-current="page"]{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:2px}
+.foot-bottom{display:flex;flex-wrap:wrap;gap:10px 32px;justify-content:space-between;margin-top:clamp(28px,4vw,44px);padding-top:18px;border-top:2px solid rgba(27,21,48,.22);font-weight:500;font-size:.98rem}
+.foot-bottom a{font-weight:700}
+
+/* The one movement: the release steps light up, once, when they come into view */
+.pipe .nd circle{fill:#00A650;stroke:#1B1530;stroke-width:3;transition:fill .35s ease,stroke .35s ease}
+.pipe .nd text{fill:#1B1530;transition:fill .35s ease}
+.pipe.dim .nd circle{fill:#251E3D;stroke:#8C84AA}
+.pipe.dim .nd text{fill:#C6BEDB}
+.pipe .nd:nth-of-type(2) *{transition-delay:.14s}
+.pipe .nd:nth-of-type(3) *{transition-delay:.28s}
+.pipe .nd:nth-of-type(4) *{transition-delay:.42s}
+.pipe .nd:nth-of-type(5) *{transition-delay:.56s}
+.pipe .nd:nth-of-type(6) *{transition-delay:.7s}
+.pipe .nd:nth-of-type(7) *{transition-delay:.84s}
+.pipe .nd:nth-of-type(8) *{transition-delay:.98s}
+.pipe .nd:nth-of-type(9) *{transition-delay:1.12s}
+.pipe .nd:nth-of-type(10) *{transition-delay:1.26s}
+.pipe .nd:nth-of-type(11) *{transition-delay:1.4s}
+.pipe .nd:nth-of-type(12) *{transition-delay:1.54s}
+.pipe .nd:nth-of-type(13) *{transition-delay:1.68s}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important;animation-delay:0s !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;transition-delay:0s !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to the content</a>
+
+<header class="head" id="top">
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="/" aria-label="All vibe no cry, home">
+      <svg viewBox="0 0 22 28" aria-hidden="true"><path d="M11 2 C11 2 3 12 3 18 a8 8 0 0 0 16 0 C19 12 11 2 11 2Z" fill="#fff" stroke="#1B1530" stroke-width="2.5"/><path d="M7 18.5l3 3 5.5-6" fill="none" stroke="#00A650" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      allvibenocry
+    </a>
+    <div class="nav-links">
+      <a href="/#how">How it works</a>
+      <a href="/#where">Keys &amp; GitHub</a>
+      <a href="/#hardware">Hardware</a>
+      <a href="/#enterprise">For teams</a>
+      <a href="/under-the-hood" aria-current="page">Under the hood</a>
+      <a class="btn" href="/#waitlist">Join the waitlist</a>
+    </div>
+  </nav>
+  <div class="head-inner">
+    <p class="kicker">For developers, system administrators, contributors and IT departments</p>
+    <h1>Under the hood</h1>
+    <p class="head-lead">How All vibe no cry is built, what has been tested and where, and what it does not protect against.</p>
+  </div>
+</header>
+
+<main class="night" id="content">
+
+  <section class="section" id="labels" aria-labelledby="labels-h">
+    <h2 id="labels-h">What this page is</h2>
+    <p class="lead">A description of the software as it is in its repository today, and of what is planned. Every statement carries one of three labels.</p>
+    <dl class="legend">
+      <div><dt><span class="badge b-built">Built</span></dt><dd>Built, and tested on the local test host: a disposable Debian 13 machine in a container on a workstation. Not yet run on real hardware, and not yet tried by the project's owner.</dd></div>
+      <div><dt><span class="badge b-hw">Verified on hardware</span></dt><dd>Built, and verified on a real Debian 13 machine. Nothing is marked this yet.</dd></div>
+      <div><dt><span class="badge b-planned">Planned</span></dt><dd>Decided, or named as later work, in the repository. Nothing of it is built.</dd></div>
+    </dl>
+    <h3>Where things stand</h3>
+    <p class="fact-p" data-fact="P1"><span class="badge b-built">Built</span>All vibe no cry is in development. Nothing here is ready to install on a machine that matters.</p>
+    <p class="fact-p" data-fact="P2"><span class="badge b-built">Built</span>What exists is the operational core, as command-line tools: the host installer, projects with dev and prod, backups with restore checks, and releases with rollback. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d11-the-bootstrap-installer-is-bash-everything-after-it-is-typescript-on-node">D11</a></span></p>
+    <p>Each statement traces to a file in the <a href="https://github.com/allvibenocry/allvibenocry">product repository</a>, and most to a numbered decision, such as D22, which links to its entry. <a href="https://github.com/allvibenocry/website/blob/main/docs/under-the-hood-facts.md">The fact sheet</a> lists the source of every statement on this page.</p>
+    <nav class="toc" aria-labelledby="toc-h">
+      <p class="toc-title" id="toc-h">On this page</p>
+      <ol>
+        <li><a href="#stack">The stack</a></li>
+        <li><a href="#isolation">Dev and prod, kept apart</a></li>
+        <li><a href="#release">The release pipeline</a></li>
+        <li><a href="#backups">Backups</a></li>
+        <li><a href="#rollback">Rollback and data</a></li>
+        <li><a href="#keys">Secrets and keys</a></li>
+        <li><a href="#offsite">Off-site backups</a></li>
+        <li><a href="#limits">What it does not protect against</a></li>
+        <li><a href="#rules">The house rules</a></li>
+        <li><a href="#source">Read the source</a></li>
+      </ol>
+    </nav>
+  </section>
+
+  <section class="section" id="stack" aria-labelledby="stack-h">
+    <h2 id="stack-h">The stack</h2>
+    <p class="lead">One machine, one operating system, and Docker for everything a project runs.</p>
+    <div class="split">
+      <ul class="facts">
+        <li data-fact="S1"><span class="badge b-built">Built</span>Debian 13 on x86-64. The installer refuses anything else, and anything not run as root, before it changes anything. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d8-debian-13-x86-64-only-in-version-1">D8</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d17-what-installsh-checks-and-how-it-reports">D17</a></span></li>
+        <li data-fact="S2"><span class="badge b-built">Built</span>Docker Engine and its Compose plugin, from Docker's own repository. The installer first checks Docker's signing key against its published fingerprint. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d9-docker-engine-with-compose-separate-dev-and-prod-stacks-per-project">D9</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d17-what-installsh-checks-and-how-it-reports">D17</a></span></li>
+        <li data-fact="S3"><span class="badge b-built">Built</span>Everything a project runs is a Docker Compose stack, and every project has two: dev and prod. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d9-docker-engine-with-compose-separate-dev-and-prod-stacks-per-project">D9</a></span></li>
+        <li data-fact="S4"><span class="badge b-built">Built</span>One nginx is the reverse proxy for the whole host: the unprivileged nginx image, on the host's network, with a read-only filesystem, every capability dropped, and no access log. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d12-nginx-is-the-reverse-proxy">D12</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d27-the-images-the-suite-uses-pinned">D27</a></span></li>
+        <li data-fact="S5"><span class="badge b-built">Built</span>Its configuration is generated, and <code>nginx -t</code> checks it before every reload. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d12-nginx-is-the-reverse-proxy">D12</a></span></li>
+        <li data-fact="S6"><span class="badge b-built">Built</span>PostgreSQL 18, one per environment: a project has two databases, one for dev and one for prod. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d10-postgres-is-the-only-project-database-in-version-1">D10</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d27-the-images-the-suite-uses-pinned">D27</a></span></li>
+        <li data-fact="S7"><span class="badge b-built">Built</span>The command-line tool, <code>allvibe</code>, is TypeScript compiled to JavaScript. It runs on Debian 13's own Node.js package, 20.19.2, and uses only Node's standard library: it has no runtime dependencies, so installing it downloads nothing from npm. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d11-the-bootstrap-installer-is-bash-everything-after-it-is-typescript-on-node">D11</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d15-the-cli-runs-on-debians-own-nodejs-with-no-runtime-dependencies-as-the-service-user">D15</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d32-d15s-nodejs-20-is-a-deliberate-choice">D32</a></span></li>
+        <li data-fact="S8"><span class="badge b-built">Built</span>It runs as a service user of its own, <code>allvibe</code>, which owns everything the suite creates. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d15-the-cli-runs-on-debians-own-nodejs-with-no-runtime-dependencies-as-the-service-user">D15</a></span></li>
+        <li data-fact="S9"><span class="badge b-built">Built</span>Backups are encrypted with age, from Debian's own package. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+        <li data-fact="S10"><span class="badge b-built">Built</span>Docker hands out addresses from 172.20.0.0/14, or from 10.201.0.0/16 if that overlaps a network the machine is on. It keeps small rotating logs, and keeps containers running while Docker itself restarts. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d16-docker-hands-out-addresses-away-from-the-home-network-keeps-logs-small-and-restarts-without-stopping-apps">D16</a></span></li>
+        <li data-fact="S11"><span class="badge b-built">Built</span>Every image the suite pulls is pinned by digest: PostgreSQL 18.6, Node.js 24.21.0 for the starter app, and nginx 1.30.5 for the proxy. A project's own images are built on the host. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d27-the-images-the-suite-uses-pinned">D27</a></span></li>
+        <li data-fact="S12"><span class="badge b-built">Built</span>A systemd timer runs the daily backup at 03:30, plus up to 30 random minutes, and catches up after the machine was off. The installer enables and starts it. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d24-the-daily-backup-is-a-systemd-timer-and-every-run-is-recorded">D24</a></span></li>
+        <li data-fact="S13"><span class="badge b-built">Built</span>A new project starts as a guestbook: Node.js 24 with <code>node:http</code>, one dependency (the <code>pg</code> driver), migrations applied at start, and a <code>/healthz</code> that asks the database. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d19-the-starter-template-is-a-guestbook-in-plain-nodejs-with-one-dependency">D19</a></span></li>
+        <li data-fact="S14"><span class="badge b-built">Built</span>A project is reached at the host's address and a port: prod on 8100 plus two per project, dev on the port after it, up to 49 projects. No DNS, router or hosts file is changed. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d30-the-architect-accepts-d18-for-version-1">D30</a></span></li>
+        <li data-fact="S15"><span class="badge b-built">Built</span>Reaching a project from another machine on the home network has not been verified yet: on the test host, the ports are on the workstation's loopback only. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a></span></li>
+        <li data-fact="S16"><span class="badge b-planned">Planned</span>A control panel in the browser, which will show links, so that nobody types a port. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d30-the-architect-accepts-d18-for-version-1">D30</a></span></li>
+      </ul>
+
+      <figure class="dia" data-fact="S1 S2 S3 S4 S6 S7 S9 S12 S14 I1 I5 I6 I7 B4">
+        <svg viewBox="0 0 360 668" role="img" aria-labelledby="host-t host-d">
+          <title id="host-t">A host, from the outside in</title>
+          <desc id="host-d">A browser on the home network reaches the machine on two ports: 8100 for prod and 8101 for dev. The machine runs Debian 13 on x86-64. nginx is the one way in: it listens on IPv4 only, passes each request to its app on the host's loopback, and prod's door refuses Docker's own address ranges. Docker Engine with Compose runs two stacks for a project, prod and dev, each with its own app, its own PostgreSQL 18, its own networks, volume and secret, with a wall between them. The allvibe command-line tool and a daily systemd timer run on the machine, which also holds the host key. Encrypted backups go to a backup disk off the machine. The recovery key is kept by the owner.</desc>
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#F6F1FF"/></marker>
+            <marker id="ahk" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1B1530"/></marker>
+          </defs>
+          <!-- a browser on the home network -->
+          <rect x="36" y="6" width="288" height="44" rx="12" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <circle cx="54" cy="28" r="3" fill="#1B1530"/><circle cx="64" cy="28" r="3" fill="#1B1530"/><circle cx="74" cy="28" r="3" fill="#1B1530"/>
+          <text x="90" y="33" font-size="13.5" class="ink b">A browser on the home network</text>
+          <line x1="128" y1="50" x2="128" y2="93" stroke="#F6F1FF" stroke-width="3"/>
+          <line x1="292" y1="50" x2="292" y2="93" stroke="#F6F1FF" stroke-width="3"/>
+          <text x="120" y="80" text-anchor="end" font-size="13" class="lt m">:8100 prod</text>
+          <text x="284" y="80" text-anchor="end" font-size="13" class="lt m">:8101 dev</text>
+          <!-- the machine -->
+          <rect x="4" y="92" width="352" height="474" rx="18" fill="#DCD7E6" stroke="#1B1530" stroke-width="3"/>
+          <line x1="128" y1="92" x2="128" y2="124" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
+          <line x1="292" y1="92" x2="292" y2="124" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
+          <!-- the proxy -->
+          <rect x="18" y="128" width="324" height="72" rx="12" fill="#FF4D94" stroke="#1B1530" stroke-width="3"/>
+          <text x="32" y="151" font-size="15" class="ink d">nginx, the one way in</text>
+          <text x="32" y="170" font-size="12.5" class="ink">IPv4 only; apps on loopback only</text>
+          <text x="32" y="188" font-size="12.5" class="ink">prod's door refuses Docker's ranges</text>
+          <!-- Docker, and the two stacks -->
+          <rect x="16" y="214" width="328" height="232" rx="12" fill="none" stroke="#1B1530" stroke-width="2.5" stroke-dasharray="7 5"/>
+          <line x1="128" y1="200" x2="128" y2="276" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
+          <line x1="292" y1="200" x2="292" y2="276" stroke="#1B1530" stroke-width="3" marker-end="url(#ahk)"/>
+          <rect x="26" y="226" width="144" height="188" rx="12" fill="#00A650" stroke="#1B1530" stroke-width="3"/>
+          <rect x="190" y="226" width="144" height="188" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <text x="38" y="252" font-size="17" class="ink d">prod</text>
+          <text x="202" y="252" font-size="17" class="ink d">dev</text>
+          <rect x="36" y="278" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="98" y="303" text-anchor="middle" font-size="13" class="ink b">app, Node.js 24</text>
+          <rect x="36" y="328" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="98" y="353" text-anchor="middle" font-size="13" class="ink b">PostgreSQL 18</text>
+          <text x="38" y="388" font-size="12.5" class="ink">own networks,</text>
+          <text x="38" y="404" font-size="12.5" class="ink">volume and secret</text>
+          <rect x="200" y="278" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="262" y="303" text-anchor="middle" font-size="13" class="ink b">app, Node.js 24</text>
+          <rect x="200" y="328" width="124" height="40" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="262" y="353" text-anchor="middle" font-size="13" class="ink b">PostgreSQL 18</text>
+          <text x="202" y="388" font-size="12.5" class="ink">own networks,</text>
+          <text x="202" y="404" font-size="12.5" class="ink">volume and secret</text>
+          <!-- the wall between them -->
+          <line x1="180" y1="232" x2="180" y2="408" stroke="#D62B26" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="180" cy="320" r="11" fill="#D62B26" stroke="#1B1530" stroke-width="2.5"/>
+          <path d="M175 315l10 10M185 315l-10 10" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+          <text x="30" y="436" font-size="13" class="ink b">Docker Engine and Compose</text>
+          <!-- the tool, the timer, the host key -->
+          <rect x="18" y="458" width="158" height="50" rx="10" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="97" y="479" text-anchor="middle" font-size="14" class="ink m b">allvibe</text>
+          <text x="97" y="497" text-anchor="middle" font-size="12.5" class="ink">TypeScript, Node.js 20</text>
+          <rect x="184" y="458" width="158" height="50" rx="10" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="263" y="479" text-anchor="middle" font-size="14" class="ink b">systemd timer</text>
+          <text x="263" y="497" text-anchor="middle" font-size="12.5" class="ink">backup, daily at 03:30</text>
+          <rect x="18" y="518" width="158" height="34" rx="10" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <circle cx="38" cy="535" r="6" fill="none" stroke="#1B1530" stroke-width="2.5"/><path d="M44 535h14M53 535v5M58 535v4" stroke="#1B1530" stroke-width="2.5" stroke-linecap="round"/>
+          <text x="68" y="540" font-size="13" class="ink b">host key</text>
+          <text x="342" y="542" text-anchor="end" font-size="15" class="ink d">Debian 13, x86-64</text>
+          <!-- off the machine -->
+          <line x1="97" y1="566" x2="97" y2="596" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah)"/>
+          <text x="110" y="587" font-size="12.5" class="lt">encrypted backups</text>
+          <rect x="18" y="598" width="200" height="62" rx="12" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="32" y="623" font-size="14" class="ink b">Backup disk</text>
+          <text x="32" y="645" font-size="12.5" class="ink">USB or NAS, off the machine</text>
+          <rect x="228" y="598" width="128" height="62" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <text x="292" y="623" text-anchor="middle" font-size="14" class="ink b">Recovery key</text>
+          <text x="292" y="645" text-anchor="middle" font-size="12.5" class="ink">kept by the owner</text>
+        </svg>
+        <figcaption>One host, with one project. Each further project adds its own prod and dev stacks, and its own pair of ports.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="isolation" aria-labelledby="isolation-h">
+    <h2 id="isolation-h">Dev and prod, kept apart</h2>
+    <p class="lead">Dev is where changes are made. Prod holds the real data.</p>
+    <ul class="facts">
+      <li data-fact="I1"><span class="badge b-built">Built</span>Dev and prod share no network, no volume and no secret. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d9-docker-engine-with-compose-separate-dev-and-prod-stacks-per-project">D9</a></span></li>
+      <li data-fact="I2"><span class="badge b-built">Built</span>Each environment's database is on an internal network of its own, which Docker gives no route out. Its app is on that network and on an edge network of its own. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d9-docker-engine-with-compose-separate-dev-and-prod-stacks-per-project">D9</a></span></li>
+      <li data-fact="I3"><span class="badge b-built">Built</span>Each environment's data is its own named volume. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d9-docker-engine-with-compose-separate-dev-and-prod-stacks-per-project">D9</a></span></li>
+      <li data-fact="I4"><span class="badge b-built">Built</span>Each environment's database password is generated on the host, 32 random bytes, kept in a file, and mounted only into that environment's containers as a Compose secret. It is never printed, and never an environment variable. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d21-a-projects-secrets-are-files-never-environment-variables">D21</a></span></li>
+      <li data-fact="I5"><span class="badge b-built">Built</span>Apps publish their port on the host's loopback only. The proxy, on the host's network, is the only way in. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a></span></li>
+      <li data-fact="I6"><span class="badge b-built">Built</span>The proxy listens on IPv4 only, so a global IPv6 address on the machine cannot put a project on the internet. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a></span></li>
+      <li data-fact="I7"><span class="badge b-built">Built</span>Prod's front door refuses every address range Docker hands out on the host, read from Docker when the door is written. So no container, dev or otherwise, reaches prod, not even the way a browser on the home network does. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a></span></li>
+      <li data-fact="I8"><span class="badge b-built">Built</span>That has been checked on the test host's Docker. On a real host, where Docker's default bridge usually has a different subnet, it has not been checked yet. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a></span></li>
+      <li data-fact="I10"><span class="badge b-planned">Planned</span>The AI agent's own container, which will work in dev, is planned. Until it exists, dev is changed by hand. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d28-what-the-first-brief-deliberately-leaves-simple">D28</a></span></li>
+    </ul>
+    <h3>What was probed from inside dev</h3>
+    <div data-fact="I9">
+      <p class="fact-p"><span class="badge b-built">Built</span>From inside dev's app container, on the test host, with <code>test/host/rule1-isolation.sh</code>. Every attempt on prod failed, and dev's own door answered. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a></span></p>
+      <div class="probe-wrap">
+        <table class="probes">
+          <caption class="sr">What dev's app container tried, and what it got</caption>
+          <thead><tr><th scope="col">From dev, it tried</th><th scope="col">It got</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">prod's database, by name</th><td>not found</td></tr>
+            <tr><th scope="row">prod's app, by name</th><td>not found</td></tr>
+            <tr><th scope="row">prod's database, by address, port 5432</th><td>timed out</td></tr>
+            <tr><th scope="row">prod's app, by each of its addresses, port 3000</th><td>timed out</td></tr>
+            <tr><th scope="row">prod's app, through the host, at its loopback-only port</th><td>refused</td></tr>
+            <tr><th scope="row">prod's front door, by the host's address</th><td>HTTP 403</td></tr>
+            <tr><th scope="row">prod's front door, by the LAN address</th><td>HTTP 403</td></tr>
+            <tr><th scope="row">dev's own front door</th><td>HTTP 200</td></tr>
+            <tr><th scope="row">dev's database password, compared by hash with prod's</th><td>different</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="release" aria-labelledby="release-h">
+    <h2 id="release-h">The release pipeline</h2>
+    <p class="lead"><code>allvibe release &lt;project&gt;</code> takes what dev runs to prod.</p>
+    <div class="split">
+      <div>
+        <p class="fact-p" data-fact="R1"><span class="badge b-built">Built</span>A release runs 13 steps, in order, and stops at the first that fails. The failure names the step and what would have to be true, and nothing after it runs. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></p>
+        <ol class="steps">
+          <li data-fact="R2"><span class="n">1</span><span><span class="badge b-built">Built</span>Dev runs the commit being released, with nothing uncommitted, and answers its smoke check. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></span></li>
+          <li data-fact="R3"><span class="n">2</span><span><span class="badge b-built">Built</span>The recovery key has been confirmed. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></span></li>
+          <li data-fact="R4"><span class="n">3 to 5</span><span><span class="badge b-built">Built</span>The backup target is off this machine and writable; prod's database is running; an encrypted backup of prod is written to the target. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d22-a-backup-target-must-be-provably-off-the-machine">D22</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></span></li>
+          <li data-fact="R5"><span class="n">6 to 9</span><span><span class="badge b-built">Built</span>A restore check of that very backup: it is whole and decrypts, it restores into a scratch copy, and the app's own health check passes against the copy. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></span></li>
+          <li data-fact="R6"><span class="n">10</span><span><span class="badge b-built">Built</span>Prod's new image is built from the commit through <code>git archive</code>, never from the working tree. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></span></li>
+          <li data-fact="R7"><span class="n">11, 12</span><span><span class="badge b-built">Built</span>Prod is deployed on the new version, and answers its smoke check. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></span></li>
+          <li data-fact="R8"><span class="n">13</span><span><span class="badge b-built">Built</span>The commit is tagged with the version, and the release is recorded with its commit, its backup and the version it replaced. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></span></li>
+        </ol>
+      </div>
+      <figure class="dia" data-fact="R1 R2 R3 R4 R5 R6 R7 R8 R9">
+        <svg class="pipe" viewBox="0 0 360 690" role="img" aria-labelledby="pipe-t pipe-d">
+          <title id="pipe-t">The 13 steps of a release</title>
+          <desc id="pipe-d">Thirteen steps in a column, in four groups. Checks: dev runs the commit; the recovery key is confirmed. Backup: the backup disk is off the machine; prod's database is running; an encrypted backup is written. Restore check: the backup to check; it is whole and decrypts; it is restored into a scratch copy; the app's health check passes on the copy. Release: prod is built from the commit; prod is deployed; prod answers its smoke check; the release is tagged and recorded. Any step that fails stops the release there. If step 11 or 12 fails, prod goes back to the version before, automatically, with its data kept.</desc>
+          <defs><marker id="ahr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FF6B66"/></marker></defs>
+          <rect x="54" y="11" width="302" height="82" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
+          <rect x="54" y="99" width="302" height="126" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
+          <rect x="54" y="231" width="302" height="170" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
+          <rect x="54" y="407" width="302" height="170" rx="12" fill="#F6F1FF" fill-opacity=".06"/>
+          <text x="346" y="37" text-anchor="end" font-size="12.5" class="b" fill="#FF8DBA">checks</text>
+          <text x="346" y="125" text-anchor="end" font-size="12.5" class="b" fill="#FFD84D">backup</text>
+          <text x="346" y="257" text-anchor="end" font-size="12.5" class="b" fill="#86EBA9">restore check</text>
+          <text x="346" y="433" text-anchor="end" font-size="12.5" class="b" fill="#FF8DBA">release</text>
+          <line x1="30" y1="32" x2="30" y2="560" stroke="#F6F1FF" stroke-opacity=".25" stroke-width="4" stroke-linecap="round"/>
+          <g class="nd"><circle cx="30" cy="32" r="15"/><text x="30" y="37" text-anchor="middle" font-size="13" class="b">1</text></g>
+          <g class="nd"><circle cx="30" cy="76" r="15"/><text x="30" y="81" text-anchor="middle" font-size="13" class="b">2</text></g>
+          <g class="nd"><circle cx="30" cy="120" r="15"/><text x="30" y="125" text-anchor="middle" font-size="13" class="b">3</text></g>
+          <g class="nd"><circle cx="30" cy="164" r="15"/><text x="30" y="169" text-anchor="middle" font-size="13" class="b">4</text></g>
+          <g class="nd"><circle cx="30" cy="208" r="15"/><text x="30" y="213" text-anchor="middle" font-size="13" class="b">5</text></g>
+          <g class="nd"><circle cx="30" cy="252" r="15"/><text x="30" y="257" text-anchor="middle" font-size="13" class="b">6</text></g>
+          <g class="nd"><circle cx="30" cy="296" r="15"/><text x="30" y="301" text-anchor="middle" font-size="13" class="b">7</text></g>
+          <g class="nd"><circle cx="30" cy="340" r="15"/><text x="30" y="345" text-anchor="middle" font-size="13" class="b">8</text></g>
+          <g class="nd"><circle cx="30" cy="384" r="15"/><text x="30" y="389" text-anchor="middle" font-size="13" class="b">9</text></g>
+          <g class="nd"><circle cx="30" cy="428" r="15"/><text x="30" y="433" text-anchor="middle" font-size="12" class="b">10</text></g>
+          <g class="nd"><circle cx="30" cy="472" r="15"/><text x="30" y="477" text-anchor="middle" font-size="12" class="b">11</text></g>
+          <g class="nd"><circle cx="30" cy="516" r="15"/><text x="30" y="521" text-anchor="middle" font-size="12" class="b">12</text></g>
+          <g class="nd"><circle cx="30" cy="560" r="15"/><text x="30" y="565" text-anchor="middle" font-size="12" class="b">13</text></g>
+          <text x="66" y="37" font-size="13.5" class="lt">Dev runs the commit</text>
+          <text x="66" y="81" font-size="13.5" class="lt">Recovery key confirmed</text>
+          <text x="66" y="125" font-size="13.5" class="lt">Backup disk off the machine</text>
+          <text x="66" y="169" font-size="13.5" class="lt">Prod's database running</text>
+          <text x="66" y="213" font-size="13.5" class="lt">Encrypted backup written</text>
+          <text x="66" y="257" font-size="13.5" class="lt">The backup to check</text>
+          <text x="66" y="301" font-size="13.5" class="lt">Whole, and it decrypts</text>
+          <text x="66" y="345" font-size="13.5" class="lt">Restored into a scratch copy</text>
+          <text x="66" y="389" font-size="13.5" class="lt">App's health check on the copy</text>
+          <text x="66" y="433" font-size="13.5" class="lt">Prod built from the commit</text>
+          <text x="66" y="477" font-size="13.5" class="lt">Prod deployed</text>
+          <text x="66" y="521" font-size="13.5" class="lt">Prod answers its smoke check</text>
+          <text x="66" y="565" font-size="13.5" class="lt">Tagged and recorded</text>
+          <!-- a failure at 11 or 12: back, automatically -->
+          <path d="M6 516H14" fill="none" stroke="#FF6B66" stroke-width="3" stroke-dasharray="6 4"/>
+          <path d="M14 472H6V626H50" fill="none" stroke="#FF6B66" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#ahr)"/>
+          <rect x="54" y="598" width="302" height="56" rx="12" fill="#D62B26" stroke="#1B1530" stroke-width="3"/>
+          <text x="68" y="621" font-size="13.5" class="wh b">11 or 12 fails: back to the version</text>
+          <text x="68" y="641" font-size="13.5" class="wh b">before, automatically, data kept</text>
+          <text x="54" y="680" font-size="12.5" class="mu">Any step that fails stops the release there.</text>
+        </svg>
+        <figcaption>What <code>allvibe release</code> prints, one line per step, in this order.</figcaption>
+      </figure>
+    </div>
+    <h3>When it fails</h3>
+    <ul class="facts">
+      <li data-fact="R9"><span class="badge b-built">Built</span>If step 11 or 12 fails, prod goes back to the version it ran before, automatically, keeping its data. The release is recorded as failed. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="R10"><span class="badge b-built">Built</span>A crash loop counts as a failure at once, and the failure shows the line in which the app said what went wrong. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></li>
+      <li data-fact="R11"><span class="badge b-built">Built</span>Version numbers are never reused, even after a rollback. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></li>
+      <li data-fact="R12"><span class="badge b-built">Built</span><code>--dry-run</code> runs every check and changes nothing. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></li>
+      <li data-fact="R13"><span class="badge b-built">Built</span>Every run of every operation is recorded, with its steps and, on failure, the reason. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d24-the-daily-backup-is-a-systemd-timer-and-every-run-is-recorded">D24</a></span></li>
+      <li data-fact="R14"><span class="badge b-built">Built</span>Tried on the test host: a change released with prod's entries intact; a release whose migration failed in prod, rolled back automatically with every entry; and a release stopped at the backup step with the backup disk gone, with nothing built, tagged or deployed. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+    </ul>
+  </section>
+
+  <section class="section" id="backups" aria-labelledby="backups-h">
+    <h2 id="backups-h">Backups</h2>
+    <p class="lead">Off the machine, encrypted, and restored before they count.</p>
+    <ul class="facts">
+      <li data-fact="B1"><span class="badge b-built">Built</span>A backup goes only to a directory the suite can prove is off the machine, and it checks again before every backup: a disk that was there yesterday may be unplugged today. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d22-a-backup-target-must-be-provably-off-the-machine">D22</a></span></li>
+      <li data-fact="B2"><span class="badge b-built">Built</span>Off the machine means, as the kernel sees it: not on the root filesystem, which is also where an unplugged disk leaves its empty mount point; not on the filesystem that holds Docker's data; not on the same physical disk as either, found through partitions, LVM and LUKS; a real disk, or a network share such as NFS or SMB; and writable by the service user, proven by writing a file as it. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d22-a-backup-target-must-be-provably-off-the-machine">D22</a></span></li>
+      <li data-fact="B3"><span class="badge b-built">Built</span>Real disks have not been tried yet. On the test host, one mount point is declared a separate disk, and everything else still refuses. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d14-development-testing-uses-a-disposable-test-host-in-a-container">D14</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d22-a-backup-target-must-be-provably-off-the-machine">D22</a></span></li>
+    </ul>
+    <div class="split">
+      <div>
+        <h3>How a backup is written</h3>
+        <ul class="facts">
+          <li data-fact="B4"><span class="badge b-built">Built</span>Every backup is encrypted to two keys: a host key, which stays on the machine and is what the daily restore check decrypts with, and a recovery key, whose private half the owner keeps off the machine. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d29-the-architect-accepts-d13-with-two-follow-ups">D29</a></span></li>
+          <li data-fact="B5"><span class="badge b-built">Built</span>It is <code>pg_dump</code> in its custom format, run inside prod's own database container so that client and server always match, and streamed straight into <code>age</code>. Nothing unencrypted is written to the target. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+          <li data-fact="B6"><span class="badge b-built">Built</span>It is written under a temporary name, flushed to disk, and only then renamed. A small manifest is written last: the time, the release, prod's entry count, the checksum, both public keys and the database image. A backup without a manifest is incomplete. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+          <li data-fact="B7"><span class="badge b-built">Built</span>Backups taken for a release are kept, and never pruned. Others go after 30 days, but never the newest three, and only files the suite named itself. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+        </ul>
+        <h3>How a restore check runs, without touching prod</h3>
+        <ul class="facts">
+          <li data-fact="B8"><span class="badge b-built">Built</span>It verifies the checksum, and decrypts the whole file with the host key into a private temporary file, so a damaged backup fails before anything is restored. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+          <li data-fact="B9"><span class="badge b-built">Built</span>It restores into a scratch PostgreSQL of the same image, on a scratch internal network, and stops at the first error. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+          <li data-fact="B10"><span class="badge b-built">Built</span>It starts the version of the app the backup was taken from against the copy, and asks the app's own health check, which reads the data. It reports the entry count beside the count prod had when the backup was taken. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+          <li data-fact="B11"><span class="badge b-built">Built</span>It removes its containers, its network and the decrypted file, whatever happened. Nothing it creates shares a name, a network or a volume with prod. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></li>
+        </ul>
+      </div>
+      <figure class="dia" data-fact="B4 B5 B6 B8 B9 B10 B11">
+        <svg viewBox="0 0 360 640" role="img" aria-labelledby="bk-t bk-d">
+          <title id="bk-t">How a backup is written, and how it is checked</title>
+          <desc id="bk-d">Top: prod's PostgreSQL runs pg_dump in its custom format, streamed into age, which encrypts to the host key and the recovery key. On the backup disk, off the machine, the file is written under a temporary name ending in .partial, flushed, then renamed, and a manifest is written last. Bottom: the restore check, on its own internal network. The checksum matches; the whole file is decrypted with the host key; it is restored into a scratch PostgreSQL of the same image; the backed-up version of the app answers its health check on the copy; the entry count is reported beside prod's; and everything it made is removed. Prod is not touched.</desc>
+          <defs>
+            <marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#F6F1FF"/></marker>
+            <marker id="ahk2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1B1530"/></marker>
+          </defs>
+          <!-- written -->
+          <rect x="6" y="8" width="156" height="72" rx="12" fill="#00A650" stroke="#1B1530" stroke-width="3"/>
+          <text x="84" y="34" text-anchor="middle" font-size="14" class="ink b">prod's database</text>
+          <text x="84" y="53" text-anchor="middle" font-size="12.5" class="ink">pg_dump, in its</text>
+          <text x="84" y="69" text-anchor="middle" font-size="12.5" class="ink">custom format</text>
+          <line x1="162" y1="44" x2="194" y2="44" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
+          <rect x="198" y="8" width="156" height="72" rx="12" fill="#FFC400" stroke="#1B1530" stroke-width="3"/>
+          <text x="276" y="33" text-anchor="middle" font-size="17" class="ink d">age</text>
+          <text x="276" y="53" text-anchor="middle" font-size="12.5" class="ink">to the host key and</text>
+          <text x="276" y="69" text-anchor="middle" font-size="12.5" class="ink">the recovery key</text>
+          <line x1="276" y1="80" x2="276" y2="116" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
+          <text x="266" y="104" text-anchor="end" font-size="12.5" class="lt">streamed, encrypted</text>
+          <rect x="6" y="120" width="348" height="190" rx="14" fill="#FFFFFF" stroke="#1B1530" stroke-width="3"/>
+          <text x="20" y="145" font-size="14" class="ink b">Backup disk, off the machine</text>
+          <path d="M22 158h18l8 8v26h-26z" fill="#FFE1EE" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="62" y="172" font-size="12.5" class="ink m">…dump.age.partial</text>
+          <text x="62" y="188" font-size="12.5" class="ink">written, then flushed</text>
+          <line x1="35" y1="196" x2="35" y2="208" stroke="#1B1530" stroke-width="2.5" marker-end="url(#ahk2)"/>
+          <path d="M22 212h18l8 8v26h-26z" fill="#DDF3E5" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="62" y="226" font-size="12.5" class="ink m">…dump.age</text>
+          <text x="62" y="242" font-size="12.5" class="ink">renamed when complete</text>
+          <path d="M22 258h18l8 8v26h-26z" fill="#FFF1BF" stroke="#1B1530" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="62" y="272" font-size="12.5" class="ink m">…json</text>
+          <text x="62" y="288" font-size="12.5" class="ink">the manifest, written last</text>
+          <!-- checked -->
+          <line x1="180" y1="310" x2="180" y2="370" stroke="#F6F1FF" stroke-width="3" marker-end="url(#ah2)"/>
+          <rect x="6" y="330" width="348" height="302" rx="14" fill="none" stroke="#F6F1FF" stroke-width="2.5" stroke-dasharray="7 5"/>
+          <text x="20" y="356" font-size="16" class="lt d">Restore check</text>
+          <text x="340" y="356" text-anchor="end" font-size="12.5" class="mu">prod is not touched</text>
+          <rect x="20" y="372" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="395" font-size="13" class="ink">The checksum matches</text>
+          <rect x="20" y="418" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="441" font-size="13" class="ink">The whole file decrypts, with the host key</text>
+          <rect x="20" y="464" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="487" font-size="13" class="ink">Scratch PostgreSQL, same image, restored</text>
+          <rect x="20" y="510" width="320" height="36" rx="9" fill="#00A650" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="533" font-size="13" class="ink b">The backed-up app answers its health check</text>
+          <rect x="20" y="556" width="320" height="36" rx="9" fill="#FFFFFF" stroke="#1B1530" stroke-width="2.5"/>
+          <text x="34" y="579" font-size="13" class="ink">Entry count, beside prod's at backup time</text>
+          <text x="20" y="617" font-size="12.5" class="mu">Then everything it made is removed.</text>
+        </svg>
+        <figcaption>One backup file and its manifest on the disk, and the check that reads it back.</figcaption>
+      </figure>
+    </div>
+    <h3>Every day</h3>
+    <ul class="facts">
+      <li data-fact="B12"><span class="badge b-built">Built</span>Every day, for every project: a backup of prod, then a restore check of that very backup. One project's failure does not leave the others without theirs. A failure makes the service fail, and shows up in <code>allvibe doctor</code>. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d24-the-daily-backup-is-a-systemd-timer-and-every-run-is-recorded">D24</a></span></li>
+      <li data-fact="B13"><span class="badge b-built">Built</span>The daily run has so far only been started by hand. One that happens on its own, at night, has not been seen yet. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d24-the-daily-backup-is-a-systemd-timer-and-every-run-is-recorded">D24</a></span></li>
+    </ul>
+  </section>
+
+  <section class="section" id="rollback" aria-labelledby="rollback-h">
+    <h2 id="rollback-h">Rollback and data</h2>
+    <p class="lead">Code goes back. Data stays, unless you ask for it too.</p>
+    <ul class="facts">
+      <li data-fact="D1"><span class="badge b-built">Built</span><code>allvibe rollback</code> goes back to the version prod ran when the current one was released, and changes only the code. Prod's data stays as it is, so nothing written since the release is lost. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="D2"><span class="badge b-built">Built</span>Why: the usual reason to roll back is that the new code is wrong, and what people wrote since the release is real. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="D3"><span class="badge b-built">Built</span>Each migration runs in a transaction, so a migration that fails leaves the schema as it was. That is why the automatic rollback after a failed release kept every entry. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="D4"><span class="badge b-built">Built</span>If the older version cannot run on today's data, its smoke check fails, the rollback stops, and it names the other way: <code>--restore-data</code>. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="D5"><span class="badge b-built">Built</span><code>--restore-data</code> on its own changes nothing. It says what would be lost: the time the data goes back to, and how many entries prod has now against the backup. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="D6"><span class="badge b-built">Built</span>With <code>--confirm-data-loss</code> as well, it first takes a backup of prod as it is, then empties prod's database and restores the backup taken just before the current version was released, then deploys the older version and checks it. Even a confirmed mistake can be undone from that first backup. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d26-rollback-keeps-prods-data-and-restoring-data-is-a-separate-confirmed-choice">D26</a></span></li>
+      <li data-fact="D7"><span class="badge b-built">Built</span>A known gap: rolling back past a release whose migration succeeded runs the old code on a newer schema, and if the old code still answers its health check, the rollback counts as done. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d31-the-architect-accepts-d26-with-a-known-gap-in-rollback">D31</a></span></li>
+      <li data-fact="D8"><span class="badge b-planned">Planned</span>To close it: releases record their schema version; rollback explains, and offers <code>--restore-data</code>, when the database is newer than the version it goes back to; and the project template gets a rule that, within one release, migrations only add, never drop or rename. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d31-the-architect-accepts-d26-with-a-known-gap-in-rollback">D31</a></span></li>
+    </ul>
+  </section>
+
+  <section class="section" id="keys" aria-labelledby="keys-h">
+    <h2 id="keys-h">Secrets and keys</h2>
+    <p class="lead">What exists today, and what is planned.</p>
+    <h3>Today</h3>
+    <ul class="facts">
+      <li data-fact="K1"><span class="badge b-built">Built</span>The tools read secrets by name, from the environment or from files with restricted permissions, and never prompt for a password. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d21-a-projects-secrets-are-files-never-environment-variables">D21</a></span></li>
+      <li data-fact="K2"><span class="badge b-built">Built</span>A project's database passwords are files, generated on the host and mounted only where they are needed. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d21-a-projects-secrets-are-files-never-environment-variables">D21</a></span></li>
+      <li data-fact="K3"><span class="badge b-built">Built</span>The host key is made at install with <code>age-keygen</code>, stays on the machine, and only the service user can read it. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+      <li data-fact="K4"><span class="badge b-built">Built</span>The recovery key is made at install too. Its private half is written once, to a file only the service user can read, and is never printed. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+      <li data-fact="K5"><span class="badge b-built">Built</span>The owner copies it off the machine and hands it back with <code>allvibe recovery-key confirm</code>, on standard input: the command refuses a terminal rather than ask. If it matches, the copy on the machine is deleted, and the owner's is the only one. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+      <li data-fact="K6"><span class="badge b-built">Built</span>Until it is confirmed, every release is refused, and <code>allvibe doctor</code> reports it. Every 180 days, doctor asks to see it again. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+      <li data-fact="K7"><span class="badge b-built">Built</span>Restoring on a new machine needs the recovery key and nothing else. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+      <li data-fact="K8"><span class="badge b-built">Built</span>The project's own repository is scanned for secrets on every push, over its whole history, and checked for details of anyone's infrastructure. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d6-every-push-is-scanned-for-secrets">D6</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d7-no-details-of-the-owners-infrastructure-in-the-repository">D7</a></span></li>
+    </ul>
+    <h3>Planned</h3>
+    <ul class="facts">
+      <li data-fact="K9"><span class="badge b-planned">Planned</span>A key check before every push, for the apps people build. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d6-every-push-is-scanned-for-secrets">D6</a></span></li>
+      <li data-fact="K10"><span class="badge b-planned">Planned</span>Once there is a web UI, the recovery key as a download and as a printable recovery sheet. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d29-the-architect-accepts-d13-with-two-follow-ups">D29</a></span></li>
+      <li data-fact="K11"><span class="badge b-planned">Planned</span>When a recovery key is lost: a new one for future backups, with a clear warning that older backups open only with the old key. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d29-the-architect-accepts-d13-with-two-follow-ups">D29</a></span></li>
+    </ul>
+  </section>
+
+  <section class="section" id="offsite" aria-labelledby="offsite-h">
+    <h2 id="offsite-h">Off-site backups</h2>
+    <p class="lead">Out of the house, not only off the machine. All of it is planned.</p>
+    <ul class="facts">
+      <li data-fact="O1"><span class="badge b-built">Built</span>Today a backup leaves the machine, but usually not the house. That protects against the computer dying, not against a fire, a theft or water. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d22-a-backup-target-must-be-provably-off-the-machine">D22</a></span></li>
+      <li data-fact="O2"><span class="badge b-planned">Planned</span>A backup target becomes a type, not a path: a local disk as today, an rclone remote, or S3-compatible storage. The backup format already works for any of them.</li>
+      <li data-fact="O3"><span class="badge b-planned">Planned</span>Several targets at once. A release still needs only the local backup. The off-site copy is sent in the background and raises an alert when it falls behind, so an internet outage never blocks a release.</li>
+      <li data-fact="O4"><span class="badge b-planned">Planned</span>The options, simplest first: two disks, rotated between home and somewhere else, with a reminder; cloud storage you already have, through rclone; S3-compatible object storage; and later, perhaps, a friend's machine.</li>
+      <li data-fact="O5"><span class="badge b-planned">Planned</span>Off-site credentials that can write but not delete, so that a compromised machine or a misbehaving agent cannot destroy the off-site copies.</li>
+      <li data-fact="O6"><span class="badge b-planned">Planned</span>An occasional restore check of an off-site copy, downloaded and tested the same way as the local one.</li>
+      <li data-fact="O7"><span class="badge b-planned">Planned</span>The storage provider only ever sees encrypted files, because backups are encrypted on the machine before anything leaves it. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></li>
+    </ul>
+    <div class="callout" data-fact="O8">
+      <p><span class="badge b-planned">Planned</span><strong>Keep the recovery key outside the house as well.</strong> After a fire, an off-site backup is useless if the only copy of the recovery key burned with the laptop. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d29-the-architect-accepts-d13-with-two-follow-ups">D29</a></span></p>
+    </div>
+  </section>
+
+  <section class="section" id="limits" aria-labelledby="limits-h">
+    <h2 id="limits-h">What it does not protect against</h2>
+    <p class="lead">Stated plainly, so that nobody has to find out.</p>
+    <ul class="limits">
+      <li data-fact="L1"><h3>A bug that passes the health check</h3><p><span class="badge b-built">Built</span>A release checks that the new version starts and answers <code>/healthz</code>, which says the app is up and can read its database. A bug anywhere else is released. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d19-the-starter-template-is-a-guestbook-in-plain-nodejs-with-one-dependency">D19</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></p></li>
+      <li data-fact="L2"><h3>A stolen computer</h3><p><span class="badge b-built">Built</span>Prod's data is in a Docker volume on the computer's own disk, and the suite does not encrypt that disk: none of the installer's eleven steps does. Backups are encrypted, but the host key that opens them is on the same computer, so whoever takes the computer and its backup disk has both. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a></span></p></li>
+      <li data-fact="L3"><h3>A fire, a flood or a theft that takes the backup disk too</h3><p><span class="badge b-built">Built</span>Backups leave the machine, not the house, until off-site backups exist. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d22-a-backup-target-must-be-provably-off-the-machine">D22</a></span></p></li>
+      <li data-fact="L4"><h3>An app's own weaknesses</h3><p><span class="badge b-built">Built</span>The suite does not add sign-in to an app, or check the one it has, and the starter guestbook has none. Today nothing is published to the internet. Publishing is planned, and an app published with weak sign-in will be as open as its sign-in. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d28-what-the-first-brief-deliberately-leaves-simple">D28</a></span></p></li>
+      <li data-fact="L5"><h3>What was written since the last backup</h3><p><span class="badge b-built">Built</span>The scheduled backup runs once a day, and a release takes one first. A disk that dies in between takes with it what was written since. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d24-the-daily-backup-is-a-systemd-timer-and-every-run-is-recorded">D24</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a></span></p></li>
+      <li data-fact="L6"><h3>A backup that restores, but not completely</h3><p><span class="badge b-built">Built</span>A restore check proves that the app can read the restored copy, and compares the entry count. It does not compare every row. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d23-what-a-backup-is-and-what-a-restore-check-proves">D23</a></span></p></li>
+      <li data-fact="L7"><h3>Two operations at the same time</h3><p><span class="badge b-built">Built</span>Nothing locks one against another yet. The nightly backup and a release started in the same minute would both run: nothing would be lost, but the work would be done twice. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d28-what-the-first-brief-deliberately-leaves-simple">D28</a></span></p></li>
+    </ul>
+  </section>
+
+  <section class="section" id="rules" aria-labelledby="rules-h">
+    <h2 id="rules-h">The house rules</h2>
+    <p class="lead">The rules the product is built to, quoted as they are written in its <a href="https://github.com/allvibenocry/allvibenocry/blob/main/CLAUDE.md#the-rules">CLAUDE.md</a>. Under each, what keeps it, and its label.</p>
+    <ol class="rules">
+      <li data-fact="H1"><blockquote><p><strong>The agent never reaches prod.</strong> Nothing in a dev environment has network access to, credentials for, or volumes of a prod environment.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by <a href="#isolation">the separation of dev and prod</a>. The agent that will work in dev is planned.</p></li>
+      <li data-fact="H2"><blockquote><p><strong>No release without a fresh backup</strong> on a target outside the machine's own disk, and that backup must have passed a restore test.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by <a href="#release">steps 3 to 9 of every release</a>.</p></li>
+      <li data-fact="H3"><blockquote><p><strong>The control panel is never exposed directly to the internet.</strong> There is no panel yet; the rule is recorded now.</p></blockquote><p class="kept"><span class="badge b-planned">Planned</span>Kept by the panel, when it exists.</p></li>
+      <li data-fact="H4"><blockquote><p><strong>Secrets never appear</strong> on a command line, in output, in logs, in the repo or in a chat. Tools read them by name from the environment or from files with restricted permissions, and never prompt for a password. SSH is key-based with <code>BatchMode=yes</code>.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by <a href="#keys">secrets in files, and nothing that prompts</a>.</p></li>
+      <li data-fact="H5"><blockquote><p><strong>Everything a beginner needs to do must eventually be doable in a browser.</strong> The CLI is the engine the web UI will call, not the user interface.</p></blockquote><p class="kept"><span class="badge b-planned">Planned</span>Kept by the web UI, when it exists.</p></li>
+      <li data-fact="H6"><blockquote><p><strong>Every numbered item is tried by a human before it counts as done.</strong> Reports keep what was actually run and observed apart from what was only built.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by the project's record of what has been tried, and by whom. Nothing has been tried by the owner yet.</p></li>
+      <li data-fact="H7"><blockquote><p><strong>Stop at the first failure.</strong> An operation that fails part-way names the step and what would have to be true, and takes no further steps.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by <a href="#release">every operation running as steps</a>.</p></li>
+      <li data-fact="H8"><blockquote><p><strong>Rollback never loses data silently.</strong> If a rollback would discard data written since the release, it says so and requires explicit confirmation.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by <a href="#rollback">rollback keeping the data</a>.</p></li>
+      <li data-fact="H9"><blockquote><p><strong>Nothing is ever named "nocry"</strong>: no command, process, service, container, image, package or file. "NoCry" is the name of a ransomware family, and a service that runs around the clock on people's home computers must not share a name with one. <code>node scripts/guard.mjs</code> checks it.</p></blockquote><p class="kept"><span class="badge b-built">Built</span>Kept by the project name rule and by the repository's guard. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d2-nothing-is-ever-named-nocry">D2</a></span></p></li>
+    </ol>
+    <p class="fact-p after-rules" data-fact="H10"><span class="badge b-built">Built</span>Rules 10 and 11 are about how the repository itself is kept: no details of anyone's infrastructure in it, and no rewriting of its history. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d7-no-details-of-the-owners-infrastructure-in-the-repository">D7</a></span></p>
+  </section>
+
+  <section class="section" id="source" aria-labelledby="source-h">
+    <h2 id="source-h">Read the source</h2>
+    <p class="lead">Everything on this page comes from these files, in the product repository on GitHub.</p>
+    <ul class="links">
+      <li><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md"><b>DECISIONS.md</b><span>Every decision, with its reason, and what was considered instead.</span></a></li>
+      <li><a href="https://github.com/allvibenocry/allvibenocry/blob/main/STATE.md"><b>STATE.md</b><span>What works, and what has not been verified yet.</span></a></li>
+      <li><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md"><b>docs/roadmap.md</b><span>What is planned, and not built.</span></a></li>
+      <li><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/walkthrough.md"><b>docs/walkthrough.md</b><span>From a fresh host to a release and a rollback, step by step.</span></a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot">
+    <div class="foot-top">
+      <a class="brand" href="/" aria-label="All vibe no cry, home">
+      <svg viewBox="0 0 22 28" aria-hidden="true"><path d="M11 2 C11 2 3 12 3 18 a8 8 0 0 0 16 0 C19 12 11 2 11 2Z" fill="#fff" stroke="#1B1530" stroke-width="2.5"/><path d="M7 18.5l3 3 5.5-6" fill="none" stroke="#00A650" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      allvibenocry
+    </a>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="/#how">How it works</a><a href="/#where">Keys &amp; GitHub</a><a href="/#hardware">Hardware</a><a href="/#compare">Free or teams</a><a href="/under-the-hood" aria-current="page">Under the hood</a><a href="https://github.com/allvibenocry">GitHub</a>
+      </nav>
+    </div>
+    <div class="foot-bottom"><span>All vibe no cry is an open source project by Lundstream.</span><a href="#top">Back to top</a></div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  /* The one movement on the page: the release steps light up, once, when they
+     come into view. Without a script, or with reduced motion, they are lit
+     from the start. */
+  const pipe = document.querySelector('.pipe');
+  if (!pipe || !('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  pipe.classList.add('dim');
+  new IntersectionObserver((entries, observer) => {
+    if (entries.some(e => e.isIntersecting)) { pipe.classList.remove('dim'); observer.disconnect(); }
+  }, { threshold: 0.35 }).observe(pipe);
+})();
+</script>
+</body>
+</html>

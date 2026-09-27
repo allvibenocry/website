@@ -451,3 +451,57 @@ container restarting on its own, as it did before, is not something this
 deploy did, and it is not to be touched; hiding it would be wrong, and so would
 calling it a change. In the first deploy (`v0.1.0`) it did not restart, so the
 note did not appear.
+
+## D17. The under-the-hood page: its address, its own policy, and its fact sheet
+
+*2026-09-27*
+
+A second page, `site/under-the-hood.html`, describes how the product is built,
+for developers, system administrators, contributors and IT departments. It uses
+the main page's design system: the same fonts, colour tokens and components,
+the pink band with the same navigation, the night background, the same footer.
+
+- **At a clean address, `/under-the-hood`.** nginx serves the file there with
+  `try_files`, so the file keeps its extension and its type comes from
+  `mime.types` like every other file's. `/under-the-hood/` and
+  `/under-the-hood.html` answer `301` to `/under-the-hood`, so the page has one
+  address. `absolute_redirect off` makes that redirect name only the path:
+  behind the edge, the visitor reached the site at another scheme, host and
+  port than nginx sees, and a redirect that named nginx's own would send them
+  there.
+- **A Content-Security-Policy of its own.** `scripts/csp.mjs` now derives a
+  policy from each page, and nginx picks it by `$uri` with a `map` in
+  `nginx/csp.conf`; `headers.conf` sends it on every response, as before. The
+  main page's policy is the default, and is byte for byte what it was, so every
+  other response (a font, a 404) gets exactly the policy it had. The new page
+  has no `style=""` attribute, no image and no form, so its policy allows none:
+  its style and script by hash, its fonts from `'self'`, `form-action 'none'`,
+  and nothing else. Whatever a page uses, and only that, is what its policy
+  allows.
+- **Every statement traces to the product repository.** The page makes 99
+  statements, each labelled Built, Verified on hardware or Planned, and each a
+  row in `docs/under-the-hood-facts.md` with its source file, pinned to the
+  product commit it was read at, and its decision. `scripts/facts.mjs` fails
+  unless the page's words and label for every row are the sheet's, every row is
+  on the page, "never" appears only where the sheet cites what enforces it, and
+  no page of the site has an en or em dash. It runs on every push and before
+  every release; each way it can fail was made to happen once.
+- **Motion:** the release steps light up once, when they come into view, and
+  nothing moves under reduced motion. Without a script, they are lit from the
+  start.
+- **`check-page` covers every page.** The site's root means both pages; a
+  path means one. For this page it checks that the release steps are dim until
+  seen and all lit after, that every diagram has a name and a description, and
+  that there is no dash anywhere in the text or its alternatives.
+
+**Why.** The main page speaks to beginners and promises; a technical reader
+wants to know what is actually there, and an IT department will check. A page
+that claims more than the repository supports would be worse than no page, so
+the claims are tied to their sources by a check, not by care alone. A policy
+per page keeps each one as strict as its own page allows, instead of letting
+each page run the other's script.
+
+**Instead.** One policy listing both pages' hashes (each page would allow the
+other's script and style); the page at `/under-the-hood/` as a directory index
+(two addresses for one page, or a redirect the other way); the diagrams as
+images (a request each, and no text a screen reader could read).

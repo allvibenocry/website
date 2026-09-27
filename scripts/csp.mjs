@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 /**
- * The Content-Security-Policy, generated from the page it protects (D10).
+ * The Content-Security-Policy, generated from the pages it protects (D10, D17).
  *
  *   node scripts/csp.mjs           # write nginx/csp.conf
- *   node scripts/csp.mjs --check   # exit 1 if nginx/csp.conf is not what the page needs
+ *   node scripts/csp.mjs --check   # exit 1 if nginx/csp.conf is not what the pages need
  *
- * The policy allows the page's one inline script and one inline style block by
- * their SHA-256, so it has to change whenever either of them does. Generated
- * rather than hand-edited, and checked in CI before an image is built, so a copy
- * edit can never ship a page that its own header blocks.
+ * Each page gets a policy of its own, derived from that page alone: its inline
+ * script and inline style by their SHA-256, and only the other sources that page
+ * itself uses. So every policy has to change whenever its page's script or style
+ * does. Generated rather than hand-edited, and checked in CI before an image is
+ * built, so a copy edit can never ship a page that its own header blocks.
+ *
+ * nginx picks the policy by URI, with a `map` in nginx/csp.conf: the main page's
+ * is the default, so every response that is not another page (a font, a 404)
+ * gets exactly the policy it had when the site was one page.
  *
  * It also refuses the things a same-origin policy would silently break rather
  * than report here: an external script, an inline event handler, a
@@ -21,8 +26,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PAGE = path.join(ROOT, "site", "index.html");
 const OUT = path.join(ROOT, "nginx", "csp.conf");
+
+/**
+ * Every page of the site, and the URIs nginx serves it at (nginx/nginx.conf).
+ * The first is the default policy. `$uri` is matched both before and after
+ * `try_files` has pointed it at the file, so both spellings are listed.
+ */
+export const PAGES = [
+  { file: "site/index.html", uris: [] },
+  { file: "site/under-the-hood.html", uris: ["/under-the-hood", "/under-the-hood.html"] },
+];
 
 /** What a browser hashes: the element's text, exactly, as UTF-8. */
 const sha256 = (text) => `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`;
@@ -36,6 +50,10 @@ export function inlineBlocks(html) {
   };
 }
 
+/** The page's tags, with the contents of its script and style elements taken out. */
+const markupOf = (html) => html.replace(/<(script|style)(\s[^>]*)?>[\s\S]*?<\/\1\s*>/gi, "");
+const tagsOf = (html) => markupOf(html).match(/<[a-z][^>]*>/gi) ?? [];
+
 /** Everything a same-origin policy would block without a word at build time. */
 export function problems(html) {
   const found = [];
@@ -43,9 +61,7 @@ export function problems(html) {
   for (const { attributes } of scripts) {
     if (/\ssrc\s*=/i.test(attributes)) found.push(`a <script${attributes}> loads a file; this policy allows inline scripts by hash only`);
   }
-  /* Tags only, with script and style contents taken out first. */
-  const markup = html.replace(/<(script|style)(\s[^>]*)?>[\s\S]*?<\/\1\s*>/gi, "");
-  for (const tag of markup.match(/<[a-z][^>]*>/gi) ?? []) {
+  for (const tag of tagsOf(html)) {
     const handler = tag.match(/\s(on[a-z]+)\s*=/i);
     if (handler) found.push(`inline event handler ${handler[1]} in ${tag.slice(0, 60)}`);
     if (/=\s*["']?\s*javascript:/i.test(tag)) found.push(`javascript: URL in ${tag.slice(0, 60)}`);
@@ -55,56 +71,82 @@ export function problems(html) {
 
 export function policy(html) {
   const { scripts, styles } = inlineBlocks(html);
-  return [
+  const css = styles.map((s) => s.text).join("\n");
+  const styleAttributes = tagsOf(html).filter((tag) => /\sstyle\s*=/i.test(tag)).length;
+  const hashes = (blocks) => (blocks.length ? blocks.map((b) => sha256(b.text)) : ["'none'"]);
+
+  const directives = [
     // Nothing is allowed unless a line below allows it.
     ["default-src", "'none'"],
-    // The one inline script, by hash. No 'unsafe-inline', no file, no eval.
-    ["script-src", ...scripts.map((s) => sha256(s.text))],
-    // Styles, in two parts (D10). The <style> element by hash, and style=""
-    // attributes allowed: the page has 26 of them, each setting a CSS custom
-    // property such as --i:3, and an attribute cannot run code.
-    ["style-src-elem", ...styles.map((s) => sha256(s.text))],
-    ["style-src-attr", "'unsafe-inline'"],
-    // For browsers from before style-src-elem and -attr (Safari < 15.4,
-    // Firefox < 108), which read only this line and would otherwise refuse the
-    // attributes. Browsers that know the two lines above ignore it for styles.
-    ["style-src", "'unsafe-inline'"],
-    // The five woff2 files next to the page.
-    ["font-src", "'self'"],
-    // One image, and it is inline: the check mark is an SVG data URI in the CSS.
-    ["img-src", "data:"],
-    // The waitlist form is a mockup whose script prevents sending; should the
-    // script ever not run, it may only go back to this origin.
-    ["form-action", "'self'"],
-    ["base-uri", "'none'"],
-    ["frame-ancestors", "'none'"],
+    // The page's inline script, by hash. No 'unsafe-inline', no file, no eval.
+    ["script-src", ...hashes(scripts)],
+    // The <style> element, by hash.
+    ["style-src-elem", ...hashes(styles)],
   ];
+  if (styleAttributes > 0) {
+    // style="" attributes, allowed (D10): on the main page, 26 of them, each
+    // setting a CSS custom property such as --i:3; an attribute cannot run
+    // code. The style-src line is for browsers from before style-src-elem and
+    // -attr (Safari < 15.4, Firefox < 108), which read only it and would
+    // otherwise refuse the attributes; current browsers ignore it for styles.
+    directives.push(["style-src-attr", "'unsafe-inline'"], ["style-src", "'unsafe-inline'"]);
+  } else {
+    // No style="" attributes, so none is allowed: style-src-attr falls back to
+    // this line, and so do browsers from before style-src-elem.
+    directives.push(["style-src", ...hashes(styles)]);
+  }
+  // The five woff2 files next to the page.
+  if (/@font-face/.test(css)) directives.push(["font-src", "'self'"]);
+  // Images only if the page has one, and then only inline: the main page's
+  // check mark is an SVG data URI in its CSS.
+  if (/url\(\s*["']?data:image\//i.test(css) || /<img\s[^>]*src\s*=\s*["']?data:image\//i.test(html)) directives.push(["img-src", "data:"]);
+  // A form may only go back to this origin; a page without one may submit nowhere.
+  // (The main page's waitlist form is a mockup whose script prevents sending.)
+  directives.push(["form-action", /<form[\s>]/i.test(markupOf(html)) ? "'self'" : "'none'"]);
+  directives.push(["base-uri", "'none'"], ["frame-ancestors", "'none'"]);
+  return directives;
 }
 
-export function render(html) {
-  const value = policy(html)
+const value = (html) =>
+  policy(html)
     .map((directive) => directive.join(" "))
     .join("; ");
-  return [
-    "# GENERATED by scripts/csp.mjs from site/index.html. Do not edit: run",
-    "# `node scripts/csp.mjs` after changing the page, and commit both (D10).",
-    `add_header Content-Security-Policy "${value}" always;`,
-    "",
-  ].join("\n");
+
+export function render(pages) {
+  const [first, ...others] = pages;
+  const width = Math.max("default".length, ...others.flatMap((p) => p.uris.map((u) => u.length)));
+  const lines = [
+    "# GENERATED by scripts/csp.mjs from the pages in site/. Do not edit: run",
+    "# `node scripts/csp.mjs` after changing a page, and commit both (D10, D17).",
+    "#",
+    "# One policy per page, each allowing only that page's own inline script and",
+    "# style. Included at http level by nginx.conf; headers.conf sends the value on",
+    "# every response. The default is the main page's, as when the site was one page.",
+    "map $uri $content_security_policy {",
+    `    ${"default".padEnd(width)} "${value(first.html)}";`,
+  ];
+  for (const page of others) {
+    for (const uri of page.uris) lines.push(`    ${uri.padEnd(width)} "${value(page.html)}";`);
+  }
+  lines.push("}", "");
+  return lines.join("\n");
 }
 
 const invokedDirectly =
   process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (invokedDirectly) {
-  const html = readFileSync(PAGE, "utf8");
-  const found = problems(html);
-  if (found.length > 0) {
-    for (const problem of found) process.stderr.write(`csp: ${problem}\n`);
-    process.exit(1);
+  const pages = PAGES.map((page) => ({ ...page, html: readFileSync(path.join(ROOT, page.file), "utf8") }));
+  let refused = false;
+  for (const page of pages) {
+    for (const problem of problems(page.html)) {
+      process.stderr.write(`csp: ${page.file}: ${problem}\n`);
+      refused = true;
+    }
   }
+  if (refused) process.exit(1);
 
-  const wanted = render(html);
+  const wanted = render(pages);
   if (process.argv.includes("--check")) {
     let current = "";
     try {
@@ -114,16 +156,19 @@ if (invokedDirectly) {
     }
     if (current !== wanted) {
       process.stderr.write(
-        "csp: nginx/csp.conf does not match site/index.html.\n" +
-          "     The page's inline script or style changed and the policy did not.\n" +
+        "csp: nginx/csp.conf does not match the pages in site/.\n" +
+          "     A page's inline script or style changed and its policy did not.\n" +
           "     Run `node scripts/csp.mjs` and commit nginx/csp.conf.\n",
       );
       process.exit(1);
     }
-    process.stdout.write("csp: nginx/csp.conf matches site/index.html\n");
+    process.stdout.write(`csp: nginx/csp.conf matches ${pages.map((p) => p.file).join(" and ")}\n`);
   } else {
     writeFileSync(OUT, wanted);
-    const { scripts, styles } = inlineBlocks(html);
-    process.stdout.write(`csp: wrote nginx/csp.conf (${scripts.length} script, ${styles.length} style hashed)\n`);
+    for (const page of pages) {
+      const { scripts, styles } = inlineBlocks(page.html);
+      process.stdout.write(`csp: ${page.file}: ${scripts.length} script, ${styles.length} style hashed${page.uris.length ? `, at ${page.uris.join(" and ")}` : ", the default"}\n`);
+    }
+    process.stdout.write("csp: wrote nginx/csp.conf\n");
   }
 }

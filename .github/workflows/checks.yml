@@ -7,6 +7,8 @@
 # 2. scripts/guard.mjs, the generic half: no private IPv4 address and no user
 #    profile path in any tracked file. The owner's own list of private strings
 #    exists only on the owner's workstation.
+# 3. The pages: scripts/facts.mjs (what the under-the-hood page may say, D17)
+#    and scripts/csp.mjs --check (each page's policy matches it).
 name: checks
 
 on:
@@ -43,3 +45,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: guard
         run: node scripts/guard.mjs
+
+  pages:
+    name: the pages say only what they may
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Every statement under the hood is in its fact sheet, with the same
+      # words and status, and no page has an en or em dash (D17).
+      - name: the fact sheet
+        run: node scripts/facts.mjs
+      # Each page's Content-Security-Policy matches the page (D10, D17).
+      - name: the policies
+        run: node scripts/csp.mjs --check

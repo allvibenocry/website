@@ -1,6 +1,10 @@
 # allvibenocry.com
 
-The website for **All vibe no cry**: one static page that explains the product.
+The website for **All vibe no cry**: a static site of two pages. The main page
+explains the product; `/under-the-hood` describes how it is built, for
+developers, system administrators, contributors and IT departments, and says
+only what the product repository supports
+([D17](DECISIONS.md#d17-the-under-the-hood-page-its-address-its-own-policy-and-its-fact-sheet)).
 
 All vibe no cry is a self-hosted suite, in development, that lets total beginners
 build and run their own apps with AI on an old computer at home without losing
@@ -17,7 +21,9 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 | Path | What it is |
 |---|---|
 | `site/` | Everything the web server serves, and nothing else. |
-| `site/index.html` | The page, with inline CSS and inline JavaScript. |
+| `site/index.html` | The main page, with inline CSS and inline JavaScript. |
+| `site/under-the-hood.html` | The technical page, served at `/under-the-hood`: the main page's design system, inline SVG diagrams, and a label on every statement. |
+| `docs/under-the-hood-facts.md` | The technical page's fact sheet: every statement it makes, with its source in the product repository, its decision and its status. |
 | `site/fonts/` | The three font families as `.woff2` files named by their content hash, and `OFL.txt` with their copyright notices and licence ([D2](DECISIONS.md#d2-fonts-served-as-separate-self-hosted-files-not-embedded-in-the-html), [D7](DECISIONS.md#d7-font-files-named-by-their-content-linked-relatively-and-preloaded)). |
 | `Dockerfile`, `.dockerignore` | The image: the pinned unprivileged nginx with `site/` and `nginx/` copied in, nothing else ([D9](DECISIONS.md#d9-how-the-container-runs-nginx)). |
 | `nginx/` | The whole nginx configuration: `nginx.conf`, the security headers in `headers.conf`, and `csp.conf`, which is generated ([D10](DECISIONS.md#d10-the-security-headers-and-what-the-csp-allows), [D11](DECISIONS.md#d11-nothing-about-a-visitor-is-logged)). |
@@ -28,8 +34,9 @@ DNS, tunnel) is done by hand, by the owner, and nothing in this repository does 
 | `scripts/portainer.mjs` | The one way the scripts talk to Portainer: token by name, never a prompt. |
 | `scripts/local-config.mjs`, `local.example.env` | The production host's details, read from the gitignored `local.env` ([D14](DECISIONS.md#d14-the-repository-is-public-so-nothing-about-the-owners-network-is-in-it)). |
 | `scripts/guard.mjs` | Fails on anything about the owner's network in a tracked file; `--history` checks every revision. |
-| `scripts/csp.mjs` | Writes `nginx/csp.conf` from the page's inline script and style; `--check` fails when they disagree. |
-| `scripts/check-page.mjs` | Loads the page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
+| `scripts/csp.mjs` | Writes `nginx/csp.conf`, one policy per page, from each page's inline script and style; `--check` fails when they disagree. |
+| `scripts/facts.mjs` | Fails unless every statement on the technical page is in its fact sheet with the same words and status, and no page has an en or em dash. |
+| `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
 
@@ -46,25 +53,37 @@ docker compose down
 
 `WEB_PORT=8081 docker compose up -d --build` if 8080 is taken.
 
-**After changing `site/index.html`**, regenerate the policy, or the browser will
-refuse the page's own script or style:
+**After changing a page in `site/`**, regenerate the policies, or the browser
+will refuse the page's own script or style:
 
 ```sh
 node scripts/csp.mjs              # rewrites nginx/csp.conf; commit it with the page
 ```
 
-To check the page the way a visitor's browser sees it (needs Node 22 and Edge or
-Chrome; set `BROWSER` to use another Chromium). It exits 1 on any console error,
-CSP violation, failed request or request to another origin:
+**After changing `site/under-the-hood.html`**, the fact sheet changes with it:
+every statement on the page is a row in `docs/under-the-hood-facts.md`, with its
+source in the product repository, and a statement the product does not support
+does not go on the page (D17).
 
 ```sh
-node scripts/check-page.mjs http://localhost:8080/                    # report only
+node scripts/facts.mjs            # the page and its fact sheet agree
+```
+
+To check the pages the way a visitor's browser sees them (needs Node 22 and Edge
+or Chrome; set `BROWSER` to use another Chromium). The site's root checks every
+page. It exits 1 on any console error, CSP violation, failed request, request to
+another origin, or en or em dash:
+
+```sh
+node scripts/check-page.mjs http://localhost:8080/                    # every page, report only
+node scripts/check-page.mjs http://localhost:8080/under-the-hood      # one page
 node scripts/check-page.mjs http://localhost:8080/ --shots out/shots  # and screenshots
 ```
 
-Without Docker, any static file server on `site/` shows the page, though
-without the headers (browsers refuse fonts from `file://`, so opening the file
-directly does not work):
+Without Docker, any static file server on `site/` shows the pages, though
+without the headers, and the technical page only at `/under-the-hood.html`
+(browsers refuse fonts from `file://`, so opening the file directly does not
+work):
 
 ```sh
 python -m http.server 8000 --directory site
@@ -78,10 +97,11 @@ stack runs exactly that tag
 [D12](DECISIONS.md#d12-the-image-is-built-in-github-actions-on-a-version-tag-and-tested-before-it-is-pushed),
 [D13](DECISIONS.md#d13-the-portainer-stack-created-through-the-api-bound-to-one-lan-address)).
 
-1. **Change, check, commit, push.** After any change to `site/index.html`:
+1. **Change, check, commit, push.** After any change to a page:
 
    ```sh
-   node scripts/csp.mjs                              # the policy follows the page
+   node scripts/csp.mjs                              # the policies follow the pages
+   node scripts/facts.mjs                            # the technical page says only what it may
    docker compose up -d --build                      # look at it on http://localhost:8080/
    node scripts/check-page.mjs http://localhost:8080/   # must end "clean"
    git commit -am "…" && git push
@@ -94,10 +114,10 @@ stack runs exactly that tag
    gh run watch --repo allvibenocry/website          # the release workflow for the tag
    ```
 
-   The workflow checks the CSP against the page, builds the image, runs and
-   checks it, pushes `ghcr.io/allvibenocry/website:v0.1.1` and `:sha-<commit>`,
-   reads both back, and checks that the package is public. Nothing is
-   pushed if any check fails.
+   The workflow checks each page's CSP against the page and the technical page
+   against its fact sheet, builds the image, runs and checks it, pushes
+   `ghcr.io/allvibenocry/website:v0.1.1` and `:sha-<commit>`, reads both back,
+   and checks that the package is public. Nothing is pushed if any check fails.
 
 3. **Deploy.** `plan` changes nothing; `deploy --yes` deploys:
 
