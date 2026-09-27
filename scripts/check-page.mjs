@@ -6,13 +6,14 @@
  *   node scripts/check-page.mjs http://127.0.0.1:8080/                  # every page
  *   node scripts/check-page.mjs http://127.0.0.1:8080/under-the-hood    # one page
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --page main      # the main page alone
+ *   node scripts/check-page.mjs http://127.0.0.1:8080/ --widths all     # 1440, 390, 360, 430 and 768
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --shots out/after
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --full out/after-full
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --json out/report.json
  *   node scripts/check-page.mjs --deployed              # the production site, from local.env (D14)
  *
  * The site's root means every page: the main page and /under-the-hood (D17).
- * For each, at desktop and at mobile width:
+ * For each, at desktop and at mobile width, or at the widths `--widths` names:
  *
  *  - every request the page makes, grouped by origin, and any that failed;
  *  - every console message and uncaught exception, and every Content-Security-
@@ -50,10 +51,19 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { decode, encode } from "./compare-shots.mjs";
 
+/**
+ * The widths a page is checked at. Desktop and the 390 px phone are the
+ * default; `--widths` picks others, by width or "all". Every phone is taken at
+ * 2x, which is enough to read and keeps a full page's picture a sensible size.
+ */
 const VIEWPORTS = {
   desktop: { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false },
   mobile: { width: 390, height: 844, deviceScaleFactor: 2, mobile: true },
+  "mobile-360": { width: 360, height: 780, deviceScaleFactor: 2, mobile: true },
+  "mobile-430": { width: 430, height: 932, deviceScaleFactor: 2, mobile: true },
+  tablet: { width: 768, height: 1024, deviceScaleFactor: 2, mobile: true },
 };
+const DEFAULT_VIEWPORTS = ["desktop", "mobile"];
 
 /**
  * The site's pages, by path. Each has its sections (by the element that holds
@@ -439,7 +449,7 @@ async function fullShot(cdp, dir, viewport, scheme, page) {
      change different. */
   const boxes = await evaluate(
     cdp,
-    `(() => { const seen = new Map(); return [...document.querySelectorAll('header, footer, nav, section, [id], .nav-links, .foot-links, .foot-top, .foot-bottom, .open > *, .cta-row, .dusk, .band')].map(el => {
+    `(() => { const seen = new Map(); return [...document.querySelectorAll('header, footer, nav, section, [id], .nav-links, .foot-links, .foot-top, .foot-bottom, .open > *, .cta-row, .honest, .dusk, .band')].map(el => {
       const base = el.tagName.toLowerCase() + (el.id ? '#' + el.id : el.classList.length ? '.' + [...el.classList].join('.') : '');
       const n = seen.get(base) ?? 0; seen.set(base, n + 1);
       const r = el.getBoundingClientRect();
@@ -469,9 +479,19 @@ function parse(argv) {
     else if (rest[i] === "--json") options.json = rest[(i += 1)];
     // "main" rather than "/": Git Bash rewrites a lone "/" into a Windows path.
     else if (rest[i] === "--page") options.page = rest[(i += 1)] === "main" ? "/" : `/${rest[i].replace(/^\/+/, "")}`;
+    else if (rest[i] === "--widths") {
+      const wanted = rest[(i += 1)];
+      options.viewports = wanted === "all"
+        ? Object.keys(VIEWPORTS)
+        : wanted.split(",").map((w) => {
+            const key = Object.keys(VIEWPORTS).find((k) => String(VIEWPORTS[k].width) === w.trim() || k === w.trim());
+            if (!key) throw new Error(`no width ${w}; the widths are ${Object.values(VIEWPORTS).map((v) => v.width).join(", ")}`);
+            return key;
+          });
+    }
     else throw new Error(`unknown option ${rest[i]}`);
   }
-  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood] [--shots dir] [--full dir] [--json file]");
+  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood] [--widths all|360,390,...] [--shots dir] [--full dir] [--json file]");
   // The root is the whole site, or the one page --page names; any other path is
   // that one page.
   const where = new URL(url);
@@ -592,7 +612,7 @@ async function main() {
     for (const p of paths) {
       const pageUrl = new URL(p, origin).href;
       report.pages[p] = { url: pageUrl, runs: {} };
-      for (const viewport of Object.keys(VIEWPORTS)) {
+      for (const viewport of options.viewports ?? DEFAULT_VIEWPORTS) {
         const { run, bad } = await checkOne(browser, pageUrl, origin, PAGES[p], viewport, options);
         report.pages[p].runs[viewport] = run;
         problems += bad;
@@ -603,7 +623,7 @@ async function main() {
   }
 
   if (options.json) writeFileSync(options.json, `${JSON.stringify(report, null, 2)}\n`);
-  process.stdout.write(`\n${problems === 0 ? `clean: ${paths.length} page(s), both widths: no errors, no violations, no other origins, no dashes` : `${problems} problem(s)`}\n`);
+  process.stdout.write(`\n${problems === 0 ? `clean: ${paths.length} page(s), ${(options.viewports ?? DEFAULT_VIEWPORTS).length} width(s): no errors, no violations, no other origins, no dashes` : `${problems} problem(s)`}\n`);
   if (problems > 0) process.exitCode = 1;
 }
 
