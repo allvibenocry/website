@@ -15,6 +15,11 @@
  * text that matched**: this repository and its CI logs are public, and a check
  * that repeats a leaked address has leaked it again. Examples in this
  * repository use 192.0.2.0/24, a range reserved for documentation.
+ *
+ * Two private ranges are allowed, exactly as written and nowhere else in their
+ * ranges: the product's own Docker address pools, which the product repository
+ * publishes (its D16) and the under-the-hood page names. They are design
+ * values, nobody's network; the product's own guard allows the same two.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -27,6 +32,10 @@ const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8"
 
 const PRIVATE_V4 =
   /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})(?:\/\d{1,2})?\b/;
+const ALLOWED_ADDRESSES = new Map([
+  ["172.20.0.0/14", "the product's Docker address pool (product D16): a design value, nobody's network"],
+  ["10.201.0.0/16", "the product's fallback pool (product D16)"],
+]);
 const WINDOWS_PROFILE = /\b[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s"'`]+/;
 
 const local = existsSync(LIST)
@@ -42,7 +51,8 @@ function inspect(text) {
   const found = [];
   text.split("\n").forEach((line, index) => {
     const lower = line.toLowerCase();
-    if (PRIVATE_V4.test(line)) found.push({ line: index + 1, kind: "a private IPv4 address" });
+    const addresses = [...line.matchAll(new RegExp(PRIVATE_V4.source, "g"))].map((m) => m[0]);
+    if (addresses.some((a) => !ALLOWED_ADDRESSES.has(a))) found.push({ line: index + 1, kind: "a private IPv4 address" });
     if (WINDOWS_PROFILE.test(line)) found.push({ line: index + 1, kind: "a Windows user profile path" });
     if (local && local.some((s) => lower.includes(s))) found.push({ line: index + 1, kind: "a string from .local/private-strings.txt" });
   });
