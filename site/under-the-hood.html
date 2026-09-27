@@ -273,6 +273,7 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
         <li><a href="#rollback">Rollback and data</a></li>
         <li><a href="#keys">Secrets and keys</a></li>
         <li><a href="#offsite">Off-site backups</a></li>
+        <li><a href="#planned">Planned, and on the main page</a></li>
         <li><a href="#limits">What it does not protect against</a></li>
         <li><a href="#rules">The house rules</a></li>
         <li><a href="#source">Read the source</a></li>
@@ -634,6 +635,20 @@ footer{background:var(--hero-bg);color:var(--hero-ink);font-family:var(--display
     <div class="callout" data-fact="O8">
       <p><span class="badge b-planned">Planned</span><strong>Keep the recovery key outside the house as well.</strong> After a fire, an off-site backup is useless if the only copy of the recovery key burned with the laptop. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d29-the-architect-accepts-d13-with-two-follow-ups">D29</a></span></p>
     </div>
+  </section>
+
+  <section class="section" id="planned" aria-labelledby="planned-h">
+    <h2 id="planned-h">Planned, and on the main page</h2>
+    <p class="lead">The main page shows these as part of what the product does. Each is an entry in the product's <a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md">roadmap</a>, with its reasons.</p>
+    <ul class="facts">
+      <li data-fact="N1"><span class="badge b-planned">Planned</span><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md#a-key-vault">A key vault</a>: API keys stored encrypted on the machine and handed to apps at run time, never in code, the repository or a chat. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d33-the-websites-promises-are-planned-here-or-they-come-off-the-website">D33</a></span></li>
+      <li data-fact="N2"><span class="badge b-planned">Planned</span><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md#the-control-panel-at-allvibelocal">The control panel at <code>allvibe.local</code></a>, found on the home network by multicast DNS, with the machine's address as the fallback. Projects keep their own ports on the host's address. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d18-projects-are-reached-at-the-hosts-address-and-a-port-per-environment">D18</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d30-the-architect-accepts-d18-for-version-1">D30</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d33-the-websites-promises-are-planned-here-or-they-come-off-the-website">D33</a></span></li>
+      <li data-fact="N3"><span class="badge b-planned">Planned</span><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md#an-installer-on-a-usb-stick">An installer on a USB stick</a> that installs Debian 13 and the suite on an old computer. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d33-the-websites-promises-are-planned-here-or-they-come-off-the-website">D33</a></span></li>
+      <li data-fact="N4"><span class="badge b-planned">Planned</span><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md#disk-health-warnings">Disk health warnings</a> in plain language, from the disk's own health data. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d33-the-websites-promises-are-planned-here-or-they-come-off-the-website">D33</a></span></li>
+      <li data-fact="N5"><span class="badge b-planned">Planned</span><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md#a-monthly-check-up">A monthly check-up</a>: updates prepared in the test copy for you to try, then shipped through the same gates as any other change. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d25-a-release-is-a-commit-that-dev-ran-behind-a-restorable-backup">D25</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d33-the-websites-promises-are-planned-here-or-they-come-off-the-website">D33</a></span></li>
+      <li data-fact="N6"><span class="badge b-planned">Planned</span><a href="https://github.com/allvibenocry/allvibenocry/blob/main/docs/roadmap.md#moving-to-a-new-computer">Moving to a new computer</a>: install, point it at the backups, and restore the whole machine with the recovery key. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d13-backups-are-encrypted-and-the-key-cannot-be-lost-unnoticed">D13</a>, <a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d33-the-websites-promises-are-planned-here-or-they-come-off-the-website">D33</a></span></li>
+      <li data-fact="N7"><span class="badge b-planned">Planned</span>The main page also relies on later work the product names in its CLAUDE.md: the AI agent's own container, the GitHub integration, the key check before push, and the control panel itself. <span class="refs"><a href="https://github.com/allvibenocry/allvibenocry/blob/main/DECISIONS.md#d28-what-the-first-brief-deliberately-leaves-simple">D28</a></span></li>
+    </ul>
   </section>
 
   <section class="section" id="limits" aria-labelledby="limits-h">
