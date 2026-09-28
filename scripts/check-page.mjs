@@ -26,7 +26,9 @@
  *    steps, which light up once when they come into view, the headings, and
  *    every diagram's text alternative. What each one left on the page is
  *    recorded, so two runs can be compared for behaviour and not only for looks;
- *  - no en or em dash anywhere in the page's text or its text alternatives.
+ *  - no en or em dash anywhere in the page's text or its text alternatives;
+ *  - its icons (D26): every one its head declares, and every one its web
+ *    manifest names, answering 200 with its own type, nosniff and a cache time.
  *
  * `--shots` saves one screenshot per section and width after its animations
  * have settled. `--full` saves full-page screenshots with reduced motion, light
@@ -407,6 +409,49 @@ async function pageChecks(cdp) {
   );
 }
 
+/** The type each kind of icon file must be served with (D26). */
+const ICON_TYPES = {
+  ico: /^image\/(x-icon|vnd\.microsoft\.icon)\b/,
+  svg: /^image\/svg\+xml\b/,
+  png: /^image\/png\b/,
+  webmanifest: /^application\/manifest\+json\b/,
+};
+
+/**
+ * Every icon the page's head declares, its web manifest included, and every
+ * icon that manifest names: each fetched as a browser would, and each must
+ * answer 200 with its own type, nosniff and a cache time. A page that declares
+ * no icon at all fails too.
+ */
+async function iconChecks(cdp) {
+  const declared = await evaluate(cdp, "[...document.querySelectorAll('link[rel~=icon], link[rel=apple-touch-icon], link[rel=manifest]')].map(l => l.href)");
+  const urls = new Set(declared);
+  for (const url of declared.filter((u) => u.endsWith(".webmanifest"))) {
+    try {
+      const manifest = await (await fetch(url)).json();
+      for (const icon of manifest.icons ?? []) urls.add(new URL(icon.src, url).href);
+    } catch {
+      /* an unreadable manifest fails below, on its own type or status */
+    }
+  }
+  const icons = [];
+  for (const url of urls) {
+    const response = await fetch(url);
+    await response.arrayBuffer();
+    const type = response.headers.get("content-type") ?? "";
+    const cache = response.headers.get("cache-control") ?? "";
+    const wanted = ICON_TYPES[new URL(url).pathname.split(".").pop()];
+    icons.push({
+      path: new URL(url).pathname,
+      status: response.status,
+      type,
+      cache,
+      ok: response.status === 200 && Boolean(wanted?.test(type)) && response.headers.get("x-content-type-options") === "nosniff" && /max-age=\d+/.test(cache),
+    });
+  }
+  return { declared: declared.length, icons };
+}
+
 /** One screenshot per section, each after its animations have settled. */
 async function sectionShots(cdp, dir, viewport, page) {
   const saved = [];
@@ -573,6 +618,7 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   const { fonts } = await open(cdp, url, viewport, [{ name: "prefers-color-scheme", value: "light" }]);
   const did = await page.exercise(cdp);
   const checks = await pageChecks(cdp);
+  const icons = await iconChecks(cdp);
   const shots = options.shots ? await sectionShots(cdp, options.shots, viewport, page) : [];
   const csp = await evaluate(cdp, "window.__csp");
 
@@ -617,13 +663,15 @@ async function checkOne(browser, url, origin, page, viewport, options) {
     cspViolations: csp,
     dashes: checks.dashes,
     unnamedDrawings: checks.unnamedDrawings,
+    icons: icons.icons,
     fonts,
     behaviour: did,
     shots: [...shots, ...full],
   };
   const bad =
     elsewhere.length + seen.failed.length + errors.length + seen.exceptions.length + csp.length +
-    checks.dashes.length + checks.unnamedDrawings.length + notLit + notPlaying;
+    checks.dashes.length + checks.unnamedDrawings.length + notLit + notPlaying +
+    icons.icons.filter((icon) => !icon.ok).length + (icons.declared ? 0 : 1);
 
   const out = (line) => process.stdout.write(`${line}\n`);
   out(`\n== ${page.name}, ${viewport} (${VIEWPORTS[viewport].width}x${VIEWPORTS[viewport].height})`);
@@ -639,6 +687,7 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   out(`CSP violations  ${csp.length === 0 ? "none" : JSON.stringify(csp)}`);
   out(`dashes          ${checks.dashes.length === 0 ? "none" : JSON.stringify(checks.dashes)}`);
   out(`drawings        ${checks.unnamedDrawings.length === 0 ? "every one named" : `unnamed: ${JSON.stringify(checks.unnamedDrawings)}`}`);
+  out(`icons           ${icons.declared ? icons.icons.map((i) => `${i.ok ? "" : "NOT OK "}${i.path} ${i.status} ${i.type} (${i.cache})`).join("; ") : "NONE declared"}`);
   out(`fonts           ${fonts.join("; ")}`);
   out(`behaviour       ${JSON.stringify(did)}`);
   if (notLit) out("release steps   NOT lit up as they should be: dim until seen, then all lit");

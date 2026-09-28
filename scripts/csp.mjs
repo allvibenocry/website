@@ -97,9 +97,16 @@ export function policy(html) {
   }
   // The five woff2 files next to the page.
   if (/@font-face/.test(css)) directives.push(["font-src", "'self'"]);
-  // Images only if the page has one, and then only inline: the main page's
-  // check mark is an SVG data URI in its CSS.
-  if (/url\(\s*["']?data:image\//i.test(css) || /<img\s[^>]*src\s*=\s*["']?data:image\//i.test(html)) directives.push(["img-src", "data:"]);
+  // Images only if the page has one: its icons, from this origin (Firefox
+  // holds a tab's icon to img-src), and inline ones, as the main page's check
+  // mark, an SVG data URI in its CSS.
+  const markup = markupOf(html);
+  const images = [];
+  if (/<link\s[^>]*rel\s*=\s*["']?(icon|apple-touch-icon)["'\s>]/i.test(markup)) images.push("'self'");
+  if (/url\(\s*["']?data:image\//i.test(css) || /<img\s[^>]*src\s*=\s*["']?data:image\//i.test(html)) images.push("data:");
+  if (images.length) directives.push(["img-src", ...images]);
+  // Its web manifest, from this origin, if it links one (D26).
+  if (/<link\s[^>]*rel\s*=\s*["']?manifest["'\s>]/i.test(markup)) directives.push(["manifest-src", "'self'"]);
   // A form may only go back to this origin; a page without one may submit nowhere.
   // (The main page's waitlist form is a mockup whose script prevents sending.)
   directives.push(["form-action", /<form[\s>]/i.test(markupOf(html)) ? "'self'" : "'none'"]);

@@ -760,3 +760,51 @@ container. They are recorded so that a change at the edge can be noticed.
 
 **Considered instead.** Turning the headers off, which the current plan does
 not allow; the plan, like everything at the edge, is the owner's.
+
+## D26. The site's icons: the owner's drop, at the names browsers look for
+
+*2026-09-28. The product's fourth brief, item 3.*
+
+**What.** The owner's icon, a drop with a check mark, as five files served at
+the conventional paths, taken from the owner's files unchanged:
+`/favicon.ico` (16, 32 and 48 px), `/favicon.svg`, `/apple-touch-icon.png`
+(180 px), `/icon-192.png` and `/icon-512.png`; and `/site.webmanifest`, a
+small web manifest with the site's name and the two larger icons. Every page's
+head declares them:
+
+```html
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+```
+
+This replaces D9's `204` for `/favicon.ico`, which was there only because the
+site had no icon.
+
+**Types.** nginx's own `mime.types` gives `.ico`, `.svg` and `.png` their
+types, and has none for `.webmanifest`, which would go out as
+`application/octet-stream`: its location sets `application/manifest+json`.
+Like everything else, they go out with `nosniff`.
+
+**Caching: a day.** The fonts are named by their content and cached for a
+year (D7), but an icon has to keep the name browsers ask for, so a new one
+cannot get a new name. The icons and the manifest are sent with `public,
+max-age=86400`: a changed icon reaches a returning visitor within a day, and a
+visit does not ask for them again meanwhile. The pages stay `no-cache`.
+
+**The Content-Security-Policy** (D10, D17) follows each page, as before: a
+page that declares icons gets `img-src 'self'` (some browsers hold a tab's icon to
+it; the main page keeps `data:` for its check mark), and one that links the
+manifest gets `manifest-src 'self'`. Nothing from another origin.
+
+**Checked.** check-page (D8) now fetches every icon a page declares, and
+every icon its manifest names, and fails unless each answers `200` with its
+own type, `nosniff` and a cache time; and fails a page that declares none.
+In a real Edge window, not headless, both pages' tabs showed the drop.
+
+**Content credentials.** The four image files the owner supplied carry C2PA
+content credentials: a signed statement by Anthropic that Claude provided the
+file (in the SVG's metadata and in each PNG's `caBX` chunk, about 5.7 kB
+each, most of the SVG's 8 kB). There is nothing private in them. They are
+served as supplied; removing them would be a change to the owner's files.
