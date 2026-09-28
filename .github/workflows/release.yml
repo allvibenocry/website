@@ -102,7 +102,18 @@ jobs:
           curl -sS -D "$RUNNER_TEMP/font.txt" -o /dev/null "http://127.0.0.1:8080${font}"
           grep -qi '^cache-control: public, max-age=31536000, immutable' "$RUNNER_TEMP/font.txt"
 
-          [ "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/favicon.ico)" = 204 ]
+          # The icons and their manifest (D26): each at its path, with its own
+          # type, nosniff and a day's cache.
+          for icon in /favicon.ico:image/x-icon /favicon.svg:image/svg+xml \
+                      /apple-touch-icon.png:image/png /icon-192.png:image/png \
+                      /icon-512.png:image/png /site.webmanifest:application/manifest+json; do
+            path=${icon%%:*}; type=${icon#*:}
+            curl -sS -D "$RUNNER_TEMP/icon.txt" -o /dev/null "http://127.0.0.1:8080${path}"
+            head -1 "$RUNNER_TEMP/icon.txt" | grep -q ' 200' || { echo "::error::${path} did not answer 200"; exit 1; }
+            grep -qi "^content-type: ${type}" "$RUNNER_TEMP/icon.txt" || { echo "::error::${path} is not ${type}"; exit 1; }
+            grep -qi '^x-content-type-options: nosniff' "$RUNNER_TEMP/icon.txt"
+            grep -qi '^cache-control: public, max-age=86400' "$RUNNER_TEMP/icon.txt"
+          done
 
           # Under the hood (D17): at its clean URL, as HTML, with a policy of
           # its own that is not the main page's; the two other ways of writing
@@ -119,6 +130,21 @@ jobs:
             curl -sS -D "$RUNNER_TEMP/redirect.txt" -o /dev/null "http://127.0.0.1:8080${other}"
             head -1 "$RUNNER_TEMP/redirect.txt" | grep -q ' 301'
             tr -d '\r' < "$RUNNER_TEMP/redirect.txt" | grep -qi '^location: /under-the-hood$'
+          done
+
+          # The control panel's demo (D27): at its clean URL, as HTML, with a
+          # policy of its own; the two other spellings redirect to it.
+          demo="$RUNNER_TEMP/demo.txt"
+          curl -sS -D "$demo" -o /dev/null http://127.0.0.1:8080/demo
+          head -1 "$demo" | grep -q ' 200'
+          grep -qi '^content-type: text/html' "$demo"
+          grep -qi '^content-security-policy: default-src .none.' "$demo"
+          [ "$(grep -i '^content-security-policy:' "$demo")" != "$(grep -i '^content-security-policy:' "$page")" ]
+          [ "$(grep -i '^content-security-policy:' "$demo")" != "$(grep -i '^content-security-policy:' "$uth")" ]
+          for other in /demo/ /demo.html; do
+            curl -sS -D "$RUNNER_TEMP/redirect.txt" -o /dev/null "http://127.0.0.1:8080${other}"
+            head -1 "$RUNNER_TEMP/redirect.txt" | grep -q ' 301'
+            tr -d '\r' < "$RUNNER_TEMP/redirect.txt" | grep -qi '^location: /demo$'
           done
 
           # Nothing about a visitor is logged (D11): after all of the above,

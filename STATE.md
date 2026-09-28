@@ -66,6 +66,14 @@ section of both pages before and after, at every phone and tablet width, is in
 
 ## In progress
 
+**The product's fifth brief.** Item 2 is done (D29, `c27db1d`). **Items 3 and
+4 are blocked** (D30): the release workflow for tag `v0.3.0` stopped before
+pushing anything, because its own test still expected the old favicon answer.
+The test is fixed on `main`; the tag cannot be re-run. Releasing needs the
+owner to either allow moving the tag `v0.3.0` to the fixed commit (a rewrite of
+a pushed ref, rule 11), or authorise `v0.3.1` at the fixed commit, with the
+same site. Until then `v0.2.0` stays live and the phone preview keeps running.
+
 **The product's fourth brief**, its website items (the product's items 1 and 2
 are in its own repository). Waiting for the owner at the stop after item 6: to
 look at the site on a computer and a phone, and to do the sign-in test in the

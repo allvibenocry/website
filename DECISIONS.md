@@ -981,3 +981,27 @@ partial step. Nothing is without a source.
 
 **Under the hood** stays read at product commit `6a20da8`: nothing it says has
 changed in the product since.
+
+## D30. The release workflow's own test, caught up with the icons and the demo
+
+*2026-09-29. The product's fifth brief, item 3.*
+
+**What happened.** Tag `v0.3.0` at `c27db1d` started the release workflow (run
+36494595479). It stopped at "The image works before anything is pushed",
+before logging in to GHCR: its test still expected `/favicon.ico` to answer
+`204`, which D26 replaced with the icon itself. The fourth brief updated nginx
+and check-page for the icons, and not the workflow's own test. **Nothing was
+pushed**: no image, no digest. `v0.2.0` stays live.
+
+**Fixed on `main`**: the test now checks each of the six icon paths (200, its
+type, `nosniff`, a day's cache) and `/demo` (200, HTML, a policy of its own,
+different from both other pages', and `/demo/` and `/demo.html` redirected
+to it). Run locally as the workflow runs it, against an image of the same
+site: the old test fails at the favicon, and the new one passes.
+
+**Not done, and why.** The workflow runs its test from the tagged commit, so
+`v0.3.0` at `c27db1d` can never pass. Releasing needs one of two things only
+the owner can give: moving the pushed tag `v0.3.0` to the fixed commit, which
+rewrites a pushed ref (rule 11), or a release authorised as `v0.3.1` at the
+fixed commit, which carries the same site. The owner's "release" was for
+`v0.3.0` only. So the release and the deploy wait.
