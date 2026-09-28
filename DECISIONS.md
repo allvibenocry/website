@@ -677,3 +677,53 @@ top.
 - **The main page links to the page from its hardware section too**, beside
   "Start it again", and says in its safety section that some of it is built and
   some planned (the product's D33).
+
+## D24. Every claim on the main page has a source, and none goes further
+
+*2026-09-28. After the architect's second review of the website.*
+
+D21 listed five claims with no source and four that went further than theirs,
+and left the decision to the architect and the owner. They decided:
+
+- **The five get sources, as plans.** The product's roadmap gains agent
+  adapters (Claude Code first, with the user's own API key; the suite never
+  touches the user's AI account or pays for AI usage), a guided plan, sign-in
+  and invitations, and the team version after version 1, and its README says
+  who makes it (D34 there, commit `218a518`). The main page's words for them
+  stay as they are.
+- **The four get new words**, and one more that re-reading the sheet showed:
+  - the nightly backup copies the apps' *data*, not the apps;
+  - *which* backups are tested: the nightly one and the one each release takes
+    (one taken by hand is not, until the next check);
+  - a release *starts* the new version, checks it, and rolls back if it does not
+    answer: nothing on the page may say the new version is held back before it
+    starts, so step 4 and the demonstration's log say so. The gates in scene 4
+    stay: their caption says each gate opens when its check passes, which is
+    still true;
+  - moving to a new computer needs the recovery key, and is no longer "one
+    click";
+  - "without ever losing your data" loses "ever": the product lists what it
+    does not protect against (Under the hood, "What it does not protect
+    against"), and "ever" said there was nothing.
+- **`docs/main-page-claims.md` is read at `218a518`**: every claim has a source,
+  none is left without one, and none says more than its source. What changed is
+  at its end. It is still not checked mechanically (D21).
+- **Under the hood lists the four new roadmap entries** in "Planned, and on the
+  main page" (N8 to N11), and its fact sheet is read at `218a518`: the only line
+  that moved is STATE.md's "To verify on real hardware", one line down.
+- **A change of words is compared with the changed elements pinned.** The
+  main page's text is 17 px with a line height of 1.55, so a sentence that gains
+  a line moves everything under it by 26.35 px, a fraction of a device pixel;
+  and its background is one gradient and grid the height of the page, so a
+  taller page changes the colour of every row. Block by block (D18), everything
+  under the change then differs. So check-page's `--pin` gives each changed
+  element the same height in the pictures before and after (larger than it
+  needs in either), and everything outside the changed elements must then be
+  identical. check-page now records those elements by their place
+  (`steps>4`, `signs>2`, `hero-copy>1`), since their classes change as the page
+  runs. compare-shots' `--margin` leaves out what a changed element paints
+  outside its own box: step 4's card has a 6 px shadow, and at 360 and 430 px,
+  where the new text takes another line above the card in a pinned step, the
+  card is shorter, so the shadow's lower edge moves. A row-by-row
+  comparison that matched unchanged rows wherever they moved was tried first,
+  and dropped: with the page-tall gradient, no row under a change is unchanged.
