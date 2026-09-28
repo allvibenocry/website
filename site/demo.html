@@ -846,7 +846,7 @@ Rules
       if (st === 'ready') cont = `<p><b>Nothing to send right now.</b> Try step ${i + 1} in the test copy, then press It works or Something is wrong in the plan. Your AI app sees your answer.</p>`;
       else {
         const next = !p.plan ? `Let us change something in ${p.name}.` : (i === -1 ? 'Every step is tried. What should we change next?' : 'Continue with the plan.');
-        cont = `<p><b>Continue in your AI app.</b> Type this there, or use its /allvibe command:</p><p class="mono say-this">${esc(next)}</p><button type="button" class="btn small" data-action="copy-next" data-text="${esc(next)}">Copy the message</button>`;
+        cont = `<p><b>Continue in your AI app.</b> Type this there:</p><p class="mono say-this">${esc(next)}</p><button type="button" class="btn small" data-action="copy-next" data-text="${esc(next)}">Copy the message</button>`;
       }
       body = `<div class="chat" id="chat" role="log" aria-live="polite">${items}</div>
         <div class="continue">${cont}</div>`;
@@ -992,7 +992,7 @@ Rules
       const rows = [
         ['allvibe-guestbook-prod-app', 'Guestbook, live app', '82 MB'], ['allvibe-guestbook-prod-db', 'Guestbook, live app\'s data', '64 MB'],
         ['allvibe-guestbook-dev-app', 'Guestbook, test copy', '79 MB'], ['allvibe-guestbook-dev-db', 'Guestbook, test copy\'s data', '58 MB'],
-        ['allvibe-guestbook-agent', 'The builder', '410 MB'], ['allvibe-guestbook-gate', 'The builder\'s one way out', '31 MB'],
+        ['allvibe-guestbook-agent', 'The builder', '410 MB'], ['allvibe-guestbook-agent-egress','The builder\'s one way out', '31 MB'],
         ['allvibe-recipes-dev-app', 'Recipe box, test copy', '74 MB'], ['allvibe-proxy', 'The doors', '12 MB']
       ].map(([n, w, m]) => `<tr><td>${n}</td><td>${w}</td><td><span class="ok-dot"></span>Running, healthy</td><td>${m}</td><td><button type="button" class="btn small line" data-action="logs" data-n="${n}">Logs</button></td></tr>`).join('');
       h += `<p class="intro" style="margin-top:28px">In the names below, "prod" means the live app and "dev" means the test copy.</p><div class="head" style="margin-bottom:12px"><h2>Containers</h2><button type="button" class="explain" data-action="explain" data-k="container">Explain this</button></div>
@@ -1350,8 +1350,8 @@ Rules
   function mcpDialog(){
     openModal(`<h2 id="dialog-title">Connect your own AI app</h2>
       <ol class="mini-plan"><li><b>Open your AI app</b><span>Claude Desktop, Claude Code, VS Code or Cursor, on a computer on your home network.</span></li>
-      <li><b>Add this machine to it</b><span>This kind of connection is called MCP. Address: <span class="mono">http://allvibe.local:8700/mcp</span></span></li>
-      <li><b>Enter the one-time connection code</b><span>It is shown once and works for 10 minutes: <span class="mono">4F7-KQ2</span> (pretend)</span></li></ol>
+      <li><b>Add this machine to it</b><span>This kind of connection is called MCP. Use the address this machine shows you.</span></li>
+      <li><b>Enter the connection code</b><span>A one-time connection code, shown once.</span></li></ol>
       <p>Your AI app signs in the way it always does. This machine never sees your AI login. The AI can only reach test copies, every call it makes is logged, and releases always happen here in the panel.</p>
       <div class="dialog-actions"><button type="button" class="btn" data-action="close">Done</button></div>`);
   }

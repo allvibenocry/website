@@ -952,3 +952,32 @@ are within the noise: outside the change, at most 407 pixels differ, by at most
 hero on a phone differed by up to 4/255 across its whole area, a background
 shade following the hero's content; on a desktop the sections were within the
 noise either way.
+
+## D29. The demo's claims settled, and two main page claims planned again
+
+*2026-09-29. The product's fifth brief, item 2: the architect's review of the
+fourth.*
+
+**In the demo**, two corrections and nothing else: the gate's container is
+named as the product names it, `allvibe-guestbook-agent-egress`; and the MCP
+bridge's undecided details are gone: "Use the address this machine shows you",
+"A one-time connection code, shown once", and the box that asks the person to
+continue says "Type this there" without naming a command.
+
+**`docs/demo-claims.md`**, read at product commit `4f22bdf`: every one of its 81
+rows has a source. Four of the seven that had none are now plans in the
+product's roadmap (its D53): a release only after every step is tried, a fresh
+backup before every change to the live app, doctor every night, and mains and
+battery. The services' reach is now in the product's roadmap too, and the two
+corrections above settle the other two. The list is kept at the end of the
+sheet.
+
+**`docs/main-page-claims.md`**, read at `4f22bdf`: "Nothing moves on until you
+have seen it work" and "You try every step before it ships" are Planned again,
+sourced to that plan, with today's instructions to the agent noted as a
+partial step. Nothing is without a source.
+
+**Kept**: the icons' C2PA content credentials, as supplied (D26).
+
+**Under the hood** stays read at product commit `6a20da8`: nothing it says has
+changed in the product since.
