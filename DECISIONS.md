@@ -657,3 +657,23 @@ not, are what the comparison relies on.
 `check-page --widths all` checks both pages at 1440, 390, 360, 430 and 768 px,
 and on the main page's cards that every scene plays in view and none at the
 top.
+
+## D23. Under the hood shows what the main page relies on, and is read at a newer product commit
+
+*2026-09-28*
+
+- **A section, "Planned, and on the main page"**, lists the roadmap entries the
+  main page shows as part of the product (a key vault, the control panel at
+  `allvibe.local`, an installer on a USB stick, disk health warnings, a monthly
+  check-up, moving to a new computer), each Planned and linked to its entry in
+  the product's `docs/roadmap.md`, and the later work the product names in its
+  CLAUDE.md that the main page also shows. So a reader who comes from a promise
+  on the main page finds out, in one place, that it is a plan and why.
+- **The fact sheet is read at product commit `6451c59`**, the one that holds
+  those roadmap entries, instead of `148ccc5` (D17). Every source was checked
+  again at the new commit: the only line that moved is STATE.md's "To verify on
+  real hardware", three lines down. The sheet gains seven rows, N1 to N7, and
+  the page 106 statements in all.
+- **The main page links to the page from its hardware section too**, beside
+  "Start it again", and says in its safety section that some of it is built and
+  some planned (the product's D33).
