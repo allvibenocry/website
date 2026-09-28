@@ -1,0 +1,1455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>allvibe.local: demo of the All vibe no cry control panel</title>
+<meta name="description" content="Try the control panel of All vibe no cry with pretend data: plan an app with the architect, try each step, report a problem, put it live through the safety checks, and look under the hood.">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preload" href="fonts/bricolage-grotesque-variable.a756882d.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-next-400.5cb240a4.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-next-700.0dbe07ed.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-mono-400.87b5b94c.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/atkinson-hyperlegible-mono-600.a52c1396.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Fonts self-hosted in fonts/ (SIL Open Font License 1.1, see fonts/OFL.txt): Bricolage Grotesque, Atkinson Hyperlegible Next and Mono, the same files as the site's other pages. No third-party requests. */
+@font-face{font-family:'AVNC Display';font-style:normal;font-weight:200 800;font-stretch:75% 100%;font-display:swap;src:url(fonts/bricolage-grotesque-variable.a756882d.woff2) format('woff2');}
+@font-face{font-family:'AVNC Body';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-next-400.5cb240a4.woff2) format('woff2');}
+@font-face{font-family:'AVNC Body';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-next-700.0dbe07ed.woff2) format('woff2');}
+@font-face{font-family:'AVNC Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-mono-400.87b5b94c.woff2) format('woff2');}
+@font-face{font-family:'AVNC Mono';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/atkinson-hyperlegible-mono-600.a52c1396.woff2) format('woff2');}
+:root{
+  --ink:#1B1530; --night:#1B1530; --pink:#FF4D94; --pink-soft:#FFE1EE; --sun:#FFC400; --sun-soft:#FFF3C4;
+  --go:#00A650; --go-soft:#DDF3E5; --stop:#D62B26; --stop-soft:#FBE0DF;
+  --canvas:#F3F0F8; --panel:#FFFFFF; --text:#1B1530; --muted:#5A5270; --line:rgba(27,21,48,.13); --line-strong:#1B1530;
+  --side-text:#EDE8FA; --side-muted:#A99FC4; --side-hover:rgba(255,255,255,.07); --side-active:rgba(255,77,148,.18);
+  --term:#18122A; --term-text:#EDE8FA; --term-dim:#9A91B6;
+  --display:"AVNC Display","Arial Black",system-ui,sans-serif;
+  --body:"AVNC Body",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"AVNC Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --shadow:6px 6px 0 var(--line-strong);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --canvas:#141020; --panel:#211A33; --text:#F3EEFF; --muted:#BDB4D3; --line:rgba(243,238,255,.14); --line-strong:#C9BFE6;
+    --pink-soft:#3B1F35; --sun-soft:#3A3217; --go-soft:#13301F; --stop-soft:#3A1614; --term:#0E0A18;
+  }
+}
+:root[data-theme="dark"]{
+  --canvas:#141020; --panel:#211A33; --text:#F3EEFF; --muted:#BDB4D3; --line:rgba(243,238,255,.14); --line-strong:#C9BFE6;
+  --pink-soft:#3B1F35; --sun-soft:#3A3217; --go-soft:#13301F; --stop-soft:#3A1614; --term:#0E0A18;
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;height:100%}
+body{font-family:var(--body);font-size:1rem;line-height:1.5;color:var(--text);background:var(--canvas);-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px;border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mono{font-family:var(--mono)}
+
+/* ---------- Shell ---------- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;min-height:100dvh}
+.side{background:var(--night);color:var(--side-text);display:flex;flex-direction:column;padding:18px 14px calc(18px + env(safe-area-inset-bottom,0px));position:sticky;top:0;height:100vh;height:100dvh}
+.side-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 6px 18px}
+.logo{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;background:none;border:0;padding:0;font-family:var(--mono);font-weight:600;font-size:1rem}
+.logo svg{width:26px;height:32px;flex:none}
+.menu-btn{display:none;background:none;border:1.5px solid var(--side-muted);color:var(--side-text);border-radius:10px;padding:6px 12px;font-weight:700}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow:auto}
+.nav-group{margin:14px 0 4px;padding:0 10px;color:var(--side-muted);font-size:.85rem;font-weight:700}
+.nav a,.nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;color:inherit;text-decoration:none;padding:9px 10px;border-radius:10px;font-weight:700;font-size:.97rem}
+.nav a:hover,.nav button:hover{background:var(--side-hover)}
+.nav [aria-current="page"]{background:var(--side-active);box-shadow:inset 3px 0 0 var(--pink)}
+.nav .sub{padding-left:20px;font-weight:400}
+.nav .dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--side-muted)}
+.nav .dot.live{background:var(--go)}
+.nav .dot.work{background:var(--pink)}
+.nav .new{color:var(--side-muted);font-weight:400}
+.side-status{display:flex;align-items:center;gap:10px;margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);font-size:.9rem;line-height:1.35}
+.side-status .led{width:10px;height:10px;border-radius:50%;background:var(--go);box-shadow:0 0 0 4px rgba(0,166,80,.25);flex:none}
+.side-status.warn .led{background:var(--sun);box-shadow:0 0 0 4px rgba(255,196,0,.25)}
+
+.main-wrap{min-width:0;display:flex;flex-direction:column}
+.demo-banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding:10px clamp(16px,3vw,36px);background:var(--sun);color:#1B1530;font-size:.93rem;line-height:1.35}
+.demo-banner b{font-family:var(--display);font-weight:800}
+.demo-banner .short{display:none}
+@media (max-width:640px){.demo-banner{flex-wrap:nowrap;padding:8px 16px}.demo-banner .long{display:none}.demo-banner .short{display:inline}}
+.demo-banner a.back{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.demo-banner button{background:#1B1530;color:#fff;border:0;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.88rem}
+main{padding:clamp(20px,3vw,36px) clamp(16px,3vw,36px) 64px;max-width:1240px;width:100%}
+main:focus{outline:none}
+
+@media (max-width:880px){
+  .app{grid-template-columns:1fr}
+  .side{position:sticky;top:0;height:auto;z-index:20;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+  .side-top{padding:0}
+  .menu-btn{display:block}
+  .nav{display:none;padding-top:12px;max-height:70vh}
+  .side.open .nav{display:flex}
+  .side-status{display:none}
+  .side.open .side-status{display:flex}
+}
+
+/* ---------- Type and common parts ---------- */
+h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.1;margin:0}
+h1{font-size:clamp(1.8rem,3.2vw,2.4rem)}
+h2{font-size:1.3rem}
+h3{font-size:1.08rem;letter-spacing:-.01em}
+p{margin:0}
+.muted{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 18px;border-radius:999px;border:2px solid transparent;background:var(--ink);color:#fff;font-weight:700;font-size:.95rem;text-decoration:none;white-space:nowrap}
+:root[data-theme="dark"] .btn:not(.line):not(.go):not(.pink),.dark-btn{background:var(--pink);color:#1B1530}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn:not(.line):not(.go):not(.pink){background:var(--pink);color:#1B1530}}
+.btn.line{background:transparent;color:var(--text);border-color:var(--line-strong)}
+.btn.go{background:var(--go);color:#1B1530;border-color:#1B1530}
+.btn.pink{background:var(--pink);color:#1B1530;border-color:#1B1530}
+.btn.small{min-height:34px;padding:0 14px;font-size:.88rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn .mono{font-weight:400;font-size:.85rem;opacity:.8}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;font-size:.85rem;font-weight:700;border:1.5px solid transparent;white-space:nowrap}
+.chip.live{background:var(--go-soft);border-color:var(--go);color:var(--text)}
+.chip.live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--go)}
+.chip.idle{background:transparent;border-color:var(--line);color:var(--muted)}
+.chip.work{background:var(--pink-soft);border-color:var(--pink);color:var(--text)}
+.chip.warn{background:var(--sun-soft);border-color:var(--sun);color:var(--text)}
+.strong{background:var(--panel);border:2px solid var(--line-strong);border-radius:20px;box-shadow:var(--shadow)}
+.quiet{background:var(--panel);border:1.5px solid var(--line);border-radius:16px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.head p{margin-top:8px}
+.section-title{margin:34px 0 14px}
+
+/* ---------- Home ---------- */
+.status-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center;padding:22px 24px}
+.status-hero .big{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--go);border:2px solid #1B1530}
+.status-hero .big svg{width:28px;height:28px}
+.status-hero h2{font-size:clamp(1.4rem,2.6vw,1.8rem)}
+.status-hero p{margin-top:6px;color:var(--muted);max-width:62ch}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:16px;border-top:1.5px solid var(--line)}
+.facts div{padding:14px 18px 2px 0}
+.facts dt{font-size:.88rem;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-weight:700}
+.notice{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px;margin-top:16px;padding:14px 18px;border-radius:14px;border:1.5px solid var(--sun);background:var(--sun-soft)}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.app-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;padding:18px 20px;min-height:170px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;transition:border-color .15s}
+.app-card:hover{border-color:var(--line-strong)}
+.app-card h3{font-size:1.25rem}
+.app-card .addr{margin-top:auto;font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.app-card.new{align-items:center;justify-content:center;border-style:dashed;border-width:2px;color:var(--muted);font-weight:700}
+.app-card.new .plus{font-family:var(--display);font-size:2rem;line-height:1;color:var(--text)}
+
+/* ---------- Project ---------- */
+.proj-links{display:flex;flex-wrap:wrap;gap:10px}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:22px;overflow-x:auto}
+.tabs button{background:none;border:0;padding:10px 14px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--pink)}
+.build{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:start}
+.build-left{display:flex;flex-direction:column;gap:22px;min-width:0}
+.plan{padding:22px 22px 12px}
+.plan .ask{margin-top:6px}
+.steps{list-style:none;margin:18px 0 0;padding:0;position:relative}
+.step{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;padding-bottom:22px}
+.step:not(:last-child)::before{content:"";position:absolute;left:18px;top:40px;bottom:2px;width:3px;border-radius:2px;background:var(--line)}
+.step.tried:not(:last-child)::before{background:var(--go)}
+.marker{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;border:2px solid var(--line);color:var(--muted);background:var(--panel)}
+.step.tried .marker{background:var(--go);border-color:#1B1530;color:#1B1530}
+.step.ready .marker{background:var(--pink);border-color:#1B1530;color:#1B1530;box-shadow:0 0 0 6px rgba(255,77,148,.22)}
+.step.building .marker{border-color:var(--pink);border-top-color:transparent;animation:spin 1s linear infinite}
+.step.building .marker span{animation:spin 1s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step h3{margin-top:9px}
+.step .check{margin-top:4px;color:var(--muted);font-size:.95rem}
+.step .state{margin-top:8px;font-size:.92rem;font-weight:700}
+.step.tried .state{color:var(--go)}
+.step.next h3{color:var(--muted)}
+.try-box{margin-top:12px;padding:14px;border-radius:14px;background:var(--pink-soft);border:1.5px solid var(--pink)}
+.try-box p{font-size:.95rem}
+.try-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.wrong{margin-top:10px;display:grid;gap:8px}
+.wrong textarea{width:100%;min-height:70px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--panel);padding:10px 12px;resize:vertical}
+.empty-plan{padding:6px 0 14px;color:var(--muted)}
+
+.helper{display:flex;flex-direction:column;background:var(--term);color:var(--term-text);border-radius:20px;border:2px solid #1B1530;overflow:hidden;position:sticky;top:20px;height:min(680px,calc(100vh - 40px));min-height:420px}
+.helper-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+.helper-head h2{font-size:1.1rem;color:#fff}
+.helper-head p{font-size:.85rem;color:var(--term-dim)}
+.helper-head .who{display:flex;align-items:center;gap:10px}
+.helper-head .who i{width:10px;height:10px;border-radius:50%;background:var(--go)}
+.log{flex:1;overflow:auto;padding:16px 18px;font-family:var(--mono);font-size:.9rem;line-height:1.55;display:flex;flex-direction:column;gap:10px}
+.log .you{color:var(--pink)}
+.log .you::before{content:"> ";color:var(--term-dim)}
+.log .ai{color:var(--term-text)}
+.log .tool{color:var(--term-dim);padding-left:14px;border-left:2px solid rgba(255,255,255,.15)}
+.log .note{color:var(--sun)}
+.log .thinking{color:var(--term-dim)}
+.log .thinking::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.prompt{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+.prompt input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;color:#fff;font-family:var(--mono);font-size:.9rem}
+.prompt input::placeholder{color:var(--term-dim)}
+.prompt .btn{background:var(--pink);color:#1B1530}
+
+.ship{padding:22px 24px}
+.ship-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.ship-top p{margin-top:6px;color:var(--muted)}
+.rail{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin:26px 0 6px;list-style:none;padding:0}
+.rail::before{content:"";position:absolute;left:calc(100%/12);right:calc(100%/12);top:17px;height:4px;border-radius:2px;background:var(--line)}
+.rail .fill{position:absolute;left:calc(100%/12);top:17px;height:4px;border-radius:2px;background:var(--go);width:0;transition:width .6s ease}
+.gate{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:.88rem;font-weight:700;color:var(--muted);padding:0 4px}
+.gate .g{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:2px solid var(--line);z-index:1;transition:background .3s,border-color .3s}
+.gate .g svg{width:18px;height:18px;opacity:0}
+.gate.checking .g{border-color:var(--sun);background:var(--sun-soft)}
+.gate.checking .g::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--sun);animation:blink .6s steps(2,start) infinite}
+@keyframes blink{to{opacity:.2}}
+.gate.done{color:var(--text)}
+.gate.done .g{background:var(--go);border-color:#1B1530}
+.gate.done .g svg{opacity:1}
+.ship-result{margin-top:16px;padding:14px 18px;border-radius:14px;background:var(--go-soft);border:1.5px solid var(--go);font-weight:700;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;align-items:center;padding:16px 20px;border-top:1.5px solid var(--line)}
+.row:first-child{border-top:0}
+.row h3{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.row p{margin-top:4px;color:var(--muted);font-size:.95rem}
+.intro{margin-bottom:16px;color:var(--muted);max-width:70ch}
+.keys-table{width:100%;border-collapse:collapse}
+.keys-table th,.keys-table td{text-align:left;padding:14px 20px;border-top:1.5px solid var(--line);vertical-align:middle}
+.keys-table thead th{border-top:0;font-size:.88rem;color:var(--muted);font-weight:700}
+.keys-table td:first-child{font-family:var(--mono);font-size:.92rem}
+.hidden-val{font-family:var(--mono);letter-spacing:.2em;color:var(--muted)}
+
+.checks{display:flex;flex-direction:column}
+.check-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;align-items:start;padding:16px 20px;border-top:1.5px solid var(--line)}
+.check-row:first-child{border-top:0}
+.ico{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;border:2px solid #1B1530}
+.ico.ok{background:var(--go)}
+.ico.warn{background:var(--sun)}
+.ico svg{width:18px;height:18px}
+.check-row p{margin-top:3px;color:var(--muted);font-size:.95rem;max-width:64ch}
+
+.settings{display:flex;flex-direction:column;gap:16px}
+.setting{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 20px;align-items:center;padding:18px 20px}
+.setting p{margin-top:4px;color:var(--muted);font-size:.95rem;max-width:62ch}
+
+/* ---------- Modal and toast ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:rgba(20,14,34,.55)}
+.modal[hidden]{display:none}
+.dialog{width:min(560px,100%);max-height:calc(100dvh - 40px);overflow:auto;background:var(--panel);color:var(--text);border:2px solid var(--line-strong);border-radius:22px;box-shadow:var(--shadow);padding:24px}
+.dialog h2{font-size:1.4rem}
+.dialog p{margin-top:10px;color:var(--muted)}
+.field{display:grid;gap:6px;margin-top:16px}
+.field label{font-weight:700}
+.field input,.field textarea,.field select{width:100%;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--panel);padding:10px 12px}
+.field textarea{min-height:96px;resize:vertical}
+.hint{font-size:.9rem;color:var(--muted)}
+.dialog-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:22px}
+.mini-plan{margin:14px 0 0;padding:0 0 0 22px}
+.mini-plan li{margin-bottom:8px}
+.mini-plan span{display:block;color:var(--muted);font-size:.92rem}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;z-index:60;max-width:min(520px,calc(100vw - 32px));background:#1B1530;color:#fff;padding:12px 18px;border-radius:14px;font-size:.95rem;transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:1080px){.build{grid-template-columns:1fr}.helper{position:static;height:460px;min-height:0}}
+@media (max-width:640px){
+  .facts{grid-template-columns:1fr}
+  .facts div{padding:12px 0 0}
+  .status-hero{grid-template-columns:1fr}
+  .rail{grid-template-columns:1fr;gap:12px;margin-top:20px}
+  .rail::before,.rail .fill{display:none}
+  .gate{flex-direction:row;text-align:left}
+  .gate .g{width:32px;height:32px}
+  .row{grid-template-columns:1fr}
+  .row > .chip,.row > .btn{justify-self:start}
+  .setting{grid-template-columns:1fr}
+  .keys-table thead{display:none}
+  .keys-table tr{display:grid;grid-template-columns:1fr 1fr;border-top:1.5px solid var(--line);padding:10px 0}
+  .keys-table td{border:0;padding:4px 20px}
+  .keys-table td:first-child{grid-column:1/-1}
+  .check-row{grid-template-columns:34px minmax(0,1fr)}
+  .check-row .btn{grid-column:2}
+  .proj-links .btn{flex:1 1 auto}
+  .ship-top .btn{width:100%}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
+
+/* ---------- Mode switch ---------- */
+.mode{margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mode b{display:block;font-size:.92rem}
+.mode small{display:block;color:var(--side-muted);font-size:.8rem;line-height:1.3;margin-top:2px}
+.switch{position:relative;flex:none;width:50px;height:28px;border-radius:999px;border:2px solid var(--side-muted);background:transparent;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--side-text);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--pink);border-color:var(--pink)}
+.switch[aria-checked="true"]::after{transform:translateX(22px);background:#1B1530}
+.adv-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding:8px clamp(16px,3vw,36px);background:var(--pink);color:#1B1530;font-size:.92rem;font-weight:700}
+.adv-strip[hidden]{display:none}
+.adv-strip button{background:#1B1530;color:#fff;border:0;border-radius:999px;padding:5px 14px;font-weight:700;font-size:.85rem}
+.tag-adv{margin-left:auto;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;border:1.5px solid var(--side-muted);color:var(--side-muted)}
+@media (max-width:880px){.mode{display:none}.side.open .mode{display:flex}}
+.consent{display:flex;gap:12px;align-items:flex-start;margin-top:16px;padding:14px;border-radius:14px;background:var(--sun-soft);border:1.5px solid var(--sun)}
+.consent input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:#1B1530}
+.consent label{font-weight:700;line-height:1.4}
+.dialog ul{margin:12px 0 0;padding-left:20px;color:var(--muted)}
+.dialog li{margin-bottom:6px}
+.dialog .safe{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--go-soft);border:1.5px solid var(--go);color:var(--text)}
+
+/* ---------- Helper: architect, builder, brief ---------- */
+.helper.light{background:var(--panel);color:var(--text);border-color:var(--line-strong)}
+.helper.light .helper-head{border-bottom:1.5px solid var(--line)}
+.helper.light .helper-head h2{color:var(--text)}
+.helper.light .helper-head p{color:var(--muted)}
+.helper.light .prompt{border-top:1.5px solid var(--line);background:transparent}
+.helper.light .prompt input{background:var(--canvas);border-color:var(--line);color:var(--text);font-family:var(--body)}
+.helper.light .prompt input::placeholder{color:var(--muted)}
+.htabs{display:flex;gap:2px;padding:0 10px;border-bottom:1.5px solid var(--line)}
+.helper:not(.light) .htabs{border-bottom-color:rgba(255,255,255,.1)}
+.htabs button{background:none;border:0;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px}
+.helper:not(.light) .htabs button{color:var(--term-dim)}
+.htabs button[aria-selected="true"]{color:inherit;border-bottom-color:var(--pink)}
+.helper:not(.light) .htabs button[aria-selected="true"]{color:#fff}
+.chat{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.45;font-size:.96rem}
+.msg.you{align-self:flex-end;background:var(--pink-soft);border:1.5px solid var(--pink);border-bottom-right-radius:4px}
+.msg.arch{align-self:flex-start;background:var(--canvas);border:1.5px solid var(--line);border-bottom-left-radius:4px}
+.msg.arch b{font-family:var(--display)}
+.msg.try{align-self:flex-start;background:var(--go-soft);border:1.5px solid var(--go);border-bottom-left-radius:4px}
+.status{align-self:center;display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);padding:2px 10px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--pink);flex:none}
+.status.working i{animation:blink .7s steps(2,start) infinite}
+.status.saved i{background:var(--go)}
+.brief{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.brief textarea{flex:1;min-height:280px;width:100%;border-radius:12px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:var(--term-text);font-family:var(--mono);font-size:.86rem;line-height:1.55;padding:12px;resize:vertical}
+.brief p{font-size:.85rem;color:var(--term-dim)}
+
+/* ---------- Report builder ---------- */
+.dialog.wide{width:min(980px,100%)}
+.report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;margin-top:16px}
+.shot{position:relative;border:2px solid var(--line-strong);border-radius:14px;overflow:hidden;background:#fff;color:#1B1530;user-select:none;touch-action:none;cursor:crosshair}
+.shot .bar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#FFE1EE;border-bottom:1.5px solid #1B1530;font-family:var(--mono);font-size:.78rem}
+.shot .bar i{width:30px;height:8px;background:radial-gradient(circle,#1B1530 3px,transparent 3.6px) 0 0/10px 8px repeat-x}
+.shot .pg{padding:14px 16px 18px}
+.shot h4{margin:0 0 10px;font-family:var(--display);font-size:1.1rem}
+.shot .m{border-left:4px solid #FF4D94;background:#FFE1EE;border-radius:0 8px 8px 0;padding:6px 10px;margin-bottom:8px;font-size:.85rem}
+.shot .m.photo{display:grid;grid-template-columns:54px 1fr;gap:10px;align-items:center}
+.shot .broken{width:54px;height:40px;border:1.5px dashed #9A91B6;border-radius:6px;display:grid;place-items:center;font-size:.65rem;color:#6A6284;background:#F6F3FB}
+.shot .form{display:flex;gap:6px;margin-top:10px}
+.shot .form span{flex:1;border:1.5px solid #1B1530;border-radius:8px;height:30px}
+.shot .form b{background:#1B1530;color:#fff;border-radius:8px;padding:6px 12px;font-size:.8rem}
+.mark{position:absolute;border:3px solid var(--pink);border-radius:8px;background:rgba(255,77,148,.12);pointer-events:none}
+.mark span{position:absolute;top:-12px;left:-12px;width:24px;height:24px;border-radius:50%;background:var(--pink);color:#1B1530;border:2px solid #1B1530;font-weight:800;font-size:.8rem;display:grid;place-items:center}
+.shot-help{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:.88rem;color:var(--muted)}
+.ctx{margin-top:14px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+.ctx summary{cursor:pointer;font-weight:700}
+.ctx ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:.88rem}
+.ctx li{margin-bottom:6px}
+.ctx code{font-family:var(--mono);font-size:.82rem;color:var(--text)}
+@media (max-width:760px){.report{grid-template-columns:1fr}}
+
+/* ---------- Files ---------- */
+.files{display:grid;grid-template-columns:260px minmax(0,1fr);gap:0;overflow:hidden}
+.tree{border-right:1.5px solid var(--line);padding:12px}
+.tree button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;font-family:var(--mono);font-size:.86rem}
+.tree button[aria-current="true"]{background:var(--pink-soft)}
+.tree .ch{margin-left:auto;font-family:var(--body);font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--go-soft);border:1px solid var(--go)}
+.code{overflow:auto;padding:0;background:var(--term);color:var(--term-text);font-family:var(--mono);font-size:.84rem;line-height:1.6;min-height:360px}
+.code .fh{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1);color:var(--term-dim);font-size:.8rem;display:flex;justify-content:space-between;gap:10px}
+.code pre{margin:0;padding:12px 0}
+.code .ln{display:block;padding:0 16px;white-space:pre}
+.code .add{background:rgba(0,166,80,.18);color:#B8F3CE}
+.code .add::before{content:"+ ";color:#63D892}
+.code .ctxl::before{content:"  "}
+@media (max-width:760px){.files{grid-template-columns:1fr}.tree{border-right:0;border-bottom:1.5px solid var(--line)}}
+
+/* ---------- Advanced details ---------- */
+.mig{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mig span{font-family:var(--mono);font-size:.8rem;padding:2px 8px;border-radius:8px;background:var(--canvas);border:1px solid var(--line)}
+.explain{background:none;border:1.5px solid var(--line);border-radius:999px;padding:1px 9px;font-size:.78rem;font-weight:700;color:var(--muted)}
+.ctable{width:100%;border-collapse:collapse}
+.ctable th,.ctable td{text-align:left;padding:12px 16px;border-top:1.5px solid var(--line);vertical-align:middle;font-size:.94rem}
+.ctable thead th{border-top:0;font-size:.85rem;color:var(--muted)}
+.ctable td:first-child{font-family:var(--mono);font-size:.86rem}
+.ok-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--go);margin-right:6px}
+.map{padding:16px 18px}
+.map{overflow-x:auto}
+.map svg{width:100%;min-width:640px;height:auto;display:block}
+.map .n rect{fill:var(--panel);stroke:var(--line-strong);stroke-width:1.8}
+.map .n.live rect{fill:var(--go-soft)}
+.map .n.dev rect{fill:var(--sun-soft)}
+.map .n.ai rect{fill:var(--pink-soft)}
+.map .n.svc rect{fill:var(--canvas);stroke-dasharray:5 4}
+.map text{fill:var(--text);font-family:var(--body);font-size:13px}
+.map .t{font-family:var(--display);font-weight:800;font-size:14px}
+.map .yes{stroke:var(--go);stroke-width:3;fill:none}
+.map .no{stroke:var(--stop);stroke-width:2.5;fill:none;stroke-dasharray:6 5}
+.map .x{stroke:var(--stop);stroke-width:3;stroke-linecap:round}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:.88rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:26px;height:0;border-top:3px solid var(--go)}
+.legend i.b{border-top:2.5px dashed var(--stop)}
+.log-view{margin-top:12px;background:var(--term);color:var(--term-text);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:.82rem;line-height:1.55;max-height:300px;overflow:auto}
+
+/* ---------- AI connection and own services ---------- */
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.choice{display:flex;flex-direction:column;gap:6px;text-align:left;padding:16px 18px;border-radius:16px;background:var(--panel);border:1.5px solid var(--line)}
+.choice[aria-checked="true"]{border:2px solid var(--line-strong);box-shadow:4px 4px 0 var(--line-strong)}
+.choice h3{display:flex;align-items:center;gap:8px}
+.choice p{color:var(--muted);font-size:.93rem}
+.choice .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--line-strong);flex:none}
+.choice[aria-checked="true"] .radio{background:var(--pink);box-shadow:inset 0 0 0 3px var(--panel)}
+@media (max-width:760px){.choices{grid-template-columns:1fr}}
+.dev-note{margin-bottom:18px;padding:14px 18px;border-radius:14px;border:1.5px solid var(--pink);background:var(--pink-soft)}
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.svc{padding:20px;display:flex;flex-direction:column;gap:10px}
+.svc h2{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.svc .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
+.perm{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.perm li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;padding:12px;border-radius:12px;border:1.5px solid var(--line)}
+.perm li.big{border-color:var(--sun);background:var(--sun-soft)}
+.perm .pi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--canvas);border:1.5px solid var(--line-strong);font-weight:800;font-family:var(--display)}
+.perm b{display:block}
+.perm span{color:var(--muted);font-size:.92rem}
+.upd{margin-top:12px}
+.upd .rail{margin-top:18px}
+.demo-ctl{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted)}
+.demo-ctl input{accent-color:var(--pink)}
+
+.rail.r4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:640px){.rail.r4{grid-template-columns:1fr}}
+
+/* ---------- Version 3: review fixes ---------- */
+.demo-pill{display:none;margin-left:auto;margin-right:8px;background:var(--sun);color:#1B1530;border-radius:999px;padding:3px 10px;font-weight:700;font-size:.8rem}
+@media (max-width:880px){.demo-pill{display:inline-block}}
+@media (min-width:881px){.demo-banner{position:sticky;top:0;z-index:15}}
+.adv-strip{background:var(--pink-soft);color:var(--text);font-weight:400;border-bottom:2px solid var(--pink);padding-top:6px;padding-bottom:6px}
+.adv-strip span{font-weight:700}
+.toast{top:auto;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:auto;right:20px;transform:translateY(12px)}
+.toast.show{transform:none}
+@media (max-width:640px){.toast{left:16px;right:16px;max-width:none}}
+.intro-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;margin-bottom:18px;padding:14px 18px;border-radius:16px;background:var(--panel);border:1.5px solid var(--line-strong)}
+.intro-card p{max-width:78ch}
+.need{font-weight:400;color:var(--muted);font-size:.9rem}
+.err{color:var(--stop);font-weight:700;font-size:.92rem;min-height:1.2em}
+.mark.active{border-style:dashed}
+.shot:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.choices{border:0;padding:0;min-width:0}
+.choice{position:relative;cursor:pointer}
+.choice input{position:absolute;opacity:0;width:1px;height:1px}
+.choice .h{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:1.08rem}
+.choice .d{color:var(--muted);font-size:.93rem}
+.choice.on{border:2px solid var(--line-strong);box-shadow:4px 4px 0 var(--line-strong)}
+.choice.on .radio{background:var(--pink);box-shadow:inset 0 0 0 3px var(--panel)}
+.choice:has(input:focus-visible){outline:3px solid var(--sun);outline-offset:3px}
+.hpanel{flex:1;display:flex;flex-direction:column;min-height:0}
+.posted{display:block;font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:2px}
+.continue{padding:14px 16px;border-top:1.5px solid var(--line);display:grid;gap:8px}
+.continue .say-this{padding:8px 10px;border-radius:10px;background:var(--canvas);border:1.5px solid var(--line);font-size:.88rem}
+.continue .btn{justify-self:start}
+.perm .pi svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#updates:focus{outline:none}
+
+.helper:focus{outline:none}
+.helper:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+
+/* ---------- Version 4: hierarchy and colour roles ----------
+   Green: done, safe, works. Pink: your next action, nothing else.
+   Yellow: something to check. Purple: neutral structure. */
+:root{--lav:#8E7CC3;--purple-soft:#ECE7F6;--purple-line:#C9BFE6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--purple-soft:#2A2140;--purple-line:#4B4068}}
+:root[data-theme="dark"]{--purple-soft:#2A2140;--purple-line:#4B4068}
+
+/* Buttons: in dark mode the default is light, never pink */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn:not(.line):not(.go):not(.pink){background:#EDE8FA;color:#1B1530}}
+:root[data-theme="dark"] .btn:not(.line):not(.go):not(.pink){background:#EDE8FA;color:#1B1530}
+.btn svg{width:16px;height:16px;flex:none}
+.linkbtn{background:none;border:0;padding:0;color:var(--text);text-decoration:underline;text-underline-offset:3px;font-weight:700;font-size:.92rem;cursor:pointer}
+.wrongbtn{margin-top:12px;color:var(--muted);font-weight:400}
+.wrongbtn:hover{color:var(--text)}
+
+/* Sidebar: apps first, the machine further down and quieter */
+.nav [aria-current="page"]{background:rgba(255,255,255,.1);box-shadow:inset 3px 0 0 var(--side-text)}
+.nav .nav-app{font-size:1rem}
+.nav .dot.act{background:var(--pink);box-shadow:0 0 0 3px rgba(255,77,148,.3)}
+.nav .dot.work{background:var(--lav)}
+.nav .dot.idle{background:var(--side-muted)}
+.nav-machine{margin-top:auto;padding-top:14px;display:flex;flex-direction:column;gap:2px}
+.nav-machine button{font-size:.9rem;font-weight:400;color:var(--side-muted)}
+.nav-machine button:hover,.nav-machine [aria-current="page"]{color:var(--side-text)}
+.menu-btn{align-items:center;gap:8px;background:var(--side-text);color:#1B1530;border:0;padding:8px 14px}
+.menu-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+@media (max-width:880px){.menu-btn{display:inline-flex}.nav-machine{margin-top:10px}}
+
+/* Mode switch and strip: neutral, not pink */
+.switch[aria-checked="true"]{background:var(--lav);border-color:var(--lav)}
+.adv-strip{background:var(--purple-soft);border-bottom:2px solid var(--purple-line)}
+
+/* Tabs and choices: neutral */
+.tabs button[aria-selected="true"]{border-bottom-color:var(--text)}
+.htabs button[aria-selected="true"]{border-bottom-color:var(--text)}
+.helper:not(.light) .htabs button[aria-selected="true"]{border-bottom-color:#fff}
+.choice.on .radio{background:var(--text)}
+.chip.sel{background:var(--purple-soft);border-color:var(--text);color:var(--text)}
+
+/* Home: calm status, action-first app cards */
+.status-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 16px;border-radius:14px;background:var(--go-soft);border:1.5px solid var(--go);margin-bottom:26px}
+.status-row .led{width:10px;height:10px;border-radius:50%;background:var(--go);flex:none}
+.facts-inline{display:flex;flex-wrap:wrap;gap:6px}
+.fact{font-size:.86rem;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.status-row .linkbtn{margin-left:auto}
+.app-card{cursor:default}
+.app-card h3{width:100%}
+.card-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.card-link:hover{text-decoration:underline;text-underline-offset:4px}
+.card-foot{margin-top:auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;width:100%}
+.card-foot .addr{margin-top:0}
+
+/* Build: the plan stands out, the helper is a quieter side panel */
+.helper.light{border:1.5px solid var(--line);box-shadow:none}
+.helper:not(.light){border-color:transparent}
+.msg.you{background:var(--purple-soft);border-color:var(--purple-line)}
+.status i{background:var(--lav)}
+.status.done i,.status.saved i{background:var(--go)}
+.helper .prompt .btn{background:var(--text);color:var(--panel)}
+.helper:not(.light) .prompt .btn{background:#EDE8FA;color:#1B1530}
+.ship.quiet{box-shadow:none}
+
+/* Problem marks are red, because they show a problem */
+.mark{border-color:var(--stop);background:rgba(214,43,38,.1)}
+.mark span{background:var(--stop);color:#fff}
+
+/* Misc colour roles */
+.dev-note{border-color:var(--sun);background:var(--sun-soft)}
+.map .n.ai rect{fill:var(--purple-soft)}
+
+/* The safety checks keep their chain on phones */
+.rail .fill{width:calc((100% - 100% / 6) * var(--frac,0))}
+.rail.r4::before{left:12.5%;right:12.5%}
+@media (max-width:640px){
+  .rail{gap:14px}
+  .rail::before{display:block;left:18.5px;right:auto;top:16px;bottom:16px;width:3px;height:auto}
+  .rail .fill{display:block;left:18.5px;top:16px;width:3px;height:calc((100% - 32px) * var(--frac,0));transition:height .6s ease}
+  .rail.r4::before{left:18.5px;right:auto}
+}
+
+/* ---------- Version 4.1: last pass ---------- */
+.side{min-width:0}
+@media (max-width:400px){.demo-pill{display:none}}
+/* Notices never cover the work area: in the sidebar on desktop, under the header on phones */
+.toast{left:16px;right:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));top:auto;max-width:216px;transform:translateY(12px)}
+@media (max-width:880px){.toast{left:12px;right:12px;top:calc(64px + env(safe-area-inset-top,0px));bottom:auto;max-width:none;transform:translateY(-12px)}}
+.toast.show{transform:none}
+/* Fewer frames on the build page */
+.intro-card{display:block;background:none;border:0;border-left:3px solid var(--purple-line);border-radius:0;padding:2px 0 2px 14px;margin-bottom:20px}
+.intro-card .linkbtn{margin-left:6px}
+.msg.arch,.msg.you{border-color:transparent}
+/* Tabs on phones: tighter, with a hint that there is more to the right */
+@media (max-width:640px){
+  .tabs button{padding:10px 9px;font-size:.93rem}
+  .tabs{background:linear-gradient(to right,var(--canvas) 30%,rgba(0,0,0,0)) left/24px 100% no-repeat local,linear-gradient(to left,var(--canvas) 30%,rgba(0,0,0,0)) right/24px 100% no-repeat local,radial-gradient(farthest-side at 100% 50%,rgba(27,21,48,.18),rgba(0,0,0,0)) right/10px 100% no-repeat scroll}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="side-top">
+      <button class="logo" data-go="home" aria-label="allvibe.local, home">
+        <svg viewBox="0 0 26 32" aria-hidden="true"><path d="M13 2C13 2 2.5 14 2.5 20.5a10.5 10.5 0 0 0 21 0C23.5 14 13 2 13 2Z" fill="#fff" stroke="#1B1530" stroke-width="2.4" stroke-linejoin="round"/><path d="M7.8 20.8l3.6 3.6 6.8-7.6" fill="none" stroke="#00A650" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        allvibe.local
+      </button>
+      <span class="demo-pill">Demo</span>
+      <button class="menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 5h12M3 9h12M3 13h12"/></svg>Menu</button>
+    </div>
+    <nav class="nav" id="nav" aria-label="Control panel"></nav>
+    <div class="mode"><div><b id="mode-name">Simple mode</b><small>Show what's under the hood</small></div><button type="button" class="switch" id="mode-switch" role="switch" aria-checked="false" aria-label="Show what's under the hood" data-action="toggle-mode"></button></div>
+    <div class="side-status" id="side-status"></div>
+  </aside>
+  <div class="main-wrap">
+    <div class="demo-banner" role="note">
+      <p><b>This is a demo.</b> <span class="long">Everything here is pretend data, and the AI follows a script. The control panel is planned; this shows how it is meant to work.</span><span class="short">Pretend data. The panel is planned.</span> <a class="back" href="/">Back to the main page</a></p>
+      <button type="button" data-action="reset">Start over</button>
+    </div>
+    <div class="adv-strip" id="adv-strip" hidden><span>Advanced mode is on.</span><button type="button" data-action="to-simple">Back to simple mode</button></div>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+<div class="modal" id="modal" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" id="dialog"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => reduce ? Math.min(ms, 120) : ms;
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const CHECK = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 9.5l3.2 3.2L14 5.5" fill="none" stroke="#1B1530" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const WARN = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 4.5v6M9 13.5v.2" fill="none" stroke="#1B1530" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  let timers = [];
+  const later = (fn, ms) => { const t = setTimeout(fn, wait(ms)); timers.push(t); return t; };
+
+  const EXPLAIN = {
+    migration: 'A migration is a small file that changes how the data is stored. "Only adds" means older versions of the app still work with the data, so going back never loses anything.',
+    container: 'A container is a sealed box that runs one part of an app, like the app itself or its database. The walls between the boxes decide who can reach whom.',
+    diff: 'Green lines are what the builder added in this step. Nothing else in the file changed.',
+    commit: 'A commit is a saved snapshot of the code. Every step you try becomes one, so you can always see what changed and go back.',
+    map: 'Green lines are connections that are allowed. Red dashed lines are blocked by the machine itself, not by a rule the AI is asked to follow.'
+  };
+
+  const BRIEF_GB = `# Brief: let guests add a photo
+
+Written by the architect for the builder. Stop after each step.
+
+1. A photo button on the form.
+   Done when: you can pick a photo in the test copy and see it before you post.
+2. Photos are kept with the message.
+   Done when: a posted photo is still there after the test copy restarts.
+3. Big photos are made smaller.
+   Done when: a large photo from a phone shows up quickly.
+
+Rules
+- Migrations only add. The version before must still work.
+- Never put keys in the code. Read them from the key vault.
+- Commit after each step, then stop and report.`;
+
+  function initial(){
+    return {
+      view: 'home', projectId: null, tab: 'build', advanced: false, introSeen: false, htab: 'architect', aiMode: 'panel', profile: 'balanced', file: 'src/server.js',
+      failUpdate: false,
+      services: {
+        pihole: { installed: true },
+        ha: { installed: false, version: '2026.9.1', next: '2026.10.0', upd: null }
+      },
+      projects: [
+        {
+          id: 'guestbook', name: "Grandma's guestbook", live: 2, prodPort: 8100, devPort: 8101, count: 42, countWord: 'messages',
+          plan: { title: 'Let guests add a photo', steps: [
+            { t: 'A photo button on the form', c: 'you can pick a photo and see it before you post.', s: 'tried' },
+            { t: 'Photos are kept with the message', c: 'a posted photo is still there after you restart the test copy.', s: 'ready' },
+            { t: 'Big photos are made smaller', c: 'a large photo from your phone shows up quickly.', s: 'next' }
+          ]},
+          chat: [
+            ['you', 'Let guests add a photo to their message.'],
+            ['arch', 'Nice idea. Two quick questions first: should everyone who can see the guestbook see the photos? And is one photo per message enough?'],
+            ['you', 'Yes to both.'],
+            ['arch', 'Then here is the plan, in three steps. I have written it as a brief for the builder, and I check its work after each step before I ask you to try anything.'],
+            ['done', 'The builder finished step 1'],
+            ['try', 'Step 1 is ready. I checked the builder\'s report: the photo button is on the form, and the photo shows before posting. Try it: pick a photo in the test copy. You should see it before you post.'],
+            ['you', 'Step 1 works.'],
+            ['done', 'The builder finished step 2'],
+            ['try', 'Step 2 is ready. The builder made room for the photo in the database, and it only adds, so older versions keep working. Try it: post a message with a photo, restart the test copy, and check that the photo is still there.']
+          ],
+          log: [
+            ['tool', 'Read briefs/let-guests-add-a-photo.md'],
+            ['ai', 'Working on step 1: a photo button on the form.'],
+            ['tool', 'Edited src/views/form.html'],
+            ['tool', 'Committed: add a photo button with a preview'],
+            ['ai', 'Step 1 done. Stopping for the person to try it.'],
+            ['ai', 'Working on step 2: keeping photos with the message.'],
+            ['tool', 'Edited src/server.js'],
+            ['tool', 'Added migrations/004_add_photo.sql (only adds)'],
+            ['tool', 'The key check found nothing that looks like a key'],
+            ['tool', 'Committed: keep photos with the message'],
+            ['ai', 'Step 2 done. Stopping for the person to try it.']
+          ],
+          brief: BRIEF_GB,
+          versions: [
+            { v: 2, when: '2 weeks ago', what: 'Only family can see the guestbook.', commit: '8c41e2a', migs: ['003_family_only.sql: only adds'] },
+            { v: 1, when: '3 weeks ago', what: 'The first version: a page with a message form.', commit: '06e16a0', migs: ['001_entries.sql: only adds'] }
+          ],
+          backups: [
+            { when: 'Last night, 03:30', size: '14 MB', ok: true },
+            { when: '2 nights ago', size: '', ok: false, why: 'The backup disk was not plugged in, so no backup was taken. It was back the next night.' },
+            { when: '3 nights ago, 03:30', size: '13 MB', ok: true },
+            { when: '4 nights ago, 03:30', size: '13 MB', ok: true }
+          ],
+          keys: [ { name: 'WEATHER_API_KEY', dev: true, prod: true, when: '5 days ago' } ],
+          ship: null
+        },
+        {
+          id: 'recipes', name: 'Recipe box', live: 0, prodPort: 8102, devPort: 8103, count: 0, countWord: 'recipes',
+          plan: { title: 'A place for the family recipes', steps: [
+            { t: 'A page that lists your recipes', c: 'you can open the test copy and see the list.', s: 'tried' },
+            { t: 'Add a recipe with a photo', c: 'a recipe you add is still there after a restart.', s: 'building' },
+            { t: 'Search by ingredient', c: 'typing "egg" shows only recipes with eggs.', s: 'next' },
+            { t: 'Share a recipe with a link', c: 'the link opens that recipe on your phone.', s: 'next' }
+          ]},
+          chat: [
+            ['you', 'A place for the family recipes, with photos.'],
+            ['arch', 'Here is a plan in four steps. I have given it to the builder, and I will tell you what to try after each one.'],
+            ['done', 'The builder finished step 1'],
+            ['try', 'Step 1 is ready. Open the test copy. You should see an empty recipe list.'],
+            ['you', 'Step 1 works.'],
+            ['working', 'The builder is working on step 2']
+          ],
+          log: [['tool', 'Read briefs/family-recipes.md'], ['ai', 'Step 1 done. Stopping for the person to try it.'], ['ai', 'Working on step 2: adding a recipe with a photo.']],
+          brief: '# Brief: a place for the family recipes\n\n1. A page that lists your recipes.\n2. Add a recipe with a photo.\n3. Search by ingredient.\n4. Share a recipe with a link.\n\nRules\n- Migrations only add.\n- Stop after each step.',
+          versions: [], backups: [], keys: [], ship: null
+        }
+      ]
+    };
+  }
+  let S = initial();
+  const proj = () => S.projects.find(p => p.id === S.projectId);
+  const triedCount = p => p.plan ? p.plan.steps.filter(s => s.s === 'tried').length : 0;
+  const allTried = p => p.plan && p.plan.steps.length > 0 && p.plan.steps.every(s => s.s === 'tried');
+  const stepOf = p => p.plan ? p.plan.steps.findIndex(s => s.s !== 'tried') : null;
+  function nextAction(p){
+    if (!p.plan) return null;
+    const st = p.plan.steps, i = st.findIndex(s => s.s !== 'tried');
+    if (i === -1) return `Put v${(p.live || 0) + 1} live`;
+    if (st[i].s === 'ready') return `Try step ${i + 1}`;
+    return null;
+  }
+  function dotOf(p){
+    if (nextAction(p)) return 'act';
+    if (p.plan && p.plan.steps.some(s => s.s === 'building')) return 'work';
+    return p.live ? 'live' : 'idle';
+  }
+  function workText(p){
+    if (!p.plan) return 'Nothing in progress.';
+    const st = p.plan.steps, i = st.findIndex(s => s.s !== 'tried');
+    if (i === -1) return `All steps tried: ready to put v${(p.live || 0) + 1} live.`;
+    const n = `step ${i + 1} of ${st.length}`;
+    if (st[i].s === 'ready') return `Ready for you to try: ${n}.`;
+    if (st[i].s === 'building') return `The builder is working on ${n}.`;
+    return `Waiting to start: ${n}.`;
+  }
+
+  /* ---------- Navigation ---------- */
+  function renderNav(){
+    const item = (label, attrs, current, cls = '') => `<button type="button" ${attrs} class="${cls}" ${current ? 'aria-current="page"' : ''}>${label}</button>`;
+    let h = item('Home', 'data-go="home"', S.view === 'home');
+    h += '<p class="nav-group">Your apps</p>';
+    S.projects.forEach(p => {
+      const d = dotOf(p);
+      const sr = d === 'act' ? '<span class="sr">, waiting for you</span>' : d === 'work' ? '<span class="sr">, the builder is working</span>' : '';
+      h += item(`<span class="dot ${d}"></span>${esc(p.name)}${sr}`, `data-open="${p.id}"`, S.view === 'project' && S.projectId === p.id, 'nav-app');
+    });
+    h += item('<span aria-hidden="true">+</span> Start a new app', 'data-action="new-app"', false, 'nav-app new');
+    h += '<div class="nav-machine"><p class="nav-group">This machine</p>';
+    h += item('Machine health', 'data-go="machine"', S.view === 'machine');
+    h += item('Backups', 'data-go="backups"', S.view === 'backups');
+    h += item(`Your own services${S.advanced ? '' : '<span class="sr">, </span><span class="tag-adv">Advanced</span>'}`, 'data-go="services"', S.view === 'services');
+    h += item('Settings', 'data-go="settings"', S.view === 'settings');
+    h += '</div>';
+    $('#nav').innerHTML = h;
+    $('#side-status').innerHTML = '<span class="led"></span><span>No problems found. Last night\'s backup was restored and checked.</span>';
+    $('#mode-switch').setAttribute('aria-checked', String(S.advanced));
+    $('#mode-name').textContent = S.advanced ? 'Advanced mode' : 'Simple mode';
+    $('#adv-strip').hidden = !S.advanced;
+  }
+
+  /* ---------- Home ---------- */
+  function viewHome(){
+    const cards = S.projects.map(p => {
+      const status = p.live ? `<span class="chip live">v${p.live} is live</span>` : '<span class="chip idle">Not live yet</span>';
+      const act = nextAction(p);
+      const btn = act ? `<button type="button" class="btn small pink" data-open="${p.id}">${act}</button>` : `<button type="button" class="btn small line" data-open="${p.id}">Open</button>`;
+      return `<article class="app-card"><h3><button type="button" class="card-link" data-open="${p.id}">${esc(p.name)}</button></h3>${status}<p class="muted">${p.plan ? esc(p.plan.title) + '. ' : ''}${workText(p)}</p><div class="card-foot">${S.advanced ? `<span class="addr">allvibe.local:${p.prodPort}</span>` : '<span></span>'}${btn}</div></article>`;
+    }).join('');
+    return `
+      <div class="status-row" role="status"><span class="led" aria-hidden="true"></span><b>No problems found.</b><span class="facts-inline"><span class="fact">Last night's backup restored and checked</span><span class="fact">Disk healthy</span><span class="fact">Recovery key confirmed</span></span><button type="button" class="linkbtn" data-go="machine">Machine health</button></div>
+      <div class="head"><div><h1>Your apps</h1><p class="muted">Running on an old laptop in the hall cupboard.</p></div></div>
+      <div class="apps">${cards}<button type="button" class="app-card new" data-action="new-app"><span class="plus" aria-hidden="true">+</span>Start a new app</button></div>
+      <h2 class="section-title">Updates to try</h2>
+      <div class="notice" style="margin-top:0"><p><b>3 updates are ready to try.</b> They were prepared in your test copies, so nothing live has changed.</p><button type="button" class="btn small line" data-action="see-updates">See the updates</button></div>`;
+  }
+
+  /* ---------- Project ---------- */
+  function viewProject(){
+    const p = proj();
+    const status = p.live ? `<span class="chip live">v${p.live} is live</span>` : '<span class="chip idle">Not live yet</span>';
+    const list = [['build','Build'],['versions','Versions'],['backups','Backups'],['keys','Service keys']];
+    if (S.advanced) list.push(['files','Files']);
+    if (!S.advanced && S.tab === 'files') S.tab = 'build';
+    const tabs = list.map(([id, l]) => `<button type="button" role="tab" id="tab-${id}" aria-controls="tabpanel" aria-selected="${S.tab === id}" tabindex="${S.tab === id ? 0 : -1}" data-tab="${id}">${l}</button>`).join('');
+    let body = '';
+    const intro = S.introSeen ? '' : `<div class="intro-card"><p><b>How this works.</b> You tell the architect what you want. The builder makes it one small step at a time. You try every step in the test copy, and when every step works, you put it live. Your data is backed up and checked first. <button type="button" class="linkbtn" data-action="intro-ok">Got it</button></p></div>`;
+    if (S.tab === 'build') body = intro + `<div class="build"><div class="build-left"><section class="strong plan" id="plan"></section><section class="strong ship" id="ship" aria-live="polite"></section></div><section class="helper" id="helper" aria-label="AI helper" tabindex="-1"></section></div>`;
+    if (S.tab === 'versions') body = tabVersions(p);
+    if (S.tab === 'backups') body = tabBackups(p);
+    if (S.tab === 'keys') body = tabKeys(p);
+    if (S.tab === 'files') body = tabFiles(p);
+    return `
+      <div class="head">
+        <div><h1>${esc(p.name)}</h1><p>${status} <span class="muted">${p.live ? `${p.count} ${p.countWord}` : 'Only the test copy exists so far.'}</span></p></div>
+        <div class="proj-links">
+          <button type="button" class="btn line" data-action="open-link" data-port="${p.prodPort}" ${p.live ? '' : 'disabled'}>Open the live app${S.advanced ? ` <span class="mono">:${p.prodPort}</span>` : ''}</button>
+          <button type="button" class="btn line" data-action="open-link" data-port="${p.devPort}">Open the test copy${S.advanced ? ` <span class="mono">:${p.devPort}</span>` : ''}</button>
+        </div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="${esc(p.name)}">${tabs}</div>
+      <div role="tabpanel" id="tabpanel" aria-labelledby="tab-${S.tab}">${body}</div>`;
+  }
+
+  function renderPlan(){
+    const el = $('#plan'); if (!el) return; const p = proj();
+    if (!p.plan){ el.innerHTML = `<h2>What's next?</h2><p class="empty-plan">Nothing is in progress. Tell the architect what you want to change, in your own words, and it will make a plan with you.</p>`; return; }
+    const steps = p.plan.steps.map((s, i) => {
+      let state = '';
+      if (s.s === 'tried') state = '<p class="state">Tried by you</p>';
+      if (s.s === 'building') state = '<p class="state muted">The builder is working on this</p>';
+      if (s.s === 'ready') state = `
+        <div class="try-box">
+          <p><b>Ready for you to try.</b> The architect has checked the builder's work. Now check it yourself in the test copy.</p>
+          <div class="try-actions">
+            <button type="button" class="btn small go" data-action="works" data-i="${i}">${CHECK} It works</button>
+            <button type="button" class="btn small line" data-action="open-link" data-port="${p.devPort}">Open the test copy</button>
+          </div>
+          <button type="button" class="linkbtn wrongbtn" data-action="report" data-i="${i}">Something is wrong</button>
+        </div>`;
+      const mark = s.s === 'tried' ? CHECK : `<span>${i + 1}</span>`;
+      return `<li class="step ${s.s}"><span class="marker">${mark}</span><div><h3>${esc(s.t)}</h3><p class="check">Done when ${esc(s.c)}</p>${state}</div></li>`;
+    }).join('');
+    el.innerHTML = `<h2>The plan: ${esc(p.plan.title)}</h2><p class="muted ask">${triedCount(p)} of ${p.plan.steps.length} steps tried by you.</p><ol class="steps">${steps}</ol>`;
+  }
+
+  function renderHelper(){
+    const el = $('#helper'); if (!el) return; const p = proj();
+    const old = $('#say'); const keep = old ? old.value : '';
+    const oldBox = $('#chat') || $('#log');
+    const nearBottom = !oldBox || oldBox.scrollTop + oldBox.clientHeight >= oldBox.scrollHeight - 40;
+    const oldTop = oldBox ? oldBox.scrollTop : 0;
+    const tab = S.advanced ? S.htab : 'architect';
+    const mcp = S.aiMode === 'mcp';
+    el.classList.toggle('light', tab === 'architect');
+    const tabs = S.advanced ? `<div class="htabs" role="tablist" aria-label="AI helper">${[['architect', mcp ? 'Your AI app' : 'Architect'],['builder','Builder'],['brief','Instructions']].map(([id, l]) => `<button type="button" role="tab" id="htab-${id}" aria-controls="hpanel" aria-selected="${tab === id}" tabindex="${tab === id ? 0 : -1}" data-htab="${id}">${l}</button>`).join('')}</div>` : '';
+    const heads = {
+      architect: mcp ? ['Your AI app', 'The conversation happens in your own AI app. Here you see what it posted and did.'] : ['Your architect', 'Plans with you and checks the builder\'s work'],
+      builder: ['The builder', mcp ? 'The coding part of your own AI app, working in the test copy' : 'Claude Code, working in your test copy'],
+      brief: ['Instructions for the builder', 'Written by the architect. Also called the brief.']
+    };
+    let body = '';
+    if (tab === 'architect' && !mcp){
+      const items = p.chat.map(([k, t]) => {
+        if (k === 'done') return `<p class="status done"><i></i>${esc(t)}</p>`;
+        if (k === 'working') return `<p class="status working"><i></i>${esc(t)}</p>`;
+        if (k === 'saved') return `<p class="status saved"><i></i>${esc(t)}</p>`;
+        return `<p class="msg ${k}">${esc(t)}</p>`;
+      }).join('');
+      body = `<div class="chat" id="chat" role="log" aria-live="polite">${items}</div>
+        <form class="prompt" id="prompt"><label class="sr" for="say">Message to the architect</label><input id="say" autocomplete="off" placeholder="Tell the architect what you want"><button class="btn small" type="submit">Send</button></form>`;
+    }
+    if (tab === 'architect' && mcp){
+      const items = p.chat.filter(([k]) => k !== 'you').map(([k, t]) => {
+        if (k === 'done') return `<p class="status done"><i></i>${esc(t)}</p>`;
+        if (k === 'working') return `<p class="status working"><i></i>${esc(t)}</p>`;
+        if (k === 'saved') return `<p class="status saved"><i></i>${esc(t)}</p>`;
+        return `<p class="msg ${k === 'try' ? 'try' : 'arch'}"><span class="posted">Your AI app posted</span>${esc(t)}</p>`;
+      }).join('');
+      const i = stepOf(p);
+      const st = p.plan && i !== -1 ? p.plan.steps[i].s : null;
+      let cont;
+      if (st === 'ready') cont = `<p><b>Nothing to send right now.</b> Try step ${i + 1} in the test copy, then press It works or Something is wrong in the plan. Your AI app sees your answer.</p>`;
+      else {
+        const next = !p.plan ? `Let us change something in ${p.name}.` : (i === -1 ? 'Every step is tried. What should we change next?' : 'Continue with the plan.');
+        cont = `<p><b>Continue in your AI app.</b> Type this there, or use its /allvibe command:</p><p class="mono say-this">${esc(next)}</p><button type="button" class="btn small" data-action="copy-next" data-text="${esc(next)}">Copy the message</button>`;
+      }
+      body = `<div class="chat" id="chat" role="log" aria-live="polite">${items}</div>
+        <div class="continue">${cont}</div>`;
+    }
+    if (tab === 'builder'){
+      body = `<div class="log" id="log" role="log" aria-live="polite">${p.log.map(([k, t]) => `<p class="${k}">${esc(t)}</p>`).join('')}</div>
+        ${mcp ? '' : '<form class="prompt" id="prompt"><label class="sr" for="say">Message to the builder</label><input id="say" autocomplete="off" placeholder="Talk to the builder directly"><button class="btn small" type="submit">Send</button></form>'}`;
+    }
+    if (tab === 'brief'){
+      body = `<div class="brief"><label class="sr" for="brief-text">Instructions for the builder</label><textarea id="brief-text" spellcheck="false">${esc(p.brief)}</textarea><p>In advanced mode you can change the instructions before the builder gets them. The architect reads your changes too.</p><div><button type="button" class="btn small" data-action="save-brief">Save the instructions</button></div></div>`;
+    }
+    el.innerHTML = `<div class="helper-head"><div class="who"><i aria-hidden="true"></i><div><h2>${heads[tab][0]}</h2><p>${heads[tab][1]}</p></div></div></div>${tabs}<div id="hpanel" ${S.advanced ? `role="tabpanel" aria-labelledby="htab-${tab}"` : ''} class="hpanel">${body}</div>`;
+    const box = $('#chat') || $('#log');
+    if (box) box.scrollTop = nearBottom ? box.scrollHeight : oldTop;
+    const inp = $('#say'); if (inp && keep) inp.value = keep;
+  }
+
+  function renderShip(){
+    const el = $('#ship'); if (!el) return; const p = proj();
+    const nextV = (p.live || 0) + 1;
+    const sh = p.ship; const gv = sh ? sh.v : nextV;
+    const gates = ['Tried by you', 'Backup taken', 'Backup restored and checked', `v${gv} started`, `v${gv} answers`, 'Live'];
+    const stage = sh ? sh.stage : -1; const ready = allTried(p);
+    const railItems = gates.map((g, i) => {
+      let cls = '';
+      if (ready && i === 0) cls = 'done';
+      if (sh){ if (i < stage) cls = 'done'; else if (i === stage && !sh.done) cls = 'checking'; if (sh.done) cls = 'done'; }
+      return `<li class="gate ${cls}"><span class="g">${CHECK}</span><span>${g}</span></li>`;
+    }).join('');
+    const doneCount = sh ? (sh.done ? gates.length : stage) : (ready ? 1 : 0);
+    const frac = Math.max(0, Math.min(doneCount, gates.length) - 1) / (gates.length - 1);
+    el.className = 'ship ' + (ready || sh ? 'strong' : 'quiet');
+    let top;
+    if (sh && sh.done) top = `<div><h2>v${sh.v} is live.</h2><p>${p.count} ${p.countWord}, nothing lost. The version before is kept, so you can go back any time.</p></div>`;
+    else if (sh) top = `<div><h2>Putting v${sh.v} live</h2><p>${esc(sh.msg || '')}</p></div>`;
+    else if (!p.plan) top = `<div><h2>Nothing to put live yet</h2><p>When the builder has made something and you have tried it, you put it live from here.</p></div>`;
+    else if (ready) top = `<div><h2>Ready to put v${nextV} live</h2><p>You have tried all ${p.plan.steps.length} steps. The safety checks below run first: if one fails, nothing live changes.</p></div><button type="button" class="btn pink" data-action="ship">Put v${nextV} live</button>`;
+    else top = `<div><h2>Put v${nextV} live</h2><p>Try every step first. ${triedCount(p)} of ${p.plan.steps.length} tried so far. Then the safety checks below run before anything goes live.</p></div><button type="button" class="btn pink" disabled>Put v${nextV} live</button>`;
+    el.innerHTML = `<div class="ship-top">${top}</div><ol class="rail" aria-label="The safety checks" style="--frac:${frac.toFixed(3)}">${railItems}<span class="fill"></span></ol>${sh && sh.done ? `<div class="ship-result"><span>Next time, just tell the architect what you want to change.</span><button type="button" class="btn small line" data-action="open-link" data-port="${p.prodPort}">Open the live app</button></div>` : ''}`;
+  }
+
+  function tabVersions(p){
+    if (!p.versions.length) return `<p class="intro">Nothing has been put live yet. When you put the first version live, it shows up here, and every version after it is kept.</p>`;
+    const rows = p.versions.map(v => {
+      const isLive = v.v === p.live;
+      const act = isLive ? '<span class="chip live">Live now</span>' : `<button type="button" class="btn small line" data-action="rollback" data-v="${v.v}">Go back to v${v.v}</button>`;
+      const adv = S.advanced ? `<div class="mig"><span>commit ${esc(v.commit || 'pending')}</span>${(v.migs || []).map(m => `<span>${esc(m)}</span>`).join('')}<button type="button" class="explain" data-action="explain" data-k="migration">Explain this</button></div>` : '';
+      return `<div class="row"><div><h3>v${v.v} <span class="muted" style="font-family:var(--body);font-weight:400;font-size:.95rem">${esc(v.when)}</span></h3><p>${esc(v.what)}</p>${adv}</div>${act}</div>`;
+    }).join('');
+    return `<p class="intro">Every version you put live is kept. Going back to an older version keeps your data: ${esc(p.countWord)} written since then stay where they are.</p><div class="quiet rows">${rows}</div>`;
+  }
+
+  function tabBackups(p){
+    if (!p.live) return `<p class="intro">Backups start when the app goes live. The test copy has nothing worth keeping yet.</p>`;
+    const rows = p.backups.map(b => b.ok
+      ? `<div class="row"><div><h3>${esc(b.when)} <span class="chip live">Restored and checked</span></h3><p>${esc(b.size)}, encrypted, on the USB disk.${S.advanced ? ' Encrypted to this machine\'s key and your recovery key; the restore ran in a scratch copy and the health check answered.' : ''}</p></div></div>`
+      : `<div class="row"><div><h3>${esc(b.when)} <span class="chip warn">No backup</span></h3><p>${esc(b.why)}</p></div></div>`).join('');
+    return `<h2 class="section-title" style="margin-top:0">Backups of ${esc(p.name)}</h2><div class="head" style="margin-bottom:14px"><p class="intro" style="margin:0">Every night at 03:30 the app's data is copied to the USB disk, then restored into a scratch copy and checked.</p><button type="button" class="btn small" data-action="backup-now">Back up now</button></div><div class="quiet rows">${rows}</div>`;
+  }
+
+  function tabKeys(p){
+    const rows = p.keys.map(k => `<tr><td>${esc(k.name)}</td><td>${k.dev ? '<span class="hidden-val" aria-label="set, hidden">••••••</span>' : '<span class="muted">not set</span>'}</td><td>${k.prod ? '<span class="hidden-val" aria-label="set, hidden">••••••</span>' : '<span class="muted">not set</span>'}</td><td class="muted">${esc(k.when)}</td></tr>`).join('');
+    return `<div class="head" style="margin-bottom:14px"><p class="intro" style="margin:0">Service keys let your app use services outside your machine, like a weather service. They are not the same as your recovery key. They are stored encrypted, handed to the app when it runs, and never shown again, not even here. The test copy and the live app have separate keys.</p><button type="button" class="btn small" data-action="add-key">Add a service key</button></div>
+      <div class="quiet">${p.keys.length ? `<table class="keys-table"><thead><tr><th>Name</th><th>Test copy</th><th>Live app</th><th>Changed</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="intro" style="padding:18px 20px;margin:0">No keys yet. Add one when your app needs a service outside the machine, like a weather or payment service.</p>'}</div>`;
+  }
+
+  const FILES = {
+    'src/server.js': { changed: 'step 2', lines: [
+      ['c', "import express from 'express';"], ['c', "import { db } from './db.js';"], ['c', ''],
+      ['c', "app.post('/entries', upload.single('photo'), async (req, res) => {"],
+      ['c', '  const { name, message } = req.body;'],
+      ['a', '  const photo = req.file ? await savePhoto(req.file) : null;'],
+      ['c', '  await db.query('], ['a', "    'insert into entries (name, message, photo) values ($1, $2, $3)',"], ['a', '    [name, message, photo]'],
+      ['c', '  );'], ['c', "  res.redirect('/');"], ['c', '});'] ] },
+    'migrations/004_add_photo.sql': { changed: 'step 2', lines: [['a', '-- A place for one photo per message.'], ['a', 'alter table entries add column photo text;']] },
+    'AGENTS.md': { changed: '', lines: [['c', '# How to work on Grandma\'s guestbook'], ['c', ''], ['c', 'These are the instructions for any AI coding agent working in this project.'], ['c', 'Read all of it before you change anything, and follow it every time.'], ['c', ''], ['c', '## Start with a plan'], ['c', 'When the person tells you their idea, do not start building.']] },
+    'STATE.md': { changed: 'step 2', lines: [['c', "# Grandma's guestbook: where things stand"], ['c', ''], ['c', '## The plan: let guests add a photo'], ['c', '1. A photo button on the form. Tried by the person.'], ['a', '2. Photos are kept with the message. Built, waiting to be tried.'], ['c', '3. Big photos are made smaller.']] }
+  };
+  function tabFiles(p){
+    if (p.id !== 'guestbook') return `<p class="intro">The files of ${esc(p.name)} appear here once the builder has made its first step.</p>`;
+    const f = FILES[S.file];
+    const tree = Object.keys(FILES).map(n => `<button type="button" data-file="${n}" aria-current="${S.file === n}">${esc(n)}${FILES[n].changed ? '<span class="ch">changed</span>' : ''}</button>`).join('');
+    const code = f.lines.map(([k, t]) => `<span class="ln ${k === 'a' ? 'add' : 'ctxl'}">${esc(t) || ' '}</span>`).join('');
+    return `<p class="intro">The project's files, as the builder left them. Changes from the latest step are marked. You can read everything here; changing code is done through the architect, so every change is tried before it goes live.</p>
+      <div class="quiet files"><div class="tree">${tree}</div><div class="code"><div class="fh"><span>${esc(S.file)}${f.changed ? `, changed in ${f.changed}` : ''}</span><button type="button" class="explain" style="color:var(--term-dim);border-color:rgba(255,255,255,.2)" data-action="explain" data-k="diff">Explain this</button></div><pre>${code}</pre></div></div>`;
+  }
+
+  /* ---------- Backups, machine, services, settings ---------- */
+  function viewBackups(){
+    const rows = S.projects.filter(p => p.live).map(p => `<div class="row"><div><h3>${esc(p.name)} <span class="chip live">Restored and checked</span></h3><p>Last night, 03:30. ${esc(p.backups[0] ? p.backups[0].size : '')}, encrypted.</p></div><button type="button" class="btn small line" data-open="${p.id}" data-tab-go="backups">See backups</button></div>`).join('');
+    return `<div class="head"><div><h1>Backups of all your apps</h1><p class="muted">Where your data is kept, and whether it can be brought back. Each app's own backups are under its Backups tab.</p></div></div>
+      <section class="quiet setting" style="margin-bottom:22px"><div><h2>USB disk, 1 TB</h2><p>Plugged in, 612 GB free. It is a separate disk from the computer's own, so your data survives if the computer dies.</p></div><span class="chip live">Plugged in</span></section>
+      <div class="quiet rows">${rows}</div>`;
+  }
+
+  function mapSVG(){
+    const box = (x, y, w, h, t, sub, cls = '') => `<g class="n ${cls}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/><text class="t" x="${x + 12}" y="${y + 22}">${t}</text>${sub ? `<text x="${x + 12}" y="${y + 40}">${sub}</text>` : ''}</g>`;
+    const x = (cx, cy) => `<path class="x" d="M${cx - 7} ${cy - 7}l14 14M${cx + 7} ${cy - 7}l-14 14"/>`;
+    return `<svg viewBox="0 0 780 380" role="img" aria-labelledby="map-t map-d"><title id="map-t">Who can reach what</title><desc id="map-d">Your home network reaches the apps through the doors. The test copy and the builder cannot reach the live app, the home network or this machine's own ports. The builder reaches only the AI service, through the gate. Home Assistant may see the home network because you allowed it.</desc>
+      <path class="yes" d="M170 318 C 220 318, 240 200, 262 196"/>
+      <path class="yes" d="M372 186 C 400 186, 400 120, 430 120"/>
+      <path class="yes" d="M372 206 C 400 206, 400 250, 430 250"/>
+      <path class="no" d="M515 212 L 515 172"/>${x(515, 192)}
+      <path class="yes" d="M626 250 L 602 250"/>
+      <path class="no" d="M660 226 C 660 170, 640 130, 602 128"/>${x(640, 160)}
+      <path class="yes" d="M700 226 L 700 176"/>
+      <path class="yes" d="M700 126 L 700 78"/>
+      <path class="no" d="M515 292 L 515 318"/>${x(515, 305)}
+      <path class="yes" d="M430 108 C 300 90, 260 50, 172 48"/>
+      <path class="no" d="M430 268 C 330 300, 240 330, 172 334"/>${x(300, 312)}
+      <path class="yes" d="M248 356 L 172 350"/>
+      ${box(20, 24, 150, 50, 'Internet', 'public addresses')}
+      ${box(610, 24, 160, 52, 'AI service', 'api.anthropic.com')}
+      ${box(20, 300, 150, 60, 'Home network', 'phones, router')}
+      ${box(262, 170, 110, 52, 'Doors', 'the proxy')}
+      ${box(430, 84, 172, 88, 'Guestbook, live', 'live app and its data', 'live')}
+      ${box(430, 212, 172, 80, 'Guestbook, test', 'test copy and its data', 'dev')}
+      ${box(626, 226, 144, 50, 'Builder', 'in the test copy', 'ai')}
+      ${box(626, 126, 144, 50, 'Gate', 'one way out', 'ai')}
+      ${box(430, 318, 172, 50, "Machine's own ports", 'SSH and more')}
+      ${box(248, 330, 170, 44, 'Your services', '', 'svc')}
+    </svg>`;
+  }
+
+  function viewMachine(){
+    const c = (ok, t, d) => `<div class="check-row"><span class="ico ${ok ? 'ok' : 'warn'}">${ok ? CHECK : WARN}</span><div><h3>${t}</h3><p>${d}</p></div></div>`;
+    let h = `<div class="head"><div><h1>Machine health</h1><p class="muted">The same checks run every night. Here they are in plain words.</p></div><button type="button" class="btn small line" data-action="recheck">Run the checks again</button></div>
+      <div class="quiet checks">
+        ${c(true, 'Memory', '16 GB. Plenty for the apps you have.')}
+        ${c(true, "The computer's own disk", 'An SSD, and its health data looks good.')}
+        ${c(true, 'Backup disk', "Plugged in, 612 GB free, and separate from the computer's own disk.")}
+        ${c(true, 'Recovery key', 'Confirmed by you. Keep the printed sheet somewhere outside the house.')}
+        ${c(true, 'Power', 'On mains power. The battery is at 80% and keeps things running for about two hours if the power goes.')}
+        ${c(false, '3 updates are ready to try', "This month's check-up prepared them in your test copies. They are listed below.")}
+      </div>
+      <h2 class="section-title" id="updates" tabindex="-1">Updates to try</h2>
+      <div class="quiet rows">
+        <div class="row"><div><h3>Grandma's guestbook</h3><p>A safety fix for the part that reads photos. Ready in the test copy.</p></div><button type="button" class="btn small line" data-action="try-update">Try it in the test copy</button></div>
+        <div class="row"><div><h3>Recipe box</h3><p>The same safety fix. Ready in the test copy.</p></div><button type="button" class="btn small line" data-action="try-update">Try it in the test copy</button></div>
+        <div class="row"><div><h3>The doors</h3><p>A newer version of the part that lets your home network reach your apps.</p></div><button type="button" class="btn small line" data-action="try-update">Update the doors</button></div>
+      </div>`;
+    if (S.advanced){
+      const rows = [
+        ['allvibe-guestbook-prod-app', 'Guestbook, live app', '82 MB'], ['allvibe-guestbook-prod-db', 'Guestbook, live app\'s data', '64 MB'],
+        ['allvibe-guestbook-dev-app', 'Guestbook, test copy', '79 MB'], ['allvibe-guestbook-dev-db', 'Guestbook, test copy\'s data', '58 MB'],
+        ['allvibe-guestbook-agent', 'The builder', '410 MB'], ['allvibe-guestbook-gate', 'The builder\'s one way out', '31 MB'],
+        ['allvibe-recipes-dev-app', 'Recipe box, test copy', '74 MB'], ['allvibe-proxy', 'The doors', '12 MB']
+      ].map(([n, w, m]) => `<tr><td>${n}</td><td>${w}</td><td><span class="ok-dot"></span>Running, healthy</td><td>${m}</td><td><button type="button" class="btn small line" data-action="logs" data-n="${n}">Logs</button></td></tr>`).join('');
+      h += `<p class="intro" style="margin-top:28px">In the names below, "prod" means the live app and "dev" means the test copy.</p><div class="head" style="margin-bottom:12px"><h2>Containers</h2><button type="button" class="explain" data-action="explain" data-k="container">Explain this</button></div>
+        <div class="quiet" style="overflow-x:auto"><table class="ctable"><thead><tr><th>Name</th><th>What it is</th><th>State</th><th>Memory</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="head section-title" style="margin-bottom:12px"><h2>Who can reach what</h2><button type="button" class="explain" data-action="explain" data-k="map">Explain this</button></div>
+        <div class="quiet map">${mapSVG()}<div class="legend"><span><i></i>Allowed</span><span><i class="b"></i>Blocked by the machine</span></div></div>`;
+    }
+    return h;
+  }
+
+  function viewServices(){
+    const s = S.services;
+    const ha = s.ha;
+    let haBody;
+    if (!ha.installed){
+      haBody = `<p>Controls lamps, sensors and speakers at home, with its own app on your phone.</p><div class="actions"><button type="button" class="btn small" data-action="svc-install" data-s="ha">Install</button><button type="button" class="btn small line" data-action="svc-perms" data-s="ha">What it can access</button></div>`;
+    } else {
+      const u = ha.upd;
+      let upd = '';
+      if (u){
+        const g = ['Backup of its data', `${esc(u.to)} started`, `${esc(u.to)} answers`, 'Live'];
+        const rail = g.map((t, i) => { let cls = ''; if (i < u.stage) cls = 'done'; else if (i === u.stage && !u.end) cls = u.fail && i === 2 ? 'checking' : 'checking'; if (u.end === 'ok') cls = 'done'; if (u.end === 'back') cls = i < 2 ? 'done' : ''; return `<li class="gate ${cls}"><span class="g">${CHECK}</span><span>${t}</span></li>`; }).join('');
+        upd = `<div class="upd"><p><b>${esc(u.msg)}</b></p><ol class="rail r4">${rail}</ol></div>`;
+      }
+      const canUpdate = ha.version !== ha.next && !u;
+      haBody = `<p>Controls lamps, sensors and speakers at home. Version ${esc(ha.version)}.</p>
+        ${canUpdate ? `<p class="muted">A newer version is ready: ${esc(ha.next)}. Updates go through gates: its data is backed up first, and if the new version does not answer, the old one comes back.</p><label class="demo-ctl"><input type="checkbox" data-action="fail-toggle" ${S.failUpdate ? 'checked' : ''}> Demo: make this update fail</label>` : ''}
+        ${upd}
+        <div class="actions">${canUpdate ? `<button type="button" class="btn small" data-action="svc-update">Update to ${esc(ha.next)}</button>` : ''}<button type="button" class="btn small line" data-action="open-svc">Open</button><button type="button" class="btn small line" data-action="svc-perms" data-s="ha">What it can access</button></div>`;
+    }
+    return `<div class="head"><div><h1>Your own services</h1><p class="muted">Services you run on this machine for yourself.</p></div></div>
+      <div class="dev-note"><b>In development.</b> Pi-hole and Home Assistant are the first services being tested. More will be added over time.</div>
+      <p class="intro">These are outside the safety net for your apps: the AI never touches them, and each card says what the service can access. Your home network means the devices in your home, like phones, computers and the router, not the open internet. Their data is backed up every night, and updates go through the same kind of gates as your apps.</p>
+      <div class="svc-grid">
+        <section class="quiet svc"><h2>Pi-hole <span class="chip live">Running</span></h2><p>Blocks ads and trackers for every device at home.</p><p class="muted"><b style="color:var(--text)">Your home's internet depends on this machine.</b> A backup DNS is set in your router, so the internet keeps working if the machine is off.</p><div class="actions"><button type="button" class="btn small line" data-action="open-svc">Open</button><button type="button" class="btn small line" data-action="svc-perms" data-s="pihole">What it can access</button><button type="button" class="btn small line" data-action="logs" data-n="pihole">Logs</button></div></section>
+        <section class="quiet svc"><h2>Home Assistant ${ha.installed ? '<span class="chip live">Running</span>' : '<span class="chip idle">Not installed</span>'}</h2>${haBody}</section>
+        <section class="quiet svc" style="border-style:dashed;border-width:2px"><h2>Add your own <span class="chip idle">Planned</span></h2><p class="muted">Paste a compose file or pick an image yourself, clearly marked as your own responsibility.</p></section>
+      </div>`;
+  }
+
+  function viewSettings(){
+    const s = (t, d, btn) => `<section class="quiet setting"><div><h2>${t}</h2><p>${d}</p></div>${btn}</section>`;
+    const choice = (id, t, d) => `<label class="choice ${S.aiMode === id ? 'on' : ''}"><input type="radio" name="aimode" value="${id}" ${S.aiMode === id ? 'checked' : ''} data-mode="${id}"><span class="h"><span class="radio" aria-hidden="true"></span>${t}</span><span class="d">${d}</span></label>`;
+    let h = `<div class="head"><div><h1>Settings</h1></div></div><div class="settings">
+      <section class="quiet setting" style="display:block"><h2>How your AI connects</h2><p>Pick the way that suits you. Either way, the AI only reaches test copies, and releases always happen here in the panel.</p>
+        <fieldset class="choices"><legend class="sr">How your AI connects</legend>
+          ${choice('panel', 'The AI in this panel', 'Claude Code runs next to your test copy and talks to you here. It uses your own API key, billed to you by Anthropic.')}
+          ${choice('mcp', 'Your own AI app', 'Keep using the AI app you already pay for, like Claude Desktop, Claude Code, VS Code or Cursor. It connects to this machine on your home network. This machine never sees your AI login. You talk to the AI in that app, and you try, check and put things live here.')}
+        </fieldset>
+        ${S.aiMode === 'mcp' ? '<div style="margin-top:14px"><button type="button" class="btn small" data-action="mcp-how">Show how to connect</button></div>' : ''}
+      </section>`;
+    if (S.advanced && S.aiMode === 'mcp'){
+      const calls = [['read_file', 'src/server.js'], ['write_file', 'src/photos.js'], ['deploy_dev', "Grandma's guestbook"], ['run_checks', 'test copy, 12 of 12 passed'], ['commit', 'key check passed'], ['propose_release', 'v3, waiting for you']];
+      h += `<section class="quiet setting" style="display:block"><h2>What your AI app did</h2><p>Every call your AI app made to this machine. It can only reach test copies.</p><div class="log-view">${calls.map(([a, b]) => `${a}  ${esc(b)}`).join('<br>')}</div></section>`;
+    }
+    h += s('Backup disk', "USB disk, 1 TB. Backups are encrypted to this machine's key and to your recovery key.", '<button type="button" class="btn small line" data-action="demo-only">Choose another disk</button>');
+    h += s('Recovery key', 'Confirmed by you. You need it to move to a new computer or to bring back a backup if this one is lost.', '<button type="button" class="btn small line" data-action="demo-only">Print a new recovery sheet</button>');
+    h += s('Who can reach this panel', 'Only devices on your home network, meaning the phones and computers in your home. The panel is never put on the open internet.', '<span class="chip live">Home network only</span>');
+    if (S.advanced){
+      const prof = (id, t) => `<button type="button" class="chip ${S.profile === id ? 'sel' : 'idle'}" aria-pressed="${S.profile === id}" data-action="profile" data-p="${id}" style="cursor:pointer">${t}</button>`;
+      h += `<section class="quiet setting"><div><h2>Profile</h2><p>Ready-made settings for how hard the machine works: memory per app, how often the checks run, and when updates are prepared.</p><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">${prof('quiet', 'Quiet laptop')}${prof('balanced', 'Balanced')}${prof('perf', 'Performance')}</div></div></section>`;
+      h += s('Load safe defaults', 'Puts every advanced setting back the way it came. Your apps, their data, keys and your own services are not touched.', '<button type="button" class="btn small line" data-action="defaults">Load safe defaults</button>');
+    }
+    return h + '</div>';
+  }
+
+  function renderMain(){
+    const m = $('#main');
+    if (S.view === 'home') m.innerHTML = viewHome();
+    if (S.view === 'project') m.innerHTML = viewProject();
+    if (S.view === 'backups') m.innerHTML = viewBackups();
+    if (S.view === 'machine') m.innerHTML = viewMachine();
+    if (S.view === 'services') m.innerHTML = viewServices();
+    if (S.view === 'settings') m.innerHTML = viewSettings();
+    if (S.view === 'project' && S.tab === 'build'){ renderPlan(); renderHelper(); renderShip(); }
+  }
+  function render(){ renderNav(); renderMain(); }
+  function closeMenu(){ $('#side').classList.remove('open'); $('#menu-btn').setAttribute('aria-expanded', 'false'); }
+  function go(view, id, tab){
+    closeMenu();
+    if (view === 'services' && !S.advanced){ modeDialog('services'); return; }
+    S.view = view; if (id) S.projectId = id; if (tab) S.tab = tab;
+    render(); window.scrollTo({top: 0}); $('#main').focus({preventScroll: true});
+  }
+
+  /* ---------- Toast and modal ---------- */
+  let toastT;
+  function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 3600); }
+  let lastFocus;
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),textarea,select,[tabindex]:not([tabindex="-1"])';
+  function openModal(html, wide, focusSel){ if ($('#modal').hidden) lastFocus = document.activeElement; const d = $('#dialog'); d.className = 'dialog' + (wide ? ' wide' : ''); d.innerHTML = html; $('#modal').hidden = false; const f = (focusSel && d.querySelector(focusSel)) || d.querySelector(FOCUSABLE); f && f.focus(); }
+  function closeModal(){ $('#modal').hidden = true; if (lastFocus && lastFocus.isConnected) lastFocus.focus(); else $('#main').focus(); }
+
+  /* ---------- Modes ---------- */
+  function modeDialog(then){
+    openModal(`<h2 id="dialog-title">Turn on advanced mode?</h2>
+      ${then === 'services' ? '<p><b style="color:var(--text)">Your own services are part of advanced mode.</b></p>' : ''}
+      <p>Advanced mode shows what happens under the hood and lets you change more:</p>
+      <ul><li>You see containers, files, code, logs and who can reach what.</li><li>You can change settings that affect how your apps run, and talk to the builder directly.</li><li>You can install your own services. They are outside the safety net for your apps.</li></ul>
+      <p class="safe"><b>Your apps stay protected.</b> Releases still go through the gates, backups still run, and the AI still cannot reach your live apps. You can go back to simple mode at any time.</p>
+      <div class="consent"><input type="checkbox" id="adv-ok" data-action="adv-consent"><label for="adv-ok">I understand that changes I make in advanced mode are my own responsibility.</label></div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Stay in simple mode</button><button type="button" class="btn" id="adv-go" data-action="to-advanced" data-then="${then || ''}" disabled>Turn on advanced mode</button></div>`);
+  }
+  function toAdvanced(then){ S.advanced = true; closeModal(); if (then === 'services'){ S.view = 'services'; } render(); toast('Advanced mode is on. "Back to simple mode" is always at the top.'); }
+  function toSimple(){ S.advanced = false; if (S.view === 'services') S.view = 'home'; S.htab = 'architect'; render(); toast('Back in simple mode. Nothing you set was lost.'); }
+
+  /* ---------- Architect and builder ---------- */
+  function refreshHelper(p){ if (S.projectId === p.id && S.view === 'project' && S.tab === 'build') renderHelper(); }
+  function chat(p, k, t){ p.chat.push([k, t]); refreshHelper(p); }
+  function blog(p, k, t){ p.log.push([k, t]); refreshHelper(p); }
+  function dropWorking(p){ p.chat = p.chat.filter(c => c[0] !== 'working'); }
+  function refreshAll(p){ if (S.projectId === p.id && S.view === 'project' && S.tab === 'build'){ renderPlan(); renderShip(); renderHelper(); } renderNav(); }
+  const SCRIPT = {
+    guestbook: [null, null, { tools: ['Edited src/photos.js', 'Photos are now made smaller when they are saved', 'Committed: make big photos smaller'], tries: 'Step 3 is ready. I checked it: the builder now makes big photos smaller when they are saved. Try it: post a big photo from your phone. It should show up quickly.' }],
+    recipes: [null,
+      { tools: ['Edited src/recipes.js', 'Added migrations/002_recipes.sql (only adds)', 'Committed: add a recipe with a photo'], tries: 'Step 2 is ready. Try it: add a recipe with a photo, restart the test copy, and check that it is still there.' },
+      { tools: ['Edited src/search.js', 'Committed: search by ingredient'], tries: 'Step 3 is ready. Try it: type "egg" in the search box. Only recipes with eggs should show.' },
+      { tools: ['Edited src/share.js', 'Committed: share a recipe with a link'], tries: 'Step 4 is ready. Try it: share a recipe and open the link on your phone.' }]
+  };
+  function build(p, i, tools, tries){
+    p.plan.steps[i].s = 'building';
+    dropWorking(p); p.chat.push(['working', `The builder is working on step ${i + 1}`]);
+    blog(p, 'ai', `Working on step ${i + 1}: ${p.plan.steps[i].t.toLowerCase()}.`);
+    refreshAll(p);
+    let t = 800;
+    tools.forEach(x => { later(() => blog(p, 'tool', x), t); t += 900; });
+    later(() => {
+      blog(p, 'ai', `Step ${i + 1} done. Stopping for the person to try it.`);
+      dropWorking(p); p.chat.push(['done', `The builder finished step ${i + 1}`]);
+      p.plan.steps[i].s = 'ready';
+      refreshAll(p);
+      later(() => chat(p, 'try', tries), 500);
+    }, t + 300);
+  }
+  function stepWorks(p, i){
+    p.plan.steps[i].s = 'tried';
+    chat(p, 'you', `Step ${i + 1} works.`);
+    const n = p.plan.steps.findIndex(x => x.s !== 'tried');
+    if (n === -1){
+      chat(p, 'arch', `All ${p.plan.steps.length} steps are tried. When you are ready, put it live with the green button. The safety checks take care of the backup.`);
+    } else {
+      const sc = (SCRIPT[p.id] || [])[n] || { tools: ['Edited the app', 'Committed the step'], tries: `Step ${n + 1} is ready. Open the test copy and try it.` };
+      chat(p, 'arch', `Good. I have asked the builder for step ${n + 1}: ${p.plan.steps[n].t.toLowerCase()}.`);
+      build(p, n, sc.tools, sc.tries);
+    }
+    refreshAll(p);
+  }
+
+  /* ---------- The report builder ---------- */
+  let marks = [];
+  function reportDialog(p, i){
+    marks = [];
+    const step = p.plan.steps[i];
+    const ctxOpen = S.advanced ? 'open' : '';
+    openModal(`<h2 id="dialog-title">Report a problem with step ${i + 1}</h2>
+      <p>Mark what looks wrong on this picture of the test copy, and answer the questions as well as you can. The last one is the one the architect needs most. The report goes to the architect, who passes it on to the builder.</p>
+      <div class="report">
+        <div>
+          <div class="shot" id="shot" tabindex="0" role="application" aria-roledescription="marking tool" aria-label="Picture of the test copy, for marking the problem" aria-describedby="shot-how">
+            <div class="bar"><i></i>allvibe.local:${p.devPort}</div>
+            <div class="pg"><h4>${esc(p.name)}</h4>
+              <div class="m photo"><span class="broken">no photo</span><span><b>Ada:</b> Happy birthday, Grandma! I added a photo.</span></div>
+              <div class="m"><b>Bo:</b> See you at the party, save me some cake!</div>
+              <div class="form"><span></span><b>Post</b></div>
+            </div>
+          </div>
+          <p class="sr" id="shot-how">Drag to mark an area. With the keyboard, press Enter to add a mark, move it with the arrow keys, change its size with Shift and the arrow keys, and press Enter again to place it.</p><div class="shot-help"><span id="mark-count" aria-live="polite">Drag on the picture, or focus it and press Enter, to mark what looks wrong.</span><button type="button" class="btn small line" data-action="clear-marks">Clear marks</button></div>
+          <details class="ctx" ${ctxOpen}><summary>Technical details added for the AI (5)</summary><ul>
+            <li>Browser console: <code>GET /photos/ada-1.jpg 404 (Not Found)</code></li>
+            <li>Failed request: <code>GET /photos/ada-1.jpg → 404</code></li>
+            <li>Test copy's server log, same minute: <code>error: column "photo" does not exist</code></li>
+            <li>Version: test copy at commit <code>b7d2c19</code></li>
+            <li>Plan step: <code>${i + 1}. ${esc(step.t)}</code></li>
+          </ul></details>
+        </div>
+        <div>
+          <div class="field" style="margin-top:0"><label for="r-did">What did you do?</label><textarea id="r-did" placeholder="For example: I posted a message with a photo, then restarted the test copy."></textarea></div>
+          <div class="field"><label for="r-exp">What did you expect?</label><textarea id="r-exp" placeholder="For example: the photo would still be there."></textarea></div>
+          <div class="field"><label for="r-got">What happened instead? <span class="need">(needed)</span></label><textarea id="r-got" aria-describedby="r-err" placeholder="For example: the message is there, but the photo is gone."></textarea><span class="err" id="r-err" aria-live="polite"></span></div>
+        </div>
+      </div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="send-report" data-i="${i}">Send to the architect</button></div>`, true, '#r-did');
+    wireShot();
+  }
+  let activeMark = null;
+  function countMarks(){ $('#mark-count').textContent = marks.length ? `${marks.length} area${marks.length > 1 ? 's' : ''} marked.` : 'Drag on the picture, or focus it and press Enter, to mark what looks wrong.'; }
+  function wireShot(){
+    const shot = $('#shot'); let start = null, cur = null;
+    const pos = e => { const r = shot.getBoundingClientRect(); return { x: Math.max(0, Math.min(r.width, e.clientX - r.left)), y: Math.max(0, Math.min(r.height, e.clientY - r.top)) }; };
+    shot.addEventListener('pointerdown', e => { start = pos(e); cur = document.createElement('div'); cur.className = 'mark'; cur.innerHTML = `<span>${marks.length + 1}</span>`; shot.appendChild(cur); shot.setPointerCapture(e.pointerId); });
+    shot.addEventListener('pointermove', e => { if (!start) return; const p = pos(e); Object.assign(cur.style, { left: Math.min(p.x, start.x) + 'px', top: Math.min(p.y, start.y) + 'px', width: Math.abs(p.x - start.x) + 'px', height: Math.abs(p.y - start.y) + 'px' }); });
+    shot.addEventListener('pointerup', e => { if (!start) return; const p = pos(e); if (Math.abs(p.x - start.x) < 8 || Math.abs(p.y - start.y) < 8){ cur.remove(); } else { marks.push(1); countMarks(); } start = null; cur = null; });
+    shot.addEventListener('keydown', e => {
+      const r = shot.getBoundingClientRect();
+      if (e.key === 'Enter'){
+        e.preventDefault();
+        if (!activeMark){
+          activeMark = { x: r.width * .3, y: r.height * .3, w: r.width * .4, h: r.height * .3, el: document.createElement('div') };
+          activeMark.el.className = 'mark active'; activeMark.el.innerHTML = `<span>${marks.length + 1}</span>`; shot.appendChild(activeMark.el);
+          $('#mark-count').textContent = 'Move the mark with the arrow keys, change its size with Shift and the arrow keys, then press Enter to place it, or Escape to drop it.';
+        } else { activeMark.el.classList.remove('active'); activeMark = null; marks.push(1); countMarks(); return; }
+      } else if (activeMark && e.key.startsWith('Arrow')){
+        e.preventDefault(); const s = 10, m = activeMark;
+        const dx = e.key === 'ArrowLeft' ? -s : e.key === 'ArrowRight' ? s : 0, dy = e.key === 'ArrowUp' ? -s : e.key === 'ArrowDown' ? s : 0;
+        if (e.shiftKey){ m.w = Math.max(20, Math.min(r.width - m.x, m.w + dx)); m.h = Math.max(20, Math.min(r.height - m.y, m.h + dy)); }
+        else { m.x = Math.max(0, Math.min(r.width - m.w, m.x + dx)); m.y = Math.max(0, Math.min(r.height - m.h, m.y + dy)); }
+      } else if (activeMark && e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); activeMark.el.remove(); activeMark = null; countMarks(); return; }
+      else return;
+      if (activeMark) Object.assign(activeMark.el.style, { left: activeMark.x + 'px', top: activeMark.y + 'px', width: activeMark.w + 'px', height: activeMark.h + 'px' });
+    });
+  }
+  function sendReport(p, i){
+    const got = ($('#r-got').value || '').trim();
+    if (!got){ $('#r-err').textContent = 'Tell the architect what happened, in your own words. One sentence is enough.'; $('#r-got').focus(); return; }
+    const n = marks.length || 1;
+    closeModal(); lastFocus = null; const hp = $('#helper'); hp && hp.focus();
+    chat(p, 'you', `Step ${i + 1} does not work. ${got} (report with ${marks.length ? `${n} marked area${n > 1 ? 's' : ''}` : 'no marks'})`);
+    chat(p, 'saved', `Saved as reports/2026-09-28-step-${i + 1}.md with 1 picture`);
+    later(() => chat(p, 'arch', 'Thanks, the report is clear. The test copy\'s server log says the database has no place for the photo yet, so the step\'s migration never ran there. I have asked the builder to reproduce it first, then fix it. I will tell you when to try again.'), 700);
+    later(() => { blog(p, 'tool', `Read reports/2026-09-28-step-${i + 1}.md and 1 picture`); build(p, i, ['Reproduced it: the photo is lost after a restart', 'Found the cause: the migration had not run in the test copy', 'Fixed the start-up so migrations always run first', 'Ran the checks: 12 of 12 passed', 'Committed: run migrations before the app starts'], `Step ${i + 1} is ready again. The builder reproduced the problem, fixed it, and I checked its report. Please try it once more: post a message with a photo, restart the test copy, and check that the photo is still there.`); }, 1400);
+  }
+
+  /* ---------- Shipping and going back ---------- */
+  function ship(p){
+    const v = (p.live || 0) + 1;
+    p.ship = { v, stage: 1, done: false, msg: 'Checking that the test copy runs exactly what you tried.' };
+    renderShip();
+    const steps = [[1, 'Taking a fresh backup of the live app.'], [2, 'Restoring the backup into a scratch copy and checking it.'], [3, `Starting v${v}.`], [4, `Checking that v${v} answers.`], [5, `v${v} answers. Switching over.`]];
+    let t = 900;
+    steps.forEach(([stage, msg]) => { later(() => { p.ship.stage = stage; p.ship.msg = msg; if (S.projectId === p.id && S.tab === 'build') renderShip(); }, t); t += 1100; });
+    later(() => {
+      p.ship.done = true; p.live = v;
+      p.versions.unshift({ v, when: 'Just now', what: p.plan.title + '.', commit: 'b7d2c19', migs: p.id === 'guestbook' ? ['004_add_photo.sql: only adds'] : [] });
+      if (!p.backups.length) p.backups.push({ when: 'Just now', size: '1 MB', ok: true });
+      p.plan = null;
+      chat(p, 'arch', `v${v} is live. Tell me what you want to change next.`);
+      if (S.projectId === p.id && S.view === 'project') renderMain();
+      renderNav();
+    }, t + 300);
+  }
+  function rollbackDialog(p, v){
+    openModal(`<h2 id="dialog-title">Go back to v${v}?</h2>
+      <p>The live app goes back to v${v}. Your ${esc(p.countWord)} stay: everything written since then is kept.</p>
+      <p>The changes since v${v} only added things to the data, so v${v} works with today's data. Before switching, a fresh backup is taken and checked, like every release.</p>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Keep v${p.live}</button><button type="button" class="btn" data-action="do-rollback" data-v="${v}">Go back to v${v}</button></div>`);
+  }
+  function doRollback(p, v){ closeModal(); toast(`Going back to v${v}: backup taken and checked, v${v} started and answering.`); later(() => { p.live = v; renderMain(); renderNav(); toast(`v${v} is live again. Nothing was lost.`); }, 1600); }
+
+  /* ---------- New app ---------- */
+  function newAppDialog(){
+    openModal(`<h2 id="dialog-title">Start a new app</h2>
+      <p>Describe it in your own words. The architect asks a question or two, writes a short plan, and you try every step before anything goes live.</p>
+      <div class="field"><label for="na-name">Name</label><input id="na-name" placeholder="For example: Chore chart" maxlength="40"></div>
+      <div class="field"><label for="na-idea">What should it do?</label><textarea id="na-idea" placeholder="For example: a chore chart for the kids, where they tick off what they did and see their points for the week."></textarea></div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="make-plan">Make a plan</button></div>`);
+  }
+  function makePlan(){
+    const name = ($('#na-name').value || 'Chore chart').trim();
+    const idea = ($('#na-idea').value || 'A chore chart for the kids, where they tick off what they did and see their points for the week.').trim();
+    $('#dialog').innerHTML = `<h2 id="dialog-title" tabindex="-1">Making a plan</h2><p>The architect is reading your idea<span aria-hidden="true">...</span></p>`; $('#dialog-title').focus();
+    later(() => {
+      $('#dialog').innerHTML = `<h2 id="dialog-title">The plan for ${esc(name)}</h2>
+        <p>Three steps. After each one the builder stops, the architect checks the work, and you try it.</p>
+        <ol class="mini-plan"><li><b>A first page for your idea</b><span>Done when you can open the test copy and see it.</span></li><li><b>What people enter is kept</b><span>Done when it is still there after a restart.</span></li><li><b>Make it yours</b><span>Done when it looks and works the way you want.</span></li></ol>
+        <p class="hint">In the real control panel, the architect asks about your idea and the plan follows it. In the demo it is always these three steps.</p>
+        <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" id="create-go" data-action="create-app" data-name="${esc(name)}" data-idea="${esc(idea)}">Create the app</button></div>`;
+      $('#create-go').focus();
+    }, 1400);
+  }
+  function createApp(name, idea){
+    const id = 'app' + Date.now(); const port = 8100 + S.projects.length * 2;
+    const p = { id, name, live: 0, prodPort: port, devPort: port + 1, count: 0, countWord: 'entries',
+      plan: { title: name, steps: [
+        { t: 'A first page for your idea', c: 'you can open the test copy and see it.', s: 'next' },
+        { t: 'What people enter is kept', c: 'it is still there after a restart.', s: 'next' },
+        { t: 'Make it yours', c: 'it looks and works the way you want.', s: 'next' } ]},
+      chat: [['you', idea], ['arch', 'Here is a plan in three steps. I have written it as a brief for the builder. I will check its work after each step and tell you what to try.']],
+      log: [['tool', 'Created the project from the starter template'], ['tool', 'Read briefs/first-plan.md']],
+      brief: `# Brief: ${name}\n\n1. A first page for your idea.\n2. What people enter is kept.\n3. Make it yours.\n\nRules\n- Migrations only add.\n- Stop after each step.`,
+      versions: [], backups: [], keys: [], ship: null };
+    S.projects.push(p); closeModal(); go('project', id, 'build');
+    build(p, 0, ['Edited src/server.js', 'Committed: a first page'], 'Step 1 is ready. I checked it: the first page is there. Open the test copy and have a look.');
+  }
+
+  /* ---------- Keys ---------- */
+  function addKeyDialog(){
+    openModal(`<h2 id="dialog-title">Add a service key</h2>
+      <p>For a service outside your machine. The value is stored encrypted and is never shown again, not even to you.</p>
+      <div class="field"><label for="k-name">Name</label><input id="k-name" placeholder="For example: WEATHER_API_KEY" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label for="k-env">Where it is used</label><select id="k-env"><option value="dev">Test copy</option><option value="prod">Live app</option><option value="both">Both, with the same value</option></select></div>
+      <div class="field"><label for="k-val">Value</label><input id="k-val" type="password" autocomplete="off" placeholder="Paste the key here"><span class="hint">In the demo, whatever you type is thrown away.</span></div>
+      <p class="consent" style="display:block"><b>Check the value carefully.</b> You will not be able to see it again after saving. If it is wrong, you add it again.</p>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="save-key">Save the service key</button></div>`);
+  }
+  function saveKey(){
+    const p = proj();
+    const name = ($('#k-name').value || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    if (!name){ $('#k-name').focus(); toast('Give the key a name first.'); return; }
+    const env = $('#k-env').value; $('#k-val').value = '';
+    let k = p.keys.find(x => x.name === name);
+    if (!k){ k = { name, dev: false, prod: false, when: 'Just now' }; p.keys.push(k); }
+    if (env === 'dev' || env === 'both') k.dev = true;
+    if (env === 'prod' || env === 'both') k.prod = true;
+    k.when = 'Just now'; closeModal(); renderMain(); toast(`${name} is saved and will not be shown again.`);
+  }
+
+  /* ---------- Own services ---------- */
+  const ICON = {
+    net: '<svg viewBox="0 0 20 20"><path d="M3 9l7-6 7 6v8H3z"/><path d="M7 13a4 4 0 0 1 6 0M8.6 15a1.8 1.8 0 0 1 2.8 0"/></svg>',
+    usb: '<svg viewBox="0 0 20 20"><rect x="6" y="2" width="8" height="7" rx="1"/><path d="M5 9h10v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path d="M8.5 4.5v2M11.5 4.5v2"/></svg>',
+    data: '<svg viewBox="0 0 20 20"><ellipse cx="10" cy="5" rx="6" ry="2.4"/><path d="M4 5v10c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V5M4 10c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4"/></svg>',
+    home: '<svg viewBox="0 0 20 20"><rect x="4" y="9" width="12" height="9" rx="2"/><path d="M7 9V6a3 3 0 0 1 6 0v3"/></svg>',
+    dns: '<svg viewBox="0 0 20 20"><path d="M10 2v16M10 4h6l2 2-2 2h-6M10 10H4l-2 2 2 2h6"/></svg>',
+    port: '<svg viewBox="0 0 20 20"><path d="M7 2v4M13 2v4M5 6h10v4a5 5 0 0 1-10 0z M10 15v3"/></svg>'
+  };
+  const PERMS = {
+    ha: { name: 'Home Assistant', items: [
+      ['big', 'net', 'See your whole home network', 'To find lamps, speakers and sensors. For this it runs outside the walls that keep your apps apart.'],
+      ['', 'usb', 'Use a USB stick, if you plug one in', 'For Zigbee or Z-Wave devices.'],
+      ['', 'data', 'Keep its data on this machine', 'About 1 GB, backed up every night with your apps.'],
+      ['', 'home', 'Only reachable from your home network', 'Not from the internet, just like this panel.']
+    ], note: "It runs as a container, so Home Assistant's own add-ons are not available in this setup." },
+    pihole: { name: 'Pi-hole', items: [
+      ['big', 'dns', 'Answer DNS for your whole home', 'Every device asks it where websites are. If this machine is off, the internet at home stops working, unless your router has a backup DNS.'],
+      ['', 'port', 'Listen on port 53 on your home network', 'That is where devices send their DNS questions.'],
+      ['', 'home', 'Its admin page is only reachable from your home network', 'Not from the internet.']
+    ], note: 'Set a backup DNS in your router before you rely on it, so a restart never takes the internet away.' }
+  };
+  function permsDialog(sid, install){
+    const P = PERMS[sid];
+    const list = P.items.map(([cls, ic, t, d]) => `<li class="${cls}"><span class="pi" aria-hidden="true">${ICON[ic]}</span><div><b>${t}</b><span>${d}</span></div></li>`).join('');
+    openModal(`<h2 id="dialog-title">${install ? `Install ${P.name}?` : `What ${P.name} can access`}</h2>
+      <p>${install ? `${P.name} will be able to:` : 'This is everything it was given when it was installed.'}</p>
+      <ul class="perm">${list}</ul>
+      <p>${P.note}</p>
+      ${install ? `<div class="consent"><input type="checkbox" id="svc-ok" data-action="svc-consent"><label for="svc-ok">I understand what ${P.name} will be able to access.</label></div>` : ''}
+      <div class="dialog-actions">${install ? `<button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" id="svc-go" data-action="svc-do-install" data-s="${sid}" disabled>Install ${P.name}</button>` : '<button type="button" class="btn" data-action="close">Close</button>'}</div>`);
+  }
+  function installHA(){ closeModal(); toast('Installing Home Assistant: fetching it, giving it what you allowed, and checking that it answers.'); later(() => { S.services.ha.installed = true; if (S.view === 'services') renderMain(); toast('Home Assistant is running. Its data is included in tonight\'s backup.'); }, 2000); }
+  function updateHA(){
+    const ha = S.services.ha; const fail = S.failUpdate;
+    ha.upd = { to: ha.next, stage: 0, msg: 'Backing up Home Assistant\'s data.', fail };
+    const r = () => { if (S.view === 'services') renderMain(); };
+    r();
+    later(() => { ha.upd.stage = 1; ha.upd.msg = `Starting ${ha.next}.`; r(); }, 1200);
+    later(() => { ha.upd.stage = 2; ha.upd.msg = `Checking that ${ha.next} answers.`; r(); }, 2400);
+    later(() => {
+      if (fail){ ha.upd.end = 'back'; ha.upd.msg = `${ha.next} did not answer, so ${ha.version} is back, with its data as it was. Nothing was lost.`; toast(`The update failed its health check. ${ha.version} is running again.`); }
+      else { ha.upd.stage = 4; ha.upd.end = 'ok'; ha.upd.msg = `${ha.next} is running and answering.`; ha.version = ha.next; toast(`Home Assistant ${ha.next} is running.`); }
+      r();
+      later(() => { ha.upd = null; r(); }, 4500);
+    }, 3700);
+  }
+
+  function mcpDialog(){
+    openModal(`<h2 id="dialog-title">Connect your own AI app</h2>
+      <ol class="mini-plan"><li><b>Open your AI app</b><span>Claude Desktop, Claude Code, VS Code or Cursor, on a computer on your home network.</span></li>
+      <li><b>Add this machine to it</b><span>This kind of connection is called MCP. Address: <span class="mono">http://allvibe.local:8700/mcp</span></span></li>
+      <li><b>Enter the one-time connection code</b><span>It is shown once and works for 10 minutes: <span class="mono">4F7-KQ2</span> (pretend)</span></li></ol>
+      <p>Your AI app signs in the way it always does. This machine never sees your AI login. The AI can only reach test copies, every call it makes is logged, and releases always happen here in the panel.</p>
+      <div class="dialog-actions"><button type="button" class="btn" data-action="close">Done</button></div>`);
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-go],[data-open],[data-tab],[data-htab],[data-file],[data-action]'); if (!t) return;
+    if (t.dataset.go){ go(t.dataset.go); return; }
+    if (t.dataset.open){ go('project', t.dataset.open, t.dataset.tabGo || 'build'); return; }
+    if (t.dataset.tab){ S.tab = t.dataset.tab; renderMain(); return; }
+    if (t.dataset.htab){ S.htab = t.dataset.htab; renderHelper(); return; }
+    if (t.dataset.file){ S.file = t.dataset.file; renderMain(); return; }
+    const a = t.dataset.action, p = proj();
+    if (a === 'reset'){ timers.forEach(clearTimeout); timers = []; S = initial(); closeModal(); go('home'); background(); toast('The demo is back where it started.'); }
+    if (a === 'toggle-mode'){ closeMenu(); if (S.advanced) toSimple(); else modeDialog(); }
+    if (a === 'to-simple') toSimple();
+    if (a === 'adv-consent') $('#adv-go').disabled = !t.checked;
+    if (a === 'to-advanced') toAdvanced(t.dataset.then);
+    if (a === 'open-link') toast(S.advanced ? `In the demo there is no app behind this. In the real panel it opens allvibe.local:${t.dataset.port}.` : 'In the demo there is no app behind this. In the real panel it opens in a new tab.');
+    if (a === 'open-svc') toast('In the demo there is no service behind this.');
+    if (a === 'works') stepWorks(p, +t.dataset.i);
+    if (a === 'report') reportDialog(p, +t.dataset.i);
+    if (a === 'clear-marks'){ document.querySelectorAll('#shot .mark').forEach(m => m.remove()); marks = []; activeMark = null; countMarks(); }
+    if (a === 'send-report') sendReport(p, +t.dataset.i);
+    if (a === 'ship') ship(p);
+    if (a === 'rollback') rollbackDialog(p, +t.dataset.v);
+    if (a === 'do-rollback') doRollback(p, +t.dataset.v);
+    if (a === 'close') closeModal();
+    if (a === 'new-app'){ closeMenu(); newAppDialog(); }
+    if (a === 'make-plan') makePlan();
+    if (a === 'create-app') createApp(t.dataset.name, t.dataset.idea);
+    if (a === 'backup-now'){ toast('Taking a backup and checking it.'); later(() => { p.backups.unshift({ when: 'Just now', size: '14 MB', ok: true }); renderMain(); toast('Backup taken, restored into a test copy and checked.'); }, 1500); }
+    if (a === 'add-key') addKeyDialog();
+    if (a === 'save-key') saveKey();
+    if (a === 'save-brief'){ p.brief = $('#brief-text').value; chat(p, 'arch', 'I have read your changes to the instructions. The builder gets them before the next step.'); toast('The instructions are saved.'); }
+    if (a === 'recheck'){ toast('Running the checks.'); later(() => toast('Checked just now. Nothing has changed.'), 1200); }
+    if (a === 'demo-only') toast('In the demo, this button does nothing.');
+    if (a === 'explain') toast(EXPLAIN[t.dataset.k]);
+    if (a === 'logs') openModal(`<h2 id="dialog-title">Logs: ${esc(t.dataset.n)}</h2><div class="log-view">22:14:03 started, healthy<br>22:14:03 listening on the internal network<br>03:30:00 nightly backup: data exported<br>03:30:41 restore check: answered<br>07:02:18 health check: ok</div><div class="dialog-actions"><button type="button" class="btn" data-action="close">Close</button></div>`);
+    if (a === 'intro-ok'){ S.introSeen = true; renderMain(); $('#tab-build') && $('#tab-build').focus(); }
+    if (a === 'see-updates'){ go('machine'); const u = $('#updates'); if (u){ u.scrollIntoView(); u.focus({preventScroll: true}); } }
+    if (a === 'try-update') toast('In the real panel, this opens a short plan in the test copy. You try it, then put it live as usual.');
+    if (a === 'copy-next'){ const txt = t.dataset.text; (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copied. Paste it in your AI app.'), () => toast('Select the message and copy it.')); }
+    if (a === 'mcp-how') mcpDialog();
+    if (a === 'profile'){ S.profile = t.dataset.p; renderMain(); toast('Profile changed. In the demo, nothing else happens.'); }
+    if (a === 'defaults') openModal(`<h2 id="dialog-title">Load safe defaults?</h2><p>This puts back:</p><ul><li>the profile, to Balanced;</li><li>memory limits per app;</li><li>the backup schedule, to every night at 03:30.</li></ul><p class="safe">Your apps, their data, their keys and your own services are not touched.</p><div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="do-defaults">Load safe defaults</button></div>`);
+    if (a === 'do-defaults'){ S.profile = 'balanced'; closeModal(); renderMain(); toast('Safe defaults loaded.'); }
+    if (a === 'svc-install') permsDialog(t.dataset.s, true);
+    if (a === 'svc-perms') permsDialog(t.dataset.s, false);
+    if (a === 'svc-consent') $('#svc-go').disabled = !t.checked;
+    if (a === 'svc-do-install') installHA();
+    if (a === 'svc-update') updateHA();
+    if (a === 'fail-toggle') S.failUpdate = t.checked;
+  });
+  document.addEventListener('submit', e => {
+    if (e.target.id !== 'prompt') return; e.preventDefault();
+    const inp = $('#say'), v = inp.value.trim(), p = proj(); if (!v) return; inp.value = '';
+    const tab = S.advanced ? S.htab : 'architect';
+    if (tab === 'builder'){ blog(p, 'you', v); later(() => blog(p, 'note', 'This is the demo, so the builder follows a script. In the real panel, you can talk to Claude Code directly here.'), 600); }
+    else { chat(p, 'you', v); later(() => chat(p, 'arch', 'This is the demo, so I follow a script and cannot answer freely. In the real panel, I would ask you about it and write a brief for the builder.'), 600); }
+  });
+  document.addEventListener('change', e => { const m = e.target.dataset && e.target.dataset.mode; if (!m) return; S.aiMode = m; renderMain(); const r = document.querySelector(`input[data-mode="${m}"]`); r && r.focus(); if (m === 'mcp') mcpDialog(); });
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+  document.addEventListener('keydown', e => {
+    const open = !$('#modal').hidden;
+    if (open && e.key === 'Escape'){ if (activeMark){ return; } closeModal(); return; }
+    if (open && e.key === 'Tab'){
+      const f = [...$('#dialog').querySelectorAll(FOCUSABLE)].filter(x => x.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      else if (!$('#dialog').contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+      return;
+    }
+    const t = e.target;
+    if (t.getAttribute && t.getAttribute('role') === 'tab' && ['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){
+      const tabs = [...t.closest('[role="tablist"]').querySelectorAll('[role="tab"]')];
+      let i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight') i = (i + 1) % tabs.length;
+      if (e.key === 'ArrowLeft') i = (i - 1 + tabs.length) % tabs.length;
+      if (e.key === 'Home') i = 0; if (e.key === 'End') i = tabs.length - 1;
+      e.preventDefault(); const id = tabs[i].id; tabs[i].click(); const n = document.getElementById(id); n && n.focus();
+    }
+  });
+  $('#menu-btn').addEventListener('click', () => { const s = $('#side'); const open = !s.classList.contains('open'); s.classList.toggle('open', open); $('#menu-btn').setAttribute('aria-expanded', String(open)); });
+
+  function background(){
+    const r = S.projects.find(p => p.id === 'recipes');
+    later(() => {
+      r.log.push(['tool', 'Edited src/recipes.js'], ['tool', 'Added migrations/002_recipes.sql (only adds)'], ['ai', 'Step 2 done. Stopping for the person to try it.']);
+      dropWorking(r); r.chat.push(['done', 'The builder finished step 2'], ['try', SCRIPT.recipes[1].tries]);
+      r.plan.steps[1].s = 'ready'; refreshAll(r);
+    }, 6000);
+  }
+  background();
+  render();
+})();
+</script>
+</body>
+</html>

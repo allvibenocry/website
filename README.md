@@ -1,10 +1,12 @@
 # allvibenocry.com
 
-The website for **All vibe no cry**: a static site of two pages. The main page
+The website for **All vibe no cry**: a static site of three pages. The main page
 explains the product; `/under-the-hood` describes how it is built, for
 developers, system administrators, contributors and IT departments, and says
 only what the product repository supports
-([D17](DECISIONS.md#d17-the-under-the-hood-page-its-address-its-own-policy-and-its-fact-sheet)).
+([D17](DECISIONS.md#d17-the-under-the-hood-page-its-address-its-own-policy-and-its-fact-sheet));
+and `/demo` is a clickable demo of the planned control panel, with pretend data
+([D27](DECISIONS.md#d27-the-control-panels-demo-at-demo)).
 
 All vibe no cry is a self-hosted suite, in development, that lets total beginners
 build and run their own apps with AI on an old computer at home without losing
@@ -26,6 +28,8 @@ So a deploy is public at once, and a new version is looked at locally first.
 | `site/` | Everything the web server serves, and nothing else. |
 | `site/index.html` | The main page, with inline CSS and inline JavaScript. |
 | `site/under-the-hood.html` | The technical page, served at `/under-the-hood`: the main page's design system, inline SVG diagrams, and a label on every statement. |
+| `site/demo.html` | The control panel's demo, served at `/demo`: the owner's reference design, with pretend data ([D27](DECISIONS.md#d27-the-control-panels-demo-at-demo)). |
+| `docs/demo-claims.md` | Everything the demo shows about the product, with its source in the product repository and its status. |
 | `docs/under-the-hood-facts.md` | The technical page's fact sheet: every statement it makes, with its source in the product repository, its decision and its status. |
 | `site/favicon.ico`, `site/favicon.svg`, `site/apple-touch-icon.png`, `site/icon-192.png`, `site/icon-512.png`, `site/site.webmanifest` | The site's icon at the paths browsers look for, and a web manifest for the two larger ones ([D26](DECISIONS.md#d26-the-sites-icons-the-owners-drop-at-the-names-browsers-look-for)). |
 | `site/fonts/` | The three font families as `.woff2` files named by their content hash, and `OFL.txt` with their copyright notices and licence ([D2](DECISIONS.md#d2-fonts-served-as-separate-self-hosted-files-not-embedded-in-the-html), [D7](DECISIONS.md#d7-font-files-named-by-their-content-linked-relatively-and-preloaded)). |
@@ -40,8 +44,8 @@ So a deploy is public at once, and a new version is looked at locally first.
 | `scripts/guard.mjs` | Fails on anything about the owner's network in a tracked file; `--history` checks every revision. |
 | `scripts/csp.mjs` | Writes `nginx/csp.conf`, one policy per page, from each page's inline script and style; `--check` fails when they disagree. |
 | `scripts/facts.mjs` | Fails unless every statement on the technical page is in its fact sheet with the same words and status, and no page has an en or em dash. |
-| `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation and behaviour; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
-| `scripts/gallery.mjs` | Every section of both pages, before and after, at every phone and tablet width, as a local page to look at ([D22](DECISIONS.md#d22-phones-and-tablets-the-four-steps-as-cards-and-what-else-was-fixed)). |
+| `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation, overflow, icon and behaviour, the demo's keyboard and focus checks included; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
+| `scripts/gallery.mjs` | Every section of the main page and Under the hood, before and after, at every phone and tablet width, as a local page to look at ([D22](DECISIONS.md#d22-phones-and-tablets-the-four-steps-as-cards-and-what-else-was-fixed)). |
 | `scripts/compare-shots.mjs` | Compares two sets of those screenshots pixel by pixel, block by block where something moved, against the noise of the page compared with itself. |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
@@ -84,7 +88,7 @@ another origin, or en or em dash:
 node scripts/check-page.mjs http://localhost:8080/                    # every page, report only
 node scripts/check-page.mjs http://localhost:8080/under-the-hood      # one page
 node scripts/check-page.mjs http://localhost:8080/ --page main        # the main page alone
-node scripts/check-page.mjs http://localhost:8080/ --widths all       # also at 360, 430 and 768 px
+node scripts/check-page.mjs http://localhost:8080/ --widths all       # every page at each of its widths
 node scripts/check-page.mjs http://localhost:8080/ --shots out/shots  # and screenshots
 ```
 

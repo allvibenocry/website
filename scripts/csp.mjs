@@ -36,6 +36,7 @@ const OUT = path.join(ROOT, "nginx", "csp.conf");
 export const PAGES = [
   { file: "site/index.html", uris: [] },
   { file: "site/under-the-hood.html", uris: ["/under-the-hood", "/under-the-hood.html"] },
+  { file: "site/demo.html", uris: ["/demo", "/demo.html"] },
 ];
 
 /** What a browser hashes: the element's text, exactly, as UTF-8. */
@@ -72,7 +73,11 @@ export function problems(html) {
 export function policy(html) {
   const { scripts, styles } = inlineBlocks(html);
   const css = styles.map((s) => s.text).join("\n");
-  const styleAttributes = tagsOf(html).filter((tag) => /\sstyle\s*=/i.test(tag)).length;
+  // style="" attributes: in the page's own tags, and in the markup its script
+  // writes (the demo builds its screens as HTML strings, D27).
+  const styleAttributes =
+    tagsOf(html).filter((tag) => /\sstyle\s*=/i.test(tag)).length +
+    scripts.reduce((n, s) => n + (s.text.match(/\sstyle\s*=\s*["'\\]/g) ?? []).length, 0);
   const hashes = (blocks) => (blocks.length ? blocks.map((b) => sha256(b.text)) : ["'none'"]);
 
   const directives = [
@@ -85,8 +90,8 @@ export function policy(html) {
   ];
   if (styleAttributes > 0) {
     // style="" attributes, allowed (D10): on the main page, 26 of them, each
-    // setting a CSS custom property such as --i:3; an attribute cannot run
-    // code. The style-src line is for browsers from before style-src-elem and
+    // setting a CSS custom property such as --i:3, and in the demo's screens,
+    // plain CSS (D27); an attribute cannot run code. The style-src line is for browsers from before style-src-elem and
     // -attr (Safari < 15.4, Firefox < 108), which read only it and would
     // otherwise refuse the attributes; current browsers ignore it for styles.
     directives.push(["style-src-attr", "'unsafe-inline'"], ["style-src", "'unsafe-inline'"]);

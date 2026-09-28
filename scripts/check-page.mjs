@@ -6,14 +6,17 @@
  *   node scripts/check-page.mjs http://127.0.0.1:8080/                  # every page
  *   node scripts/check-page.mjs http://127.0.0.1:8080/under-the-hood    # one page
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --page main      # the main page alone
- *   node scripts/check-page.mjs http://127.0.0.1:8080/ --widths all     # 1440, 390, 360, 430 and 768
+ *   node scripts/check-page.mjs http://127.0.0.1:8080/ --widths all     # every page at each of its widths
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --shots out/after
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --full out/after-full
  *   node scripts/check-page.mjs http://127.0.0.1:8080/ --json out/report.json
  *   node scripts/check-page.mjs --deployed              # the production site, from local.env (D14)
  *
- * The site's root means every page: the main page and /under-the-hood (D17).
- * For each, at desktop and at mobile width, or at the widths `--widths` names:
+ * The site's root means every page: the main page, /under-the-hood (D17) and
+ * /demo (D27). For each, at desktop and at mobile width, or at the widths
+ * `--widths` names; `all` is each page's own list: 1440, 390, 360, 430 and 768
+ * for the main page and Under the hood, and 1440, 768, 390, 360 and 320 for the
+ * demo, which is also exercised in light and in dark:
  *
  *  - every request the page makes, grouped by origin, and any that failed;
  *  - every console message and uncaught exception, and every Content-Security-
@@ -24,8 +27,15 @@
  *    scroll-driven steps, the headline replay, both "ship" buttons, the laptop
  *    and the routes replays, and the waitlist form. Under the hood: the release
  *    steps, which light up once when they come into view, the headings, and
- *    every diagram's text alternative. What each one left on the page is
- *    recorded, so two runs can be compared for behaviour and not only for looks;
+ *    every diagram's text alternative. The demo: its report dialog (focus on
+ *    its first question, a mark made with the keyboard, an empty last answer
+ *   refused, Tab kept inside it, focus given back), its project tabs with the
+ *    arrow keys, "Make a plan" leaving focus on "Create the app", the whole way
+ *    from trying the last step to "v3 is live", "Start over", and no
+ *    horizontal overflow in any of the states it passes through. What each one
+ *    left on the page is recorded, so two runs can be compared for behaviour
+ *    and not only for looks;
+ *  - no horizontal overflow: nothing wider than the window;
  *  - no en or em dash anywhere in the page's text or its text alternatives;
  *  - its icons (D26): every one its head declares, and every one its web
  *    manifest names, answering 200 with its own type, nosniff and a cache time.
@@ -64,8 +74,11 @@ const VIEWPORTS = {
   "mobile-360": { width: 360, height: 780, deviceScaleFactor: 2, mobile: true },
   "mobile-430": { width: 430, height: 932, deviceScaleFactor: 2, mobile: true },
   tablet: { width: 768, height: 1024, deviceScaleFactor: 2, mobile: true },
+  "mobile-320": { width: 320, height: 640, deviceScaleFactor: 2, mobile: true },
 };
 const DEFAULT_VIEWPORTS = ["desktop", "mobile"];
+/** A page's widths for `--widths all`, unless it names its own. */
+const ALL_VIEWPORTS = ["desktop", "mobile", "mobile-360", "mobile-430", "tablet"];
 
 /**
  * The site's pages, by path. Each has its sections (by the element that holds
@@ -113,6 +126,19 @@ const PAGES = {
       ["12-rules", "#rules"],
       ["13-source", "#source"],
       ["14-footer", "footer"],
+    ],
+  },
+  "/demo": {
+    name: "demo",
+    prefix: "demo-",
+    settle: 1200,
+    exercise: exerciseDemo,
+    widths: ["desktop", "tablet", "mobile", "mobile-360", "mobile-320"],
+    schemes: ["light", "dark"],
+    sections: [
+      ["01-banner", ".demo-banner"],
+      ["02-side", ".side"],
+      ["03-main", "#main"],
     ],
   },
 };
@@ -377,6 +403,127 @@ async function exerciseUnderTheHood(cdp) {
   return did;
 }
 
+/** Keys as a keyboard sends them: a real keydown, with the browser's own default (Tab moves focus). */
+const KEY_CODES = { Enter: 13, Tab: 9, Escape: 27, End: 35, Home: 36, ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40 };
+async function press(cdp, key, { shift = false } = {}) {
+  const event = { key, code: key, windowsVirtualKeyCode: KEY_CODES[key], nativeVirtualKeyCode: KEY_CODES[key], modifiers: shift ? 8 : 0 };
+  // Enter carries its character, as a real one does, so that it also presses a button.
+  await cdp.send("Input.dispatchKeyEvent", key === "Enter" ? { type: "keyDown", text: "\r", unmodifiedText: "\r", ...event } : { type: "rawKeyDown", ...event });
+  await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", ...event });
+  await sleep(60);
+}
+
+/** How far the page is wider than its window, in CSS pixels; 0 when it is not. */
+const OVERFLOW = "Math.max(0, Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth)";
+
+/**
+ * The control panel's demo (D27), the way a person would use it, from the
+ * keyboard where the brief asks for it. Plain data, like the other pages'; each
+ * `ok` says whether the step did what it must.
+ */
+async function exerciseDemo(cdp) {
+  const did = { overflow: {} };
+  const q = (selector) => JSON.stringify(selector);
+  // A missing element is a failed step, seen in its result, not a stopped run.
+  const click = (selector) => evaluate(cdp, `document.querySelector(${q(selector)})?.click() ?? "missing"`);
+  const active = () => evaluate(cdp, "(() => { const a = document.activeElement; return a ? (a.id || a.dataset.action || a.tagName.toLowerCase()) : null; })()");
+  const inDialog = "!!document.querySelector('#dialog')?.contains(document.activeElement)";
+  const overflowAt = async (state) => { did.overflow[state] = await evaluate(cdp, OVERFLOW); };
+  await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+
+  await overflowAt("home");
+  did.bannerLink = await evaluate(cdp, "(() => { const a = document.querySelector('.demo-banner a.back'); return a && { href: a.getAttribute('href'), text: a.textContent, visible: a.getClientRects().length > 0 }; })()");
+
+  /* Grandma's guestbook: step 2 is ready to try. */
+  await click('[data-open="guestbook"]');
+  await sleep(300);
+  await overflowAt("project");
+
+  /* The report dialog, opened from the keyboard, with focus on its first question. */
+  await evaluate(cdp, "document.querySelector('[data-action=\"report\"][data-i=\"1\"]')?.focus()");
+  await press(cdp, "Enter");
+  await sleep(300);
+  did.reportDialog = { open: await evaluate(cdp, "!document.querySelector('#modal').hidden"), focus: await active() };
+  did.reportDialog.ok = did.reportDialog.open && did.reportDialog.focus === "r-did";
+  await overflowAt("report dialog");
+
+  /* A mark made with the keyboard: Enter, move, resize, Enter to place it. */
+  await evaluate(cdp, "document.querySelector('#shot')?.focus()");
+  await press(cdp, "Enter");
+  await press(cdp, "ArrowRight");
+  await press(cdp, "ArrowRight");
+  await press(cdp, "ArrowDown", { shift: true });
+  await press(cdp, "Enter");
+  did.keyboardMark = await evaluate(cdp, "({ placed: document.querySelectorAll('#shot .mark:not(.active)').length, moving: document.querySelectorAll('#shot .mark.active').length, said: document.querySelector('#mark-count')?.textContent ?? null })");
+  did.keyboardMark.ok = did.keyboardMark.placed === 1 && did.keyboardMark.moving === 0 && did.keyboardMark.said === "1 area marked.";
+
+  /* Tab never leaves the open dialog, forwards or backwards. */
+  const stops = await evaluate(cdp, "document.querySelectorAll('#dialog button, #dialog textarea, #dialog input, #dialog summary, #dialog [tabindex]').length");
+  let outside = 0;
+  for (let i = 0; i < stops + 3; i += 1) { await press(cdp, "Tab"); if (!(await evaluate(cdp, inDialog))) outside += 1; }
+  for (let i = 0; i < stops + 3; i += 1) { await press(cdp, "Tab", { shift: true }); if (!(await evaluate(cdp, inDialog))) outside += 1; }
+  did.tabInDialog = { presses: 2 * (stops + 3), outside, ok: outside === 0 };
+
+  /* An empty last answer is refused, and says why, where the person is. */
+  await evaluate(cdp, "(document.querySelector('#r-got') ?? {}).value = ''");
+  await click('[data-action="send-report"]');
+  await sleep(200);
+  did.emptyAnswer = { stillOpen: await evaluate(cdp, "!document.querySelector('#modal').hidden"), said: await evaluate(cdp, "document.querySelector('#r-err')?.textContent ?? ''"), focus: await active() };
+  did.emptyAnswer.ok = did.emptyAnswer.stillOpen && did.emptyAnswer.said.length > 0 && did.emptyAnswer.focus === "r-got";
+
+  /* Escape closes it, and focus goes back to what opened it. */
+  await press(cdp, "Escape");
+  did.dialogClosed = { hidden: await evaluate(cdp, "document.querySelector('#modal').hidden"), focus: await active() };
+  did.dialogClosed.ok = did.dialogClosed.hidden && did.dialogClosed.focus === "report";
+
+  /* The project tabs follow the tab pattern: arrows, Home and End. */
+  await evaluate(cdp, "document.querySelector('#tab-build')?.focus()");
+  const tabsSeen = [];
+  for (const key of ["ArrowRight", "ArrowRight", "End", "Home", "ArrowLeft", "Home"]) {
+    await press(cdp, key);
+    tabsSeen.push(await evaluate(cdp, "(() => { const a = document.activeElement; return a ? a.id + (a.getAttribute('aria-selected') === 'true' ? '' : ' (not selected)') : null; })()"));
+  }
+  did.projectTabs = { seen: tabsSeen, ok: tabsSeen.join() === "tab-versions,tab-backups,tab-keys,tab-build,tab-keys,tab-build" };
+
+  /* "Make a plan" leaves focus on "Create the app". */
+  await click('[data-action="new-app"]');
+  await sleep(200);
+  await overflowAt("new app dialog");
+  await click('[data-action="make-plan"]');
+  await until(cdp, "document.activeElement && document.activeElement.id === 'create-go'", 5000);
+  did.makePlan = { focus: await active(), text: await evaluate(cdp, "document.activeElement?.textContent ?? null") };
+  did.makePlan.ok = did.makePlan.focus === "create-go" && did.makePlan.text === "Create the app";
+  await overflowAt("plan dialog");
+  await press(cdp, "Escape");
+
+  /* The whole way from trying the last step to "v3 is live". */
+  const flow = {};
+  await click('[data-action="works"][data-i="1"]');
+  flow.lastStepReady = await until(cdp, "!!document.querySelector('[data-action=\"works\"][data-i=\"2\"]')", 10_000);
+  if (flow.lastStepReady) await click('[data-action="works"][data-i="2"]');
+  flow.shipReady = await until(cdp, "(() => { const b = document.querySelector('[data-action=\"ship\"]'); return !!b && !b.disabled; })()", 5000);
+  flow.button = flow.shipReady ? await evaluate(cdp, "document.querySelector('[data-action=\"ship\"]').textContent") : null;
+  if (flow.shipReady) await click('[data-action="ship"]');
+  flow.live = await until(cdp, "document.querySelector('#ship h2')?.textContent === 'v3 is live.'", 15_000);
+  flow.result = await evaluate(cdp, "document.querySelector('#ship h2')?.textContent ?? null");
+  flow.gatesDone = await evaluate(cdp, "document.querySelectorAll('#ship .gate.done').length");
+  flow.ok = flow.lastStepReady && flow.button === "Put v3 live" && flow.live && flow.gatesDone === 6;
+  did.lastStepToLive = flow;
+  await overflowAt("v3 is live");
+
+  /* "Start over" puts everything back. */
+  await click('[data-action="reset"]');
+  await sleep(300);
+  did.startOver = await evaluate(cdp, "({ heading: document.querySelector('#main h1')?.textContent, guestbook: document.querySelector('.app-card .chip')?.textContent })");
+  did.startOver.ok = did.startOver.heading === "Your apps" && did.startOver.guestbook === "v2 is live";
+
+  did.overflowMax = Math.max(...Object.values(did.overflow));
+  did.failed = ["reportDialog", "keyboardMark", "tabInDialog", "emptyAnswer", "dialogClosed", "projectTabs", "makePlan", "lastStepToLive", "startOver"].filter((k) => !did[k].ok);
+  if (!did.bannerLink || did.bannerLink.href !== "/" || !did.bannerLink.visible) did.failed.push("bannerLink");
+  if (did.overflowMax > 0) did.failed.push("overflow");
+  return did;
+}
+
 /**
  * Checks every page must pass, whatever it is: no en or em dash in its text or
  * in any text alternative (the owner's rule for copy on the site), and, for
@@ -404,7 +551,7 @@ async function pageChecks(cdp) {
       const unnamed = [...document.querySelectorAll('svg[role="img"]')]
         .filter(svg => !(svg.getAttribute('aria-label') || (svg.getAttribute('aria-labelledby') ?? '').split(/\\s+/).some(id => document.getElementById(id)?.textContent.trim())))
         .map(svg => svg.outerHTML.slice(0, 60));
-      return { dashes, unnamedDrawings: unnamed };
+      return { dashes, unnamedDrawings: unnamed, overflow: ${OVERFLOW} };
     })()`,
   );
 }
@@ -571,7 +718,7 @@ function parse(argv) {
     else if (rest[i] === "--widths") {
       const wanted = rest[(i += 1)];
       options.viewports = wanted === "all"
-        ? Object.keys(VIEWPORTS)
+        ? "all"
         : wanted.split(",").map((w) => {
             const key = Object.keys(VIEWPORTS).find((k) => String(VIEWPORTS[k].width) === w.trim() || k === w.trim());
             if (!key) throw new Error(`no width ${w}; the widths are ${Object.values(VIEWPORTS).map((v) => v.width).join(", ")}`);
@@ -580,7 +727,7 @@ function parse(argv) {
     }
     else throw new Error(`unknown option ${rest[i]}`);
   }
-  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood] [--widths all|360,390,...] [--shots dir] [--full dir [--pin key=px,...]] [--json file]");
+  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood|demo] [--widths all|320,360,390,...] [--shots dir] [--full dir [--pin key=px,...]] [--json file]");
   // The root is the whole site, or the one page --page names; any other path is
   // that one page.
   const where = new URL(url);
@@ -614,13 +761,27 @@ async function checkOne(browser, url, origin, page, viewport, options) {
       "window.__csp.push({ directive: e.effectiveDirective, blocked: e.blockedURI, sample: e.sample }), true);",
   });
 
-  /* Light, explicitly: headless follows the OS, and this box runs dark. */
-  const { fonts } = await open(cdp, url, viewport, [{ name: "prefers-color-scheme", value: "light" }]);
-  const did = await page.exercise(cdp);
-  const checks = await pageChecks(cdp);
+  /* Light, explicitly: headless follows the OS, and this box runs dark. A page
+     that asks for both (the demo) is exercised in each, from a fresh load. */
+  const schemes = page.schemes ?? ["light"];
+  const byScheme = {};
+  let fonts = [];
+  let checks = { dashes: [], unnamedDrawings: [], overflow: 0 };
+  let csp = [];
+  for (const scheme of schemes) {
+    ({ fonts } = await open(cdp, url, viewport, [{ name: "prefers-color-scheme", value: scheme }]));
+    byScheme[scheme] = await page.exercise(cdp);
+    const found = await pageChecks(cdp);
+    checks = {
+      dashes: [...checks.dashes, ...found.dashes],
+      unnamedDrawings: [...checks.unnamedDrawings, ...found.unnamedDrawings],
+      overflow: Math.max(checks.overflow, found.overflow),
+    };
+    csp = [...csp, ...(await evaluate(cdp, "window.__csp"))];
+  }
+  const did = schemes.length === 1 ? byScheme[schemes[0]] : byScheme;
   const icons = await iconChecks(cdp);
   const shots = options.shots ? await sectionShots(cdp, options.shots, viewport, page) : [];
-  const csp = await evaluate(cdp, "window.__csp");
 
   const full = [];
   if (options.full) {
@@ -650,6 +811,8 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   const notLit = steps && (!did.releaseStepsBeforeInView.dim || steps.dim || steps.lit !== steps.of) ? 1 : 0;
   /* On the main page's cards, every scene plays in view, and none at the top. */
   const notPlaying = did.scenesPlayInView ? did.scenesPlayInView.filter((playing) => !playing).length + (did.scenesPlayingAtTheTop ? 1 : 0) : 0;
+  /* The demo: every step of its exercise, in every scheme. */
+  const demoFailed = page.schemes ? Object.entries(byScheme).flatMap(([scheme, d]) => (d.failed ?? []).map((f) => `${scheme}: ${f}`)) : [];
 
   const run = {
     document: seen.document,
@@ -663,6 +826,7 @@ async function checkOne(browser, url, origin, page, viewport, options) {
     cspViolations: csp,
     dashes: checks.dashes,
     unnamedDrawings: checks.unnamedDrawings,
+    overflow: checks.overflow,
     icons: icons.icons,
     fonts,
     behaviour: did,
@@ -671,7 +835,8 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   const bad =
     elsewhere.length + seen.failed.length + errors.length + seen.exceptions.length + csp.length +
     checks.dashes.length + checks.unnamedDrawings.length + notLit + notPlaying +
-    icons.icons.filter((icon) => !icon.ok).length + (icons.declared ? 0 : 1);
+    icons.icons.filter((icon) => !icon.ok).length + (icons.declared ? 0 : 1) +
+    (checks.overflow > 0 ? 1 : 0) + demoFailed.length;
 
   const out = (line) => process.stdout.write(`${line}\n`);
   out(`\n== ${page.name}, ${viewport} (${VIEWPORTS[viewport].width}x${VIEWPORTS[viewport].height})`);
@@ -687,11 +852,13 @@ async function checkOne(browser, url, origin, page, viewport, options) {
   out(`CSP violations  ${csp.length === 0 ? "none" : JSON.stringify(csp)}`);
   out(`dashes          ${checks.dashes.length === 0 ? "none" : JSON.stringify(checks.dashes)}`);
   out(`drawings        ${checks.unnamedDrawings.length === 0 ? "every one named" : `unnamed: ${JSON.stringify(checks.unnamedDrawings)}`}`);
+  out(`overflow        ${checks.overflow > 0 ? `WIDER than the window by ${checks.overflow} px` : "none"}`);
   out(`icons           ${icons.declared ? icons.icons.map((i) => `${i.ok ? "" : "NOT OK "}${i.path} ${i.status} ${i.type} (${i.cache})`).join("; ") : "NONE declared"}`);
   out(`fonts           ${fonts.join("; ")}`);
   out(`behaviour       ${JSON.stringify(did)}`);
   if (notLit) out("release steps   NOT lit up as they should be: dim until seen, then all lit");
   if (notPlaying) out("scenes          NOT playing as they should: each in view, none at the top");
+  if (page.schemes) out(`demo checks     ${demoFailed.length === 0 ? `all as they must be, in ${schemes.join(" and ")}` : `NOT as they must be: ${demoFailed.join(", ")}`}`);
   if (run.shots.length > 0) out(`screenshots     ${run.shots.length} in ${path.dirname(run.shots[0])}`);
   return { run, bad };
 }
@@ -703,15 +870,18 @@ async function main() {
   const browser = await launch();
   const report = { url, origin, pages: {} };
   let problems = 0;
+  let runs = 0;
+  const widthsOf = (p) => (options.viewports === "all" ? PAGES[p].widths ?? ALL_VIEWPORTS : options.viewports ?? DEFAULT_VIEWPORTS);
 
   try {
     for (const p of paths) {
       const pageUrl = new URL(p, origin).href;
       report.pages[p] = { url: pageUrl, runs: {} };
-      for (const viewport of options.viewports ?? DEFAULT_VIEWPORTS) {
+      for (const viewport of widthsOf(p)) {
         const { run, bad } = await checkOne(browser, pageUrl, origin, PAGES[p], viewport, options);
         report.pages[p].runs[viewport] = run;
         problems += bad;
+        runs += 1;
       }
     }
   } finally {
@@ -719,7 +889,7 @@ async function main() {
   }
 
   if (options.json) writeFileSync(options.json, `${JSON.stringify(report, null, 2)}\n`);
-  process.stdout.write(`\n${problems === 0 ? `clean: ${paths.length} page(s), ${(options.viewports ?? DEFAULT_VIEWPORTS).length} width(s): no errors, no violations, no other origins, no dashes` : `${problems} problem(s)`}\n`);
+  process.stdout.write(`\n${problems === 0 ? `clean: ${paths.length} page(s), ${runs} page and width runs: no errors, no violations, no other origins, no dashes, no overflow` : `${problems} problem(s)`}\n`);
   if (problems > 0) process.exitCode = 1;
 }
 

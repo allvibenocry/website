@@ -808,3 +808,72 @@ content credentials: a signed statement by Anthropic that Claude provided the
 file (in the SVG's metadata and in each PNG's `caBX` chunk, about 5.7 kB
 each, most of the SVG's 8 kB). There is nothing private in them. They are
 served as supplied; removing them would be a change to the owner's files.
+
+## D27. The control panel's demo, at /demo
+
+*2026-09-28. The product's fourth brief, item 4. The product records the demo
+as the panel's reference design (its D51).*
+
+**What.** The owner's clickable demo of the control panel, served at `/demo`
+from `site/demo.html` (`/demo/` and `/demo.html` answer `301` to `/demo`, as
+for `/under-the-hood`, D17). It is the owner's file, unchanged but for three
+things the brief asked for:
+
+- **its icon**: the site's own (D26), instead of a data-URI copy of it;
+- **its fonts**: the same three families it already names, from the site's
+  own files, preloaded and declared exactly as on the other pages (D2, D7),
+  instead of the system fonts its review copy fell back to;
+- **a plain link back to the main page** in its yellow banner, "Back to the
+  main page", inside the banner's text so that it wraps with it on a narrow
+  screen.
+
+Everything it does and says is kept: its pretend data, its scripted AI, the
+yellow banner and "Start over".
+
+**Its Content-Security-Policy** is generated like every page's (D10, D17): its
+one inline script and one style by hash, its fonts, icons and manifest from
+this origin, nothing else. The demo builds its screens as HTML strings, and 25
+of them carry `style=""` attributes of plain CSS, which a policy without
+`style-src-attr 'unsafe-inline'` would block when the script inserts them. So
+`scripts/csp.mjs` now counts the style attributes a page's script writes as
+well as those in its markup, and the demo gets the same allowance as the main
+page (D10): an attribute cannot run code. The other two pages' policies did not
+change. The demo stores nothing: no cookie, no storage, its state in memory
+only, gone on reload or "Start over". Its "Copy the message" button uses the
+clipboard, which needs no permission to write.
+
+**Checked** (D8). check-page exercises the demo at 1440, 768, 390, 360 and
+320 px, each in light and in dark, from a fresh load, the way a person would,
+from the keyboard where it matters:
+
+- the report dialog, opened with Enter, has focus on its first question;
+- a mark is made with the keyboard (Enter, the arrow keys, Shift and an arrow,
+  Enter);
+- Tab and Shift-Tab, pressed more times than the dialog has stops, never leave
+  it;
+- an empty last answer is refused, with its message, and focus on it;
+- Escape closes the dialog and gives focus back to "Something is wrong";
+- the project tabs move with the arrow keys, Home and End;
+- after "Make a plan", focus lands on "Create the app";
+- the whole way from trying the last step to "v3 is live" completes, all six
+  safety checks done;
+- "Start over" puts the demo back where it started;
+- the banner's link is there and points to `/`;
+- nothing is wider than the window, at home, in the app, with the report
+  dialog open, with the new app's dialogs open, and after "v3 is live";
+
+and, as on every page, no console error, no CSP violation, no request to
+another origin, no failed request, no dash and every icon answering. **Each of
+these was seen failing** before it was trusted: eleven copies of the demo, each
+with one of these behaviours broken, each failed exactly that check (the copy
+that sends an empty answer also failed the steps after it, whose state it had
+changed), and a run no longer stops at the first missing element.
+
+**What it claims** is in [docs/demo-claims.md](docs/demo-claims.md), read at
+product commit `d3f3131`: 81 things it shows, each with its source and status.
+Seven have no source in the product, or go further than it; they are listed
+there for the owner, and the demo keeps its words.
+
+**Not checked:** a screen reader reading it (the checks are of focus, roles and
+names, not of speech); marking with a finger on a touch screen; and a real
+phone, until the owner looks at the preview.
