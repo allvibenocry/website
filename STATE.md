@@ -1,6 +1,6 @@
 # State
 
-*Updated 2026-09-28.*
+*Updated 2026-09-28: the product's fourth brief, items 3 to 6 done; waiting for the owner.*
 
 This repository is public (D14). It describes the production host only
 generically; its address, its port and every other detail of the network it
@@ -66,7 +66,31 @@ section of both pages before and after, at every phone and tablet width, is in
 
 ## In progress
 
-Nothing. The fourth and fifth briefs are done.
+**The product's fourth brief**, its website items (the product's items 1 and 2
+are in its own repository). Waiting for the owner at the stop after item 6: to
+look at the site on a computer and a phone, and to do the sign-in test in the
+product's walkthrough, step 23. Nothing is tagged, released or deployed before
+the owner writes "release" (rule 16).
+
+3. Favicons (D26): the owner's drop at the conventional paths, a web manifest,
+   a day's cache, and an icon check in check-page. **Done**, `4ae41f9`.
+4. The control panel's demo at `/demo` (D27), with its checks at 1440, 768,
+   390, 360 and 320 px in light and dark, and `docs/demo-claims.md`. **Done**,
+   `54b25dd`.
+5. Under the hood and both claims sheets read at product commit `6a20da8`, the
+   demo linked from the navigation and the hero, and the main page compared
+   with `v0.2.0` (D28). **Done**, `cb6ff9e`.
+6. The local container rebuilt, the policies regenerated, check-page clean for
+   every page at every width (3 pages, 15 runs); **the phone preview is
+   running**: a second container from the same image, started by hand on the
+   workstation's home-network address, port 8090, and in no file (the address
+   is given in chat only). It is removed once `v0.3.0` is live. This file and
+   DECISIONS.md. **Done** with this commit.
+7. Release `v0.3.0`. Waiting for "release".
+8. Deploy and verify `v0.3.0`, then remove the phone preview. Waiting for
+   "release".
+
+**Before that**, the website's own fourth and fifth briefs, both done:
 
 The fifth brief, after the architect's second review of the website, came
 before items 7 and 8 of the fourth:
@@ -106,12 +130,18 @@ roadmap):
 - `site/index.html`: the main page, with its fonts in `site/fonts/` (D2, D7);
   since `v0.2.0`'s content, with the links, the honest line and the phone and
   tablet layout above.
-- `site/under-the-hood.html` (D17, D22): in the main page's design system, with
-  three inline SVG diagrams; served at `/under-the-hood`, the two other
-  spellings redirected there.
-- `docs/under-the-hood-facts.md` and `docs/main-page-claims.md` (D17, D21,
-  D24): what each page says, and where in the product repository it comes
-  from, both read at product commit `218a518`.
+- `site/under-the-hood.html` (D17, D22, D28): in the main page's design system,
+  with three inline SVG diagrams, the release's now in fifteen steps; served
+  at `/under-the-hood`, the two other spellings redirected there.
+- `site/demo.html` (D27): the owner's demo of the control panel, served at
+  `/demo`, with the site's fonts and icons and a link back in its banner;
+  linked from both pages' navigation and the main page's hero.
+- The icons (D26): `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`,
+  `icon-192.png`, `icon-512.png` and `site.webmanifest`, a day's cache.
+- `docs/under-the-hood-facts.md`, `docs/main-page-claims.md` and
+  `docs/demo-claims.md` (D17, D21, D24, D27, D28): what each page says, and
+  where in the product repository it comes from, all read at product commit
+  `6a20da8`.
 - `site/fonts/OFL.txt`: the OFL 1.1 text and each family's copyright notice.
 - The container (D9 to D11, D17): healthy, read-only, as uid 101, with the
   headers and a Content-Security-Policy per page; its log stays empty.
@@ -124,8 +154,9 @@ roadmap):
   the host's only change was this stack and its container.
 - `scripts/guard.mjs` (D14), `scripts/facts.mjs` (D17), `scripts/csp.mjs` (D10,
   D17): in CI on every push, and the last two before every release.
-- `scripts/check-page.mjs` (D8, D17, D18, D22, D24): every page, at every width
-  with `--widths all`, with screenshots and full pages in slices, and changed
+- `scripts/check-page.mjs` (D8, D17, D18, D22, D24, D26, D27): every page, at
+  each of its widths with `--widths all`, its icons and its overflow; the
+  demo's keyboard, focus and flow checks, in light and dark; with screenshots and full pages in slices, and changed
   elements pinned to one height with `--pin`; `scripts/compare-shots.mjs` (D18,
   D19, D24): two sets of pictures against each other and the noise;
   `scripts/gallery.mjs` (D22): every section, before and after, at every phone
@@ -133,6 +164,20 @@ roadmap):
 - `scripts/portainer.mjs`, `scripts/local-config.mjs`.
 
 ## Known
+
+- **The demo shows seven things the product does not have or say** (D27,
+  `docs/demo-claims.md`): "Tried by you" as a safety check, a backup before
+  going back, checks every night, power and battery, the gate's container
+  name, who can reach your own services, and the MCP bridge's command, port
+  and pairing code. It keeps the owner's words; each needs a decision in the
+  product or a change to the demo.
+- **Two main page claims rest on the agent's instructions only** (D28): "Nothing
+  moves on until you have seen it work" and "You try every step before it
+  ships". A release does not check that anyone tried.
+- **The icon files carry C2PA content credentials** (D26), served as supplied.
+- **The site still says "your own API key"**: the product's agent can now sign
+  in with a Claude account too (its D46), and the site says so only after the
+  owner has tried it.
 
 - **The demonstration's gates** still show the new version stopping at the
   health check while the old one stays live; its words now say the new version
