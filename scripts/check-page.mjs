@@ -430,8 +430,22 @@ async function sectionShots(cdp, dir, viewport, page) {
 }
 
 /** The whole page, with reduced motion: deterministic, for a pixel comparison. */
-async function fullShot(cdp, dir, viewport, scheme, page) {
+async function fullShot(cdp, dir, viewport, scheme, page, pin) {
   await sleep(1500);
+  /* `--pin steps>4=800,section#planned=2200`: each element, by its key in the
+     boxes below, given that height in CSS pixels, the same in both pictures of
+     a comparison. A sentence that gains a line moves everything under it by a
+     fraction of a pixel, and the main page's background is one gradient and
+     grid the height of the page, so otherwise no row below a change would match. */
+  if (pin) {
+    await evaluate(cdp, `(() => { for (const [key, px] of ${JSON.stringify(pin)}) {
+      const [parent, n] = key.split(">");
+      const el = document.querySelector(n ? "." + parent + " > :nth-child(" + n + ")" : key);
+      if (!el) throw new Error("--pin: nothing is " + key);
+      el.style.height = px + "px";
+    } })()`);
+    await sleep(500);
+  }
   const { cssContentSize } = await cdp.send("Page.getLayoutMetrics");
   const width = Math.round(cssContentSize.width);
   const height = Math.round(cssContentSize.height);
@@ -475,7 +489,11 @@ async function fullShot(cdp, dir, viewport, scheme, page) {
       const n = seen.get(base) ?? 0; seen.set(base, n + 1);
       const r = el.getBoundingClientRect();
       return { key: n ? base + ':' + n : base, x: Math.round(r.left + scrollX), y: Math.round(r.top + scrollY), width: Math.round(r.width), height: Math.round(r.height) };
-    }); })()`,
+    }).concat([...document.querySelectorAll('.steps > li, .signs > li, .hero-copy > p')].map(el => {
+      /* Items whose classes change as the page runs, named by their place instead: steps>4, signs>2. */
+      const r = el.getBoundingClientRect();
+      return { key: el.parentElement.classList[0] + '>' + ([...el.parentElement.children].indexOf(el) + 1), x: Math.round(r.left + scrollX), y: Math.round(r.top + scrollY), width: Math.round(r.width), height: Math.round(r.height) };
+    })); })()`,
   );
   writeFileSync(file.replace(/\.png$/, ".boxes.json"), `${JSON.stringify(boxes, null, 1)}\n`);
   return file;
@@ -498,6 +516,11 @@ function parse(argv) {
     if (rest[i] === "--shots") options.shots = rest[(i += 1)];
     else if (rest[i] === "--full") options.full = rest[(i += 1)];
     else if (rest[i] === "--json") options.json = rest[(i += 1)];
+    else if (rest[i] === "--pin") options.pin = rest[(i += 1)].split(",").map((p) => {
+      const [key, px] = p.split("=");
+      if (!/^([\w-]+>\d+|[a-z]+[#.][\w-]+)$/.test(key) || !(Number(px) > 0)) throw new Error(`--pin wants key=px, as in steps>4=800 or section#planned=2200, not ${p}`);
+      return [key, Number(px)];
+    });
     // "main" rather than "/": Git Bash rewrites a lone "/" into a Windows path.
     else if (rest[i] === "--page") options.page = rest[(i += 1)] === "main" ? "/" : `/${rest[i].replace(/^\/+/, "")}`;
     else if (rest[i] === "--widths") {
@@ -512,7 +535,7 @@ function parse(argv) {
     }
     else throw new Error(`unknown option ${rest[i]}`);
   }
-  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood] [--widths all|360,390,...] [--shots dir] [--full dir] [--json file]");
+  if (!url || !/^https?:\/\//.test(url)) throw new Error("usage: check-page.mjs <http(s) url> [--page main|under-the-hood] [--widths all|360,390,...] [--shots dir] [--full dir [--pin key=px,...]] [--json file]");
   // The root is the whole site, or the one page --page names; any other path is
   // that one page.
   const where = new URL(url);
@@ -560,7 +583,7 @@ async function checkOne(browser, url, origin, page, viewport, options) {
         { name: "prefers-reduced-motion", value: "reduce" },
         { name: "prefers-color-scheme", value: scheme },
       ]);
-      full.push(await fullShot(cdp, options.full, viewport, scheme, page));
+      full.push(await fullShot(cdp, options.full, viewport, scheme, page, options.pin));
     }
     await cdp.send("Emulation.setEmulatedMedia", { features: [] });
   }

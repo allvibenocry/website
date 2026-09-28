@@ -5,7 +5,7 @@
  * compared with itself.
  *
  *   node scripts/compare-shots.mjs <before> <after> [--noise <before, again>]
- *        [--changed <box key>,<box key>,...]
+ *        [--changed <box key>,<box key>,... [--margin <css px>]]
  *
  * `<before>` and `<after>` are directories of check-page's `--shots` or
  * `--full` output. Screenshots with the same name are compared.
@@ -17,7 +17,15 @@
  * not called different. The boxes named by `--changed` are where a change was
  * meant to be: they are left out of the comparison and reported as such. When
  * a block with a change in it changed height, the rows above the change are
- * compared from the top and the rows below it from the bottom.
+ * compared from the top and the rows below it from the bottom. `--margin`
+ * grows each named box by that many CSS pixels, for what an element paints
+ * outside its box: a shadow, an outline.
+ *
+ * A change of words that changes an element's height moves everything under it,
+ * often by a fraction of a pixel, and the main page's background is one gradient
+ * the height of the page: no block below would match. Taken with check-page's
+ * `--pin`, the changed elements have the same height in both pictures, and
+ * everything else must be identical (D24).
  *
  * With `--noise`, every comparison is also made between `<before>` and the
  * second before run, and the result says whether after-against-before stays
@@ -134,16 +142,25 @@ const isBlock = (key) => /^(header|section|footer|div\.dusk)/.test(key);
  * One full-page screenshot against another, block by block. `changed` is the
  * set of box keys where a change was meant to be.
  */
-function compareFull(beforeFile, afterFile, changed) {
+function compareFull(beforeFile, afterFile, changed, margin = 0) {
   const A = decode(readFileSync(beforeFile));
   const B = decode(readFileSync(afterFile));
   // Boxes are in CSS pixels; a picture taken at 2x (mobile) has twice as many.
+  let scale = 1;
   const scaled = (boxes, img) => {
-    const scale = img.width / Math.max(...boxes.map((b) => b.x + b.width));
+    scale = img.width / Math.max(...boxes.map((b) => b.x + b.width));
     return boxes.map((b) => ({ key: b.key, x: Math.round(b.x * scale), y: Math.round(b.y * scale), width: Math.round(b.width * scale), height: Math.round(b.height * scale) }));
   };
   const boxesA = scaled(JSON.parse(readFileSync(beforeFile.replace(/\.png$/, ".boxes.json"), "utf8")), A);
   const boxesB = scaled(JSON.parse(readFileSync(afterFile.replace(/\.png$/, ".boxes.json"), "utf8")), B);
+  // A named change, in its block's own coordinates, grown by the margin (what
+  // it paints outside its box: a shadow, an outline) but never past the block.
+  const pad = Math.round(margin * scale);
+  const mask = (m, block) => {
+    const x0 = Math.max(m.x - pad, block.x), y0 = Math.max(m.y - pad, block.y);
+    const x1 = Math.min(m.x + m.width + pad, block.x + block.width), y1 = Math.min(m.y + m.height + pad, block.y + block.height);
+    return { x: x0 - block.x, y: y0 - block.y, w: x1 - x0, h: y1 - y0 };
+  };
   const byKey = (boxes) => new Map(boxes.map((b) => [b.key, b]));
   const mapA = byKey(boxesA), mapB = byKey(boxesB);
   const inside = (outer, inner) => inner.y >= outer.y && inner.y + inner.height <= outer.y + outer.height && inner.x >= outer.x && inner.x + inner.width <= outer.x + outer.width;
@@ -160,8 +177,8 @@ function compareFull(beforeFile, afterFile, changed) {
     }
     const ca = clamp(a, A), cb = clamp(b, B);
     // The intended changes inside this block, in the block's own coordinates.
-    const masksA = [...changed].map((k) => mapA.get(k)).filter((m) => m && inside(a, m)).map((m) => ({ x: m.x - a.x, y: m.y - a.y, w: m.width, h: m.height }));
-    const masksB = [...changed].map((k) => mapB.get(k)).filter((m) => m && inside(b, m)).map((m) => ({ x: m.x - b.x, y: m.y - b.y, w: m.width, h: m.height }));
+    const masksA = [...changed].map((k) => mapA.get(k)).filter((m) => m && inside(a, m)).map((m) => mask(m, a));
+    const masksB = [...changed].map((k) => mapB.get(k)).filter((m) => m && inside(b, m)).map((m) => mask(m, b));
     const masks = [...masksA, ...masksB];
     const width = Math.min(ca.width, cb.width);
     let result;
@@ -231,9 +248,10 @@ function main() {
   for (let i = 0; i < rest.length; i += 1) {
     if (rest[i] === "--noise") options.noise = rest[(i += 1)];
     else if (rest[i] === "--changed") options.changed = new Set(rest[(i += 1)].split(","));
+    else if (rest[i] === "--margin") options.margin = Number(rest[(i += 1)]);
     else throw new Error(`unknown option ${rest[i]}`);
   }
-  if (!before || !after) throw new Error("usage: compare-shots.mjs <before> <after> [--noise <before, again>] [--changed key,key]");
+  if (!before || !after) throw new Error("usage: compare-shots.mjs <before> <after> [--noise <before, again>] [--changed key,key [--margin css px]]");
 
   let beyond = 0;
   for (const name of readdirSync(before).filter((f) => f.endsWith(".png")).sort()) {
@@ -248,7 +266,7 @@ function main() {
     process.stdout.write(`\n${name}  `);
     let within;
     if (full) {
-      const result = compareFull(path.join(before, name), afterFile, options.changed);
+      const result = compareFull(path.join(before, name), afterFile, options.changed, options.margin);
       const noise = noiseFile && existsSync(noiseFile) ? compareFull(path.join(before, name), noiseFile, new Set()) : null;
       process.stdout.write(`${result.size}\n`);
       for (const block of result.blocks) {

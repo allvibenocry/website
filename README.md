@@ -100,6 +100,17 @@ node scripts/compare-shots.mjs out/a-full out/new-full --noise out/b-full --chan
 node scripts/compare-shots.mjs out/a out/new --noise out/b
 ```
 
+When the change is to words, and a sentence gains or loses a line, pin the
+changed elements to the same height in both full-page runs, so that everything
+under them stays where it was (D24). `--margin` also leaves out what an element
+paints outside its box, such as a card's shadow:
+
+```sh
+node scripts/check-page.mjs http://localhost:8089/ --page main --full out/a-full --pin "steps>4=800,signs>2=260"
+node scripts/check-page.mjs http://localhost:8080/ --page main --full out/new-full --pin "steps>4=800,signs>2=260"
+node scripts/compare-shots.mjs out/a-full out/new-full --changed "steps>4,signs>2" --margin 6
+```
+
 Without Docker, any static file server on `site/` shows the pages, though
 without the headers, and the technical page only at `/under-the-hood.html`
 (browsers refuse fonts from `file://`, so opening the file directly does not
