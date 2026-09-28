@@ -8,33 +8,36 @@ runs on are in `local.env`, which is gitignored (see `local.example.env`).
 
 ## Live
 
-**`v0.1.0` is live, and published on allvibenocry.com.** The owner published it
-(rule 1, D20); the edge in front of the production host is theirs, and nothing
-in this repository configures it. Deployed 2026-09-27 (23:46 UTC on
-26 September). Seen from outside on 2026-09-27: `https://allvibenocry.com/`
-answers `200` through the edge, with `v0.1.0`'s Content-Security-Policy.
+**`v0.2.0` is live, and public on allvibenocry.com.** Deployed 2026-09-28 at
+01:26 UTC, over `v0.1.0`; the owner published the site (rule 1, D20), and the
+edge in front of the production host is theirs. Seen from outside on
+2026-09-28: `https://allvibenocry.com/` and `https://allvibenocry.com/under-the-hood`
+answer `200` through the edge, each with `v0.2.0`'s own Content-Security-Policy;
+`/under-the-hood/` and `/under-the-hood.html` answer `301` to `/under-the-hood`;
+plain `http://` answers `301` to `https://`.
 
 | | |
 |---|---|
-| Version released | `v0.1.0`, commit `e46eb09` |
-| Image | `ghcr.io/allvibenocry/website:v0.1.0` = `:sha-e46eb090ada7246791664e8a50bbe6062bcc1442`, digest `sha256:04dd874272c1da490344776e825eb6debf22fb42635d82f356a12123634a7f72`; public, pulled without credentials (D15) |
+| Version released | `v0.2.0`, commit `54e3a5e` (its `site/` and `nginx/` are `c38765f`'s) |
+| Image | `ghcr.io/allvibenocry/website:v0.2.0` = `:sha-54e3a5eb53bab83187b300dac26816f098f53bd3`, digest `sha256:8041b7b4695eb756498dd93e1cfd7804355bd7e2e7dc0b664616b74339aedb36`; built, tested and pushed by release run 36365874752; public, pulled without credentials (D15) |
 | Production host | the production Docker host, managed by Portainer (x86_64) |
-| Stack | `allvibenocry-website`, running `v0.1.0`; its container healthy, 64 MiB, 64 processes, read-only root, no capabilities, uid 101 |
+| Stack | `allvibenocry-website`, running `v0.2.0`; its container healthy, 64 MiB, 64 processes, read-only root, no capabilities, uid 101 |
 | On the LAN | the host's LAN address and a port, both in `local.env`; `node scripts/check-page.mjs --deployed` checks it |
-| In public | `https://allvibenocry.com/`, published by the owner |
-| Rollback | none needed yet; `v0.1.0` is the first version |
+| In public | `https://allvibenocry.com/` and `/under-the-hood`, published by the owner |
+| Rollback | `node scripts/stack.mjs deploy v0.1.0 --yes`; `v0.1.0` is still on GHCR, digest `sha256:04dd874272c1da490344776e825eb6debf22fb42635d82f356a12123634a7f72` |
 
-**A deploy is public at once** (D20). That is why `v0.2.0` below waits for the
-owner to look at it, and to write "release".
+**Checked after the deploy**: the deploy's snapshots of the host before and
+after show this stack's container replaced, `v0.1.0` to `v0.2.0`, and
+everything else the same: the same stacks and containers, ids, images, start
+times and restart counts. `check-page --deployed --widths all` is clean for both
+pages at 1440, 390, 360, 430 and 768 px, with every behaviour as in the local
+container. The public pages are the new ones: their policies are `v0.2.0`'s,
+and the edge did not serve them from its cache.
 
-## Ready, not released: `v0.2.0`
+**A deploy is public at once** (D20), so a new version is looked at by the
+owner in the local container first.
 
-**Its content is final at `c38765f`**: `site/` and `nginx/`, which are all the
-image holds. Later commits change only documentation. **Not tagged, not built
-by the release workflow, not pushed, not deployed**: nothing of it is on the
-production host or in public.
-
-What it holds, beyond `v0.1.0`:
+**What `v0.2.0` added**, beyond `v0.1.0`:
 
 - **`/under-the-hood`** (D17, D23, D24): how the product is built, for a
   technical reader, 110 statements each labelled Built, Verified on hardware or
@@ -54,23 +57,19 @@ What it holds, beyond `v0.1.0`:
   playing when it comes into view; the gates, the notes and the stamp fixed;
   Under the hood's diagrams readable at 360 px.
 
-**Runs in the local container**: `docker compose up -d --build`, then
-http://localhost:8080/ and http://localhost:8080/under-the-hood.
-
-**Checked there**: check-page clean for both pages at 1440, 390, 360, 430 and
-768 px, at `c38765f`. Against `7af600a`, with the changed elements pinned to
-one height (D24), both pages at every width, light and dark, differ by no more
-than 2/255 outside the elements whose words changed: the main page's hero line,
-step 4 and three of the safety section's signs, and Under the hood's Planned
-section. Every section of both pages before and after, at every phone and
-tablet width, is in `out/screenshots/brief5.html`, which is not committed.
+**Checked before the release**, in the local container: check-page clean for
+both pages at every width, at `c38765f`. Against `7af600a`, with the changed
+elements pinned to one height (D24), both pages at every width, light and dark,
+differ by no more than 2/255 outside the elements whose words changed. Every
+section of both pages before and after, at every phone and tablet width, is in
+`out/screenshots/brief5.html`, which is not committed.
 
 ## In progress
 
+Nothing. The fourth and fifth briefs are done.
+
 The fifth brief, after the architect's second review of the website, came
-before items 7 and 8 of the fourth. **Its items 1 to 5 are done; the fourth
-brief's items 7 and 8, the release and the deploy of `v0.2.0`, wait for the
-owner to write "release".**
+before items 7 and 8 of the fourth:
 
 1. The product roadmap: agent adapters, a guided plan, sign-in and
    invitations, the team version, and the README's credit (D34 there).
@@ -79,11 +78,10 @@ owner to write "release".**
 3. `docs/main-page-claims.md` read at `218a518`: every claim has a source, and
    none goes further (D24). Under the hood's N8 to N11. **Done**, `c38765f`.
 4. A preview for the owner's phone: a second container from the same image,
-   started by hand and published on the workstation's home-network address. It
-   is not in `compose.yaml`, and its address is in no file. **Running**; to be
-   removed once `v0.2.0` is live.
-5. The local container rebuilt, both pages checked at every width, this file.
-   **Done.**
+   started by hand and published on the workstation's home-network address,
+   never in `compose.yaml` or any file. **Done, and removed** once `v0.2.0` was
+   live.
+5. The local container rebuilt, both pages checked at every width. **Done.**
 
 The fourth brief (the second website brief of the same day, and the product's
 roadmap):
@@ -99,8 +97,9 @@ roadmap):
 4. Phones and tablets (D22). **Done.**
 5. Under the hood's Planned section. **Done.**
 6. The local preview, this file and DECISIONS.md. **Done.**
-7. Release `v0.2.0`. **Waiting for "release".**
-8. Deploy and verify `v0.2.0`. **Waiting for "release".**
+7. Release `v0.2.0`. **Done**: tag `v0.2.0` at `54e3a5e`, release run
+   36365874752, the image pulled without credentials.
+8. Deploy and verify `v0.2.0`. **Done**, and the edge recorded (D25).
 
 ## What works
 
@@ -117,12 +116,12 @@ roadmap):
 - The container (D9 to D11, D17): healthy, read-only, as uid 101, with the
   headers and a Content-Security-Policy per page; its log stays empty.
 - The release workflow (D12): the `v0.1.0` tag built, tested, pushed and read
-  back the image above (run 36271926458). It also checks the fact sheet, and the
-  new page's address, type, policy and redirects; that part was run locally,
-  not by a tag.
+  back its image (run 36271926458), and the `v0.2.0` tag the image above (run
+  36365874752), with the fact sheet, the policies, and Under the hood's
+  address, type, policy and redirects checked by a tag for the first time.
 - The stack file and `scripts/stack.mjs` (D13, D16): `deploy v0.1.0 --yes`
-  created the stack for real, and the host's only change was this stack and
-  its container.
+  created the stack for real, and `deploy v0.2.0 --yes` updated it; each time
+  the host's only change was this stack and its container.
 - `scripts/guard.mjs` (D14), `scripts/facts.mjs` (D17), `scripts/csp.mjs` (D10,
   D17): in CI on every push, and the last two before every release.
 - `scripts/check-page.mjs` (D8, D17, D18, D22, D24): every page, at every width
@@ -140,9 +139,12 @@ roadmap):
   was started and is rolled back. The illustration is kept, by decision (D24).
 - **The words on the laptop's screen** in the hardware section are about 5 px
   on a 360 px phone: a picture of a screen, kept as it is (D22).
-- **The edge**, seen from outside on 2026-09-27: no `Strict-Transport-Security`,
-  `http://` answering `522`, and Network Error Logging headers. The owner is
-  changing these; nothing in this repository sets them.
+- **The edge**, seen from outside on 2026-09-28: `Strict-Transport-Security:
+  max-age=2592000` (one month, without `includeSubDomains` or `preload`),
+  `http://` answering `301` to `https://`, and Network Error Logging headers
+  (`NEL`, `Report-To`), which cannot be turned off on the current plan and are
+  accepted (D25). All three are the edge's; this repository's server sends none
+  of them.
 - **Pictures taken by a headless browser**: one of a whole page shrinks its
   window to 1 by 1 pixel for a moment, and one of a section taller than the
   screen counts everything in it as in view. The page now waits for a change
@@ -153,10 +155,6 @@ roadmap):
 
 ## Next, and the owner's
 
-- Look at http://localhost:8080/ and http://localhost:8080/under-the-hood on
-  the computer, and at the phone preview (its address is in the chat, not
-  here), then write "release" for items 7 and 8.
-- The edge: HSTS, plain http, and Network Error Logging.
 - A licence file, or none.
 - Whether to rewrite the history that still holds network details (D14,
   rule 8).

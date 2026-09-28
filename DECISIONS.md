@@ -727,3 +727,36 @@ and left the decision to the architect and the owner. They decided:
   card is shorter, so the shadow's lower edge moves. A row-by-row
   comparison that matched unchanged rows wherever they moved was tried first,
   and dropped: with the page-tall gradient, no row under a change is unchanged.
+
+## D25. The edge's Network Error Logging is accepted, and rule 5 is about the site
+
+*2026-09-28. The owner's decision, recorded when `v0.2.0` was deployed.*
+
+The edge in front of the site is Cloudflare's (D20), and it adds two headers
+to every response: `NEL` and `Report-To`. They ask the visitor's browser to
+report to Cloudflare when a page load fails. On the owner's current Cloudflare
+plan this cannot be turned off. **It is accepted**, because:
+
+- reports are sent only when a load fails: the edge sends
+  `"success_fraction":0.0`, so a load that works reports nothing;
+- they go to Cloudflare, which already carries every request to the site;
+- per Cloudflare, they contain no personal data.
+
+**So rule 5, "no third-party requests", is about the site**: its pages, the
+files they load, and the responses of this repository's server. It is not about
+headers the edge adds, which nothing in this repository sets or can change
+(rule 1). check-page and the Content-Security-Policy go on enforcing it for
+everything the site itself does.
+
+**The edge also, now**, as seen from outside on 2026-09-28:
+
+- sends `Strict-Transport-Security: max-age=2592000`: one month, without
+  `includeSubDomains` and without `preload`;
+- answers plain `http://` with `301` to the same address on `https://`.
+
+Neither is set here either: this repository's nginx sends no
+`Strict-Transport-Security`, `NEL` or `Report-To`, checked on the local
+container. They are recorded so that a change at the edge can be noticed.
+
+**Considered instead.** Turning the headers off, which the current plan does
+not allow; the plan, like everything at the edge, is the owner's.
