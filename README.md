@@ -31,6 +31,7 @@ So a deploy is public at once, and a new version is looked at locally first.
 | `site/demo.html` | The control panel's demo, served at `/demo`: the owner's reference design, with pretend data ([D27](DECISIONS.md#d27-the-control-panels-demo-at-demo)). |
 | `docs/demo-claims.md` | Everything the demo shows about the product, with its source in the product repository and its status. |
 | `docs/under-the-hood-facts.md` | The technical page's fact sheet: every statement it makes, with its source in the product repository, its decision and its status. |
+| `docs/main-page-claims.md` | Every claim the main page makes about the product, with its source in the product repository and its status. |
 | `site/favicon.ico`, `site/favicon.svg`, `site/apple-touch-icon.png`, `site/icon-192.png`, `site/icon-512.png`, `site/site.webmanifest` | The site's icon at the paths browsers look for, and a web manifest for the two larger ones ([D26](DECISIONS.md#d26-the-sites-icons-the-owners-drop-at-the-names-browsers-look-for)). |
 | `site/fonts/` | The three font families as `.woff2` files named by their content hash, and `OFL.txt` with their copyright notices and licence ([D2](DECISIONS.md#d2-fonts-served-as-separate-self-hosted-files-not-embedded-in-the-html), [D7](DECISIONS.md#d7-font-files-named-by-their-content-linked-relatively-and-preloaded)). |
 | `Dockerfile`, `.dockerignore` | The image: the pinned unprivileged nginx with `site/` and `nginx/` copied in, nothing else ([D9](DECISIONS.md#d9-how-the-container-runs-nginx)). |

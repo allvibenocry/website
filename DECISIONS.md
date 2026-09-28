@@ -870,10 +870,85 @@ that sends an empty answer also failed the steps after it, whose state it had
 changed), and a run no longer stops at the first missing element.
 
 **What it claims** is in [docs/demo-claims.md](docs/demo-claims.md), read at
-product commit `d3f3131`: 81 things it shows, each with its source and status.
+product commit `6a20da8`: 81 things it shows, each with its source and status.
 Seven have no source in the product, or go further than it; they are listed
 there for the owner, and the demo keeps its words.
 
 **Not checked:** a screen reader reading it (the checks are of focus, roles and
 names, not of speech); marking with a finger on a touch screen; and a real
 phone, until the owner looks at the preview.
+
+## D28. Read at the product's fourth brief, and the demo linked
+
+*2026-09-28. The product's fourth brief, item 5.*
+
+**Under the hood, read again** at product commit `6a20da8`, the product's
+latest after its fourth brief. The second and third briefs' work is Built
+there, built and run on the test host and not yet tried by the owner, and so
+it is here: 129 statements, up from 110.
+
+- **The coding agent** (I10 to I15): Claude Code, unmodified, in a container of
+  its own on dev's network, with one way out to the model's API through a gate
+  that reads nothing, your own API key as a file, its instructions (the guided
+  plan, which was N9 under Planned), and its commits key-checked.
+- **The machine and the home network** (I16 to I19): the firewall for every
+  project container, and doctor's check that no app network has IPv6.
+- **The probe from inside dev** (I9), run again: both front doors and dev's own
+  now answer "refused" where they answered 403 and 200, because the firewall
+  refuses a container before nginx sees it.
+- **The release** has 15 steps, not 13 (R1, R15, R5): the migrations check and
+  the key vault's restore were added; its diagram is redrawn with fifteen. The
+  automatic rollback now stops, and says so, when the failed version's
+  migration has already changed prod's data (R9).
+- **Rollback knows the schema** (D7, D8), which closes the known gap the first
+  version had.
+- **The key vault and the key check before every commit** (K12 to K15, B14);
+  N1 moves from Planned to these.
+- **The installer's steps** are thirteen (L2), and the agent's image is in the
+  stack (S17).
+- **Planned, and shown on the main page or in the demo** (N12 to N16): two modes
+  in the panel, a bug report builder, the architect, your own services, and the
+  panel's design, which is the demo. N7 and N8 no longer list the agent's
+  container, which is built.
+
+**Not said on the site:** that the agent can sign in with a Claude account
+(the product's D46). The owner decided that the site says "your own API key"
+until they have tried that mode.
+
+**The sheets.** `docs/under-the-hood-facts.md`, `docs/main-page-claims.md` and
+`docs/demo-claims.md` are all read at `6a20da8`. On the main page, eleven claims
+moved from Planned to Built (the agent with your own API key, its plan and its
+steps as its own instructions, the key vault, and dev without prod's keys), and
+the rows about the agent say that it has not yet talked to the model through
+the suite, as no real key has been used. Two of them, "Nothing moves on until you have seen it
+work" and "You try every step before it ships", rest on the agent's instructions
+only: a release does not check that anyone tried. They are marked so, for the
+owner.
+
+**The demo, linked** from the main page's navigation ("Demo"), as the hero's
+second button ("Try the control panel demo": the panel itself is planned, so
+the button says it is a demo), and from Under the hood's navigation and its
+statement about the panel's design (N16).
+
+**The navigation between 1100 and 1199 px.** With a seventh link, a link
+wrapped onto a second line inside the one-row navigation at those widths,
+measured at 1100 and 1150 px. The layout that gives the links a row of their
+own, used from 821 px, now reaches to 1199 px on both pages; from 1200 px the
+navigation is one row, as before.
+
+**Checked.** facts.mjs: every statement in the fact sheet, with the same words
+and status. check-page: every page at each of its widths, clean (the main page
+and Under the hood at five, the demo at five in light and in dark).
+
+**The main page, against `v0.2.0`, block by block** (D8, D24). On a phone the
+new button puts the hero's buttons on three rows instead of two (or one, at
+430 px), and the hero, which centres its content, moves its headline up by half
+of that; the page's height does not change. So the button row was pinned to one
+height in both versions (`--pin "div.cta-row=168"`), `v0.2.0` taken twice for
+the noise, and the navigation's links and the hero's buttons named as the
+change. At 1440, 768, 430, 390 and 360 px, light and dark, all ten full pages
+are within the noise: outside the change, at most 407 pixels differ, by at most
+2/255, as the page does against itself. Unpinned, every section below the
+hero on a phone differed by up to 4/255 across its whole area, a background
+shade following the hero's content; on a desktop the sections were within the
+noise either way.
