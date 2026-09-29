@@ -45,8 +45,9 @@ So a deploy is public at once, and a new version is looked at locally first.
 | `scripts/guard.mjs` | Fails on anything about the owner's network in a tracked file; `--history` checks every revision. |
 | `scripts/csp.mjs` | Writes `nginx/csp.conf`, one policy per page, from each page's inline script and style; `--check` fails when they disagree. |
 | `scripts/facts.mjs` | Fails unless every statement on the technical page is in its fact sheet with the same words and status, and no page has an en or em dash. |
-| `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation, overflow, icon and behaviour, the demo's keyboard and focus checks included; takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
+| `scripts/check-page.mjs` | Loads every page in headless Edge or Chrome and reports every request by origin, console error, CSP violation, overflow, icon and behaviour, the demo's keyboard, focus and flow checks included ([D31](DECISIONS.md#d31-the-demos-app-view-rebuilt-to-the-products-d55)); takes screenshots ([D8](DECISIONS.md#d8-nothing-visible-changed-is-measured-against-a-noise-floor)). |
 | `scripts/gallery.mjs` | Every section of the main page and Under the hood, before and after, at every phone and tablet width, as a local page to look at ([D22](DECISIONS.md#d22-phones-and-tablets-the-four-steps-as-cards-and-what-else-was-fixed)). |
+| `scripts/demo-gallery.mjs` | Every state of the demo, before and after a change, at every width the demo is checked at, as a local page to look at; uses check-page's browser ([D31](DECISIONS.md#d31-the-demos-app-view-rebuilt-to-the-products-d55)). |
 | `scripts/compare-shots.mjs` | Compares two sets of those screenshots pixel by pixel, block by block where something moved, against the noise of the page compared with itself. |
 | `DECISIONS.md` | Every decision about how the site is built and run, with the reason for it. Append-only. |
 | `STATE.md` | What works, what is in progress, what is next, and what is live. |
@@ -115,6 +116,14 @@ paints outside its box, such as a card's shadow:
 node scripts/check-page.mjs http://localhost:8089/ --page main --full out/a-full --pin "steps>4=800,signs>2=260"
 node scripts/check-page.mjs http://localhost:8080/ --page main --full out/new-full --pin "steps>4=800,signs>2=260"
 node scripts/compare-shots.mjs out/a-full out/new-full --changed "steps>4,signs>2" --margin 6
+```
+
+For the demo, whose states are reached by using it, `demo-gallery.mjs` takes
+every state at every width it is checked at, before (here, the previous image
+run on port 8089) and after, and puts them side by side in a local page (D31):
+
+```sh
+node scripts/demo-gallery.mjs http://localhost:8089/demo http://localhost:8080/demo out/screenshots/demo
 ```
 
 Without Docker, any static file server on `site/` shows the pages, though

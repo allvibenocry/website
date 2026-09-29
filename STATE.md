@@ -1,6 +1,6 @@
 # State
 
-*Updated 2026-09-28: the product's fourth brief, items 3 to 6 done; waiting for the owner.*
+*Updated 2026-09-29: the product's fifth brief, item 6 (the demo's app view, D31) committed, not released; items 3 and 4 blocked (D30); waiting for the owner.*
 
 This repository is public (D14). It describes the production host only
 generically; its address, its port and every other detail of the network it
@@ -65,6 +65,16 @@ section of both pages before and after, at every phone and tablet width, is in
 `out/screenshots/brief5.html`, which is not committed.
 
 ## In progress
+
+**The product's fifth brief, item 6: the demo's app view (D31). Committed and
+pushed, not tagged, released or deployed**: the page for one app rebuilt to the
+product's D55 (the same layout in simple and advanced mode; Versions into Live,
+Files into Code, Backups and Service keys under More; a new app opens in
+planning with "Looks good, start building"), everything else kept;
+check-page's demo checks rewritten and each seen failing on its own break;
+`docs/demo-claims.md` read at product `f205494`, 98 rows, none without a
+source; a before-and-after gallery in `out/screenshots/`. The phone preview now
+shows it. Waiting for the owner to look at it.
 
 **The product's fifth brief.** Item 2 is done (D29, `c27db1d`). **Items 3 and
 4 are blocked** (D30): the release workflow for tag `v0.3.0` stopped before
@@ -141,9 +151,10 @@ roadmap):
 - `site/under-the-hood.html` (D17, D22, D28): in the main page's design system,
   with three inline SVG diagrams, the release's now in fifteen steps; served
   at `/under-the-hood`, the two other spellings redirected there.
-- `site/demo.html` (D27): the owner's demo of the control panel, served at
+- `site/demo.html` (D27, D31): the owner's demo of the control panel, served at
   `/demo`, with the site's fonts and icons and a link back in its banner;
-  linked from both pages' navigation and the main page's hero.
+  linked from both pages' navigation and the main page's hero. Locally, its
+  app view is the product's D55 (not yet released).
 - The icons (D26): `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`,
   `icon-192.png`, `icon-512.png` and `site.webmanifest`, a day's cache.
 - `docs/under-the-hood-facts.md`, `docs/main-page-claims.md` and
@@ -173,15 +184,15 @@ roadmap):
 
 ## Known
 
-- **The demo shows seven things the product does not have or say** (D27,
-  `docs/demo-claims.md`): "Tried by you" as a safety check, a backup before
-  going back, checks every night, power and battery, the gate's container
-  name, who can reach your own services, and the MCP bridge's command, port
-  and pairing code. It keeps the owner's words; each needs a decision in the
-  product or a change to the demo.
-- **Two main page claims rest on the agent's instructions only** (D28): "Nothing
-  moves on until you have seen it work" and "You try every step before it
-  ships". A release does not check that anyone tried.
+- **The product has moved on since the claims sheets were read**
+  (`docs/demo-claims.md` at `f205494`, D31; `docs/main-page-claims.md` at
+  `4f22bdf`, D29): its D56 to D59 build a release only after every step is
+  tried, a fresh backup before going back, doctor every night, and mains and
+  battery. The sheets still mark them Planned (the demo's DA9 "Tried by you",
+  DV4, DM1 and DM6; the main page's M10 and M50, "Nothing moves on until you
+  have seen it work" and "You try every step before it ships"): built and run
+  by the implementer, not yet tried by the owner. A reading at the newer
+  commit would move them.
 - **The icon files carry C2PA content credentials** (D26), served as supplied.
 - **The site still says "your own API key"**: the product's agent can now sign
   in with a Claude account too (its D46), and the site says so only after the

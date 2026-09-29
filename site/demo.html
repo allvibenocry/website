@@ -84,7 +84,7 @@ main{padding:clamp(20px,3vw,36px) clamp(16px,3vw,36px) 64px;max-width:1240px;wid
 main:focus{outline:none}
 
 @media (max-width:880px){
-  .app{grid-template-columns:1fr}
+  .app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
   .side{position:sticky;top:0;height:auto;z-index:20;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
   .side-top{padding:0}
   .menu-btn{display:block}
@@ -141,73 +141,27 @@ p{margin:0}
 .app-card.new{align-items:center;justify-content:center;border-style:dashed;border-width:2px;color:var(--muted);font-weight:700}
 .app-card.new .plus{font-family:var(--display);font-size:2rem;line-height:1;color:var(--text)}
 
-/* ---------- Project ---------- */
-.proj-links{display:flex;flex-wrap:wrap;gap:10px}
-.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:22px;overflow-x:auto}
-.tabs button{background:none;border:0;padding:10px 14px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px;white-space:nowrap}
-.tabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--pink)}
-.build{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:start}
-.build-left{display:flex;flex-direction:column;gap:22px;min-width:0}
-.plan{padding:22px 22px 12px}
-.plan .ask{margin-top:6px}
-.steps{list-style:none;margin:18px 0 0;padding:0;position:relative}
-.step{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;padding-bottom:22px}
-.step:not(:last-child)::before{content:"";position:absolute;left:18px;top:40px;bottom:2px;width:3px;border-radius:2px;background:var(--line)}
-.step.tried:not(:last-child)::before{background:var(--go)}
-.marker{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;border:2px solid var(--line);color:var(--muted);background:var(--panel)}
-.step.tried .marker{background:var(--go);border-color:#1B1530;color:#1B1530}
-.step.ready .marker{background:var(--pink);border-color:#1B1530;color:#1B1530;box-shadow:0 0 0 6px rgba(255,77,148,.22)}
-.step.building .marker{border-color:var(--pink);border-top-color:transparent;animation:spin 1s linear infinite}
-.step.building .marker span{animation:spin 1s linear infinite reverse}
+/* ---------- Lists, keys and the builder's log ---------- */
 @keyframes spin{to{transform:rotate(360deg)}}
-.step h3{margin-top:9px}
-.step .check{margin-top:4px;color:var(--muted);font-size:.95rem}
-.step .state{margin-top:8px;font-size:.92rem;font-weight:700}
-.step.tried .state{color:var(--go)}
-.step.next h3{color:var(--muted)}
-.try-box{margin-top:12px;padding:14px;border-radius:14px;background:var(--pink-soft);border:1.5px solid var(--pink)}
-.try-box p{font-size:.95rem}
-.try-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.wrong{margin-top:10px;display:grid;gap:8px}
-.wrong textarea{width:100%;min-height:70px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--panel);padding:10px 12px;resize:vertical}
-.empty-plan{padding:6px 0 14px;color:var(--muted)}
-
-.helper{display:flex;flex-direction:column;background:var(--term);color:var(--term-text);border-radius:20px;border:2px solid #1B1530;overflow:hidden;position:sticky;top:20px;height:min(680px,calc(100vh - 40px));min-height:420px}
-.helper-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
-.helper-head h2{font-size:1.1rem;color:#fff}
-.helper-head p{font-size:.85rem;color:var(--term-dim)}
-.helper-head .who{display:flex;align-items:center;gap:10px}
-.helper-head .who i{width:10px;height:10px;border-radius:50%;background:var(--go)}
-.log{flex:1;overflow:auto;padding:16px 18px;font-family:var(--mono);font-size:.9rem;line-height:1.55;display:flex;flex-direction:column;gap:10px}
+@keyframes blink{to{opacity:.2}}
+.log{padding:16px 18px;font-family:var(--mono);font-size:.9rem;line-height:1.55;display:flex;flex-direction:column;gap:10px}
+.log p{overflow-wrap:anywhere}
 .log .you{color:var(--pink)}
 .log .you::before{content:"> ";color:var(--term-dim)}
 .log .ai{color:var(--term-text)}
 .log .tool{color:var(--term-dim);padding-left:14px;border-left:2px solid rgba(255,255,255,.15)}
 .log .note{color:var(--sun)}
-.log .thinking{color:var(--term-dim)}
-.log .thinking::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:dots 1.2s steps(4,end) infinite}
-@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
-.prompt{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
-.prompt input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 12px;color:#fff;font-family:var(--mono);font-size:.9rem}
-.prompt input::placeholder{color:var(--term-dim)}
-.prompt .btn{background:var(--pink);color:#1B1530}
 
-.ship{padding:22px 24px}
-.ship-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
-.ship-top p{margin-top:6px;color:var(--muted)}
 .rail{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin:26px 0 6px;list-style:none;padding:0}
 .rail::before{content:"";position:absolute;left:calc(100%/12);right:calc(100%/12);top:17px;height:4px;border-radius:2px;background:var(--line)}
-.rail .fill{position:absolute;left:calc(100%/12);top:17px;height:4px;border-radius:2px;background:var(--go);width:0;transition:width .6s ease}
 .gate{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:.88rem;font-weight:700;color:var(--muted);padding:0 4px}
 .gate .g{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--panel);border:2px solid var(--line);z-index:1;transition:background .3s,border-color .3s}
 .gate .g svg{width:18px;height:18px;opacity:0}
 .gate.checking .g{border-color:var(--sun);background:var(--sun-soft)}
 .gate.checking .g::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--sun);animation:blink .6s steps(2,start) infinite}
-@keyframes blink{to{opacity:.2}}
 .gate.done{color:var(--text)}
 .gate.done .g{background:var(--go);border-color:#1B1530}
 .gate.done .g svg{opacity:1}
-.ship-result{margin-top:16px;padding:14px 18px;border-radius:14px;background:var(--go-soft);border:1.5px solid var(--go);font-weight:700;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
 
 .rows{display:flex;flex-direction:column}
 .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;align-items:center;padding:16px 20px;border-top:1.5px solid var(--line)}
@@ -252,13 +206,12 @@ p{margin:0}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;z-index:60;max-width:min(520px,calc(100vw - 32px));background:#1B1530;color:#fff;padding:12px 18px;border-radius:14px;font-size:.95rem;transition:opacity .2s,transform .2s}
 .toast.show{opacity:1;transform:translateX(-50%)}
 
-@media (max-width:1080px){.build{grid-template-columns:1fr}.helper{position:static;height:460px;min-height:0}}
 @media (max-width:640px){
   .facts{grid-template-columns:1fr}
   .facts div{padding:12px 0 0}
   .status-hero{grid-template-columns:1fr}
   .rail{grid-template-columns:1fr;gap:12px;margin-top:20px}
-  .rail::before,.rail .fill{display:none}
+  .rail::before{display:none}
   .gate{flex-direction:row;text-align:left}
   .gate .g{width:32px;height:32px}
   .row{grid-template-columns:1fr}
@@ -270,8 +223,6 @@ p{margin:0}
   .keys-table td:first-child{grid-column:1/-1}
   .check-row{grid-template-columns:34px minmax(0,1fr)}
   .check-row .btn{grid-column:2}
-  .proj-links .btn{flex:1 1 auto}
-  .ship-top .btn{width:100%}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
@@ -297,33 +248,19 @@ p{margin:0}
 .dialog li{margin-bottom:6px}
 .dialog .safe{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--go-soft);border:1.5px solid var(--go);color:var(--text)}
 
-/* ---------- Helper: architect, builder, brief ---------- */
-.helper.light{background:var(--panel);color:var(--text);border-color:var(--line-strong)}
-.helper.light .helper-head{border-bottom:1.5px solid var(--line)}
-.helper.light .helper-head h2{color:var(--text)}
-.helper.light .helper-head p{color:var(--muted)}
-.helper.light .prompt{border-top:1.5px solid var(--line);background:transparent}
-.helper.light .prompt input{background:var(--canvas);border-color:var(--line);color:var(--text);font-family:var(--body)}
-.helper.light .prompt input::placeholder{color:var(--muted)}
-.htabs{display:flex;gap:2px;padding:0 10px;border-bottom:1.5px solid var(--line)}
-.helper:not(.light) .htabs{border-bottom-color:rgba(255,255,255,.1)}
-.htabs button{background:none;border:0;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px}
-.helper:not(.light) .htabs button{color:var(--term-dim)}
-.htabs button[aria-selected="true"]{color:inherit;border-bottom-color:var(--pink)}
-.helper:not(.light) .htabs button[aria-selected="true"]{color:#fff}
-.chat{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.45;font-size:.96rem}
+/* ---------- Chat ---------- */
+.chat{padding:10px 16px;display:flex;flex-direction:column;gap:9px;overflow:auto}
+.msg{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.45;font-size:.96rem;overflow-wrap:anywhere}
 .msg.you{align-self:flex-end;background:var(--pink-soft);border:1.5px solid var(--pink);border-bottom-right-radius:4px}
 .msg.arch{align-self:flex-start;background:var(--canvas);border:1.5px solid var(--line);border-bottom-left-radius:4px}
 .msg.arch b{font-family:var(--display)}
 .msg.try{align-self:flex-start;background:var(--go-soft);border:1.5px solid var(--go);border-bottom-left-radius:4px}
+.msg .btn{margin-top:10px}
 .status{align-self:center;display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);padding:2px 10px}
 .status i{width:8px;height:8px;border-radius:50%;background:var(--pink);flex:none}
 .status.working i{animation:blink .7s steps(2,start) infinite}
 .status.saved i{background:var(--go)}
-.brief{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
-.brief textarea{flex:1;min-height:280px;width:100%;border-radius:12px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:var(--term-text);font-family:var(--mono);font-size:.86rem;line-height:1.55;padding:12px;resize:vertical}
-.brief p{font-size:.85rem;color:var(--term-dim)}
+.brief-text{min-height:300px !important;font-family:var(--mono);font-size:.86rem;line-height:1.55}
 
 /* ---------- Report builder ---------- */
 .dialog.wide{width:min(980px,100%)}
@@ -349,20 +286,20 @@ p{margin:0}
 .ctx code{font-family:var(--mono);font-size:.82rem;color:var(--text)}
 @media (max-width:760px){.report{grid-template-columns:1fr}}
 
-/* ---------- Files ---------- */
-.files{display:grid;grid-template-columns:260px minmax(0,1fr);gap:0;overflow:hidden}
+/* ---------- Code ---------- */
+.files{display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;overflow:hidden}
 .tree{border-right:1.5px solid var(--line);padding:12px}
-.tree button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;font-family:var(--mono);font-size:.86rem}
+.tree button{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;font-family:var(--mono);font-size:.86rem;color:var(--text)}
+.tree button span:first-child{min-width:0;overflow-wrap:anywhere}
 .tree button[aria-current="true"]{background:var(--pink-soft)}
 .tree .ch{margin-left:auto;font-family:var(--body);font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--go-soft);border:1px solid var(--go)}
-.code{overflow:auto;padding:0;background:var(--term);color:var(--term-text);font-family:var(--mono);font-size:.84rem;line-height:1.6;min-height:360px}
-.code .fh{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1);color:var(--term-dim);font-size:.8rem;display:flex;justify-content:space-between;gap:10px}
+.code{overflow:auto;padding:0;background:var(--term);color:var(--term-text);font-family:var(--mono);font-size:.84rem;line-height:1.6;min-height:320px}
+.code .fh{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.1);color:var(--term-dim);font-size:.8rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 .code pre{margin:0;padding:12px 0}
 .code .ln{display:block;padding:0 16px;white-space:pre}
 .code .add{background:rgba(0,166,80,.18);color:#B8F3CE}
 .code .add::before{content:"+ ";color:#63D892}
 .code .ctxl::before{content:"  "}
-@media (max-width:760px){.files{grid-template-columns:1fr}.tree{border-right:0;border-bottom:1.5px solid var(--line)}}
 
 /* ---------- Advanced details ---------- */
 .mig{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
@@ -429,8 +366,6 @@ p{margin:0}
 .toast{top:auto;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:auto;right:20px;transform:translateY(12px)}
 .toast.show{transform:none}
 @media (max-width:640px){.toast{left:16px;right:16px;max-width:none}}
-.intro-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;margin-bottom:18px;padding:14px 18px;border-radius:16px;background:var(--panel);border:1.5px solid var(--line-strong)}
-.intro-card p{max-width:78ch}
 .need{font-weight:400;color:var(--muted);font-size:.9rem}
 .err{color:var(--stop);font-weight:700;font-size:.92rem;min-height:1.2em}
 .mark.active{border-style:dashed}
@@ -443,16 +378,12 @@ p{margin:0}
 .choice.on{border:2px solid var(--line-strong);box-shadow:4px 4px 0 var(--line-strong)}
 .choice.on .radio{background:var(--pink);box-shadow:inset 0 0 0 3px var(--panel)}
 .choice:has(input:focus-visible){outline:3px solid var(--sun);outline-offset:3px}
-.hpanel{flex:1;display:flex;flex-direction:column;min-height:0}
 .posted{display:block;font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:2px}
 .continue{padding:14px 16px;border-top:1.5px solid var(--line);display:grid;gap:8px}
 .continue .say-this{padding:8px 10px;border-radius:10px;background:var(--canvas);border:1.5px solid var(--line);font-size:.88rem}
 .continue .btn{justify-self:start}
 .perm .pi svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #updates:focus{outline:none}
-
-.helper:focus{outline:none}
-.helper:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 
 /* ---------- Version 4: hierarchy and colour roles ----------
    Green: done, safe, works. Pink: your next action, nothing else.
@@ -466,8 +397,6 @@ p{margin:0}
 :root[data-theme="dark"] .btn:not(.line):not(.go):not(.pink){background:#EDE8FA;color:#1B1530}
 .btn svg{width:16px;height:16px;flex:none}
 .linkbtn{background:none;border:0;padding:0;color:var(--text);text-decoration:underline;text-underline-offset:3px;font-weight:700;font-size:.92rem;cursor:pointer}
-.wrongbtn{margin-top:12px;color:var(--muted);font-weight:400}
-.wrongbtn:hover{color:var(--text)}
 
 /* Sidebar: apps first, the machine further down and quieter */
 .nav [aria-current="page"]{background:rgba(255,255,255,.1);box-shadow:inset 3px 0 0 var(--side-text)}
@@ -486,10 +415,7 @@ p{margin:0}
 .switch[aria-checked="true"]{background:var(--lav);border-color:var(--lav)}
 .adv-strip{background:var(--purple-soft);border-bottom:2px solid var(--purple-line)}
 
-/* Tabs and choices: neutral */
-.tabs button[aria-selected="true"]{border-bottom-color:var(--text)}
-.htabs button[aria-selected="true"]{border-bottom-color:var(--text)}
-.helper:not(.light) .htabs button[aria-selected="true"]{border-bottom-color:#fff}
+/* Choices: neutral */
 .choice.on .radio{background:var(--text)}
 .chip.sel{background:var(--purple-soft);border-color:var(--text);color:var(--text)}
 
@@ -506,15 +432,10 @@ p{margin:0}
 .card-foot{margin-top:auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;width:100%}
 .card-foot .addr{margin-top:0}
 
-/* Build: the plan stands out, the helper is a quieter side panel */
-.helper.light{border:1.5px solid var(--line);box-shadow:none}
-.helper:not(.light){border-color:transparent}
+/* The chat: calm; what you wrote is neutral */
 .msg.you{background:var(--purple-soft);border-color:var(--purple-line)}
 .status i{background:var(--lav)}
 .status.done i,.status.saved i{background:var(--go)}
-.helper .prompt .btn{background:var(--text);color:var(--panel)}
-.helper:not(.light) .prompt .btn{background:#EDE8FA;color:#1B1530}
-.ship.quiet{box-shadow:none}
 
 /* Problem marks are red, because they show a problem */
 .mark{border-color:var(--stop);background:rgba(214,43,38,.1)}
@@ -524,13 +445,11 @@ p{margin:0}
 .dev-note{border-color:var(--sun);background:var(--sun-soft)}
 .map .n.ai rect{fill:var(--purple-soft)}
 
-/* The safety checks keep their chain on phones */
-.rail .fill{width:calc((100% - 100% / 6) * var(--frac,0))}
+/* The update's safety checks keep their chain on phones */
 .rail.r4::before{left:12.5%;right:12.5%}
 @media (max-width:640px){
   .rail{gap:14px}
   .rail::before{display:block;left:18.5px;right:auto;top:16px;bottom:16px;width:3px;height:auto}
-  .rail .fill{display:block;left:18.5px;top:16px;width:3px;height:calc((100% - 32px) * var(--frac,0));transition:height .6s ease}
   .rail.r4::before{left:18.5px;right:auto}
 }
 
@@ -541,14 +460,157 @@ p{margin:0}
 .toast{left:16px;right:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px));top:auto;max-width:216px;transform:translateY(12px)}
 @media (max-width:880px){.toast{left:12px;right:12px;top:calc(64px + env(safe-area-inset-top,0px));bottom:auto;max-width:none;transform:translateY(-12px)}}
 .toast.show{transform:none}
-/* Fewer frames on the build page */
-.intro-card{display:block;background:none;border:0;border-left:3px solid var(--purple-line);border-radius:0;padding:2px 0 2px 14px;margin-bottom:20px}
-.intro-card .linkbtn{margin-left:6px}
 .msg.arch,.msg.you{border-color:transparent}
-/* Tabs on phones: tighter, with a hint that there is more to the right */
-@media (max-width:640px){
-  .tabs button{padding:10px 9px;font-size:.93rem}
-  .tabs{background:linear-gradient(to right,var(--canvas) 30%,rgba(0,0,0,0)) left/24px 100% no-repeat local,linear-gradient(to left,var(--canvas) 30%,rgba(0,0,0,0)) right/24px 100% no-repeat local,radial-gradient(farthest-side at 100% 50%,rgba(27,21,48,.18),rgba(0,0,0,0)) right/10px 100% no-repeat scroll}
+
+/* ---------- Version 5: the app view (D55) ----------
+   The same layout in simple and advanced mode, so that nothing moves when the
+   person switches. Left: who you talk to. Right: what you look at. The preview
+   is always there. Up to 1080 px wide, one row of tabs instead of two sides. */
+body.appview main{max-width:none;padding:0}
+.work{display:grid;grid-template-columns:clamp(330px,36%,410px) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.left{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel);border-right:1.5px solid var(--line)}
+.right{display:flex;flex-direction:column;min-width:0;min-height:0}
+.apphead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:14px 16px 10px}
+.apphead h1{flex:1 1 0;min-width:0;font-size:1.35rem;overflow-wrap:anywhere}
+.chipline{flex:0 0 100%;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:10px;min-width:0;min-height:30px}
+.chipline .chip{flex:none}
+.modeback{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--purple-soft);border:1.5px solid var(--purple-line);color:var(--text);border-radius:999px;padding:2px 12px;font-weight:700;font-size:.82rem}
+.more{position:relative;flex:none}
+.more-btn{border:1.5px solid var(--line-strong);background:transparent;color:var(--text);border-radius:999px;padding:3px 14px;font-weight:700;font-size:.88rem}
+.more-btn[aria-expanded="true"]{background:var(--purple-soft)}
+.more-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:min(270px,calc(100vw - 32px));background:var(--panel);border:1.5px solid var(--line-strong);border-radius:14px;box-shadow:5px 5px 0 var(--line-strong);padding:6px}
+.more-menu[hidden]{display:none}
+.more-menu button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.94rem;color:var(--text)}
+.more-menu button:hover{background:var(--canvas)}
+.more-menu small{display:block;font-weight:400;font-size:.84rem;color:var(--muted)}
+.ltabs,.rtabs,.mtabs{display:flex;gap:2px;padding:0 12px;border-bottom:1.5px solid var(--line)}
+.ltabs[hidden]{display:none}
+.rtabs{background:var(--panel);padding-top:8px}
+.mtabs{display:none}
+.ltabs button,.rtabs button,.mtabs button{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;padding:9px 12px;font-weight:700;font-size:.93rem;color:var(--muted);white-space:nowrap}
+.ltabs button[aria-selected="true"],.rtabs button[aria-selected="true"],.mtabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--text)}
+.tdot{width:8px;height:8px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 3px rgba(255,77,148,.25);flex:none}
+.lside,.lpane{display:flex;flex-direction:column;min-height:0}
+.who{padding:12px 16px 6px}
+.who h2{font-size:1.05rem}
+.who h2:focus{outline:none}
+.who p{font-size:.87rem;color:var(--muted)}
+.plan{margin:6px 14px 8px;padding:10px 12px;border-radius:14px;background:var(--canvas)}
+.plan-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px;font-size:.87rem}
+.plan-top h3{font-size:.97rem}
+.plan ol{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.plan li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:9px;align-items:start;font-size:.9rem;line-height:1.4}
+.plan li small{display:block;color:var(--muted);font-size:.82rem}
+.plan .m{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.74rem;font-weight:800;border:1.5px solid var(--line);color:var(--muted);background:var(--panel)}
+.plan .m svg{width:14px;height:14px}
+.plan .tried .m{background:var(--go);border-color:#1B1530;color:#1B1530}
+.plan .ready .m{background:var(--pink);border-color:#1B1530;color:#1B1530}
+.plan .building .m{border-color:var(--lav);border-top-color:transparent;animation:spin 1s linear infinite}
+.plan .building .m span{animation:spin 1s linear infinite reverse}
+.plan .proposed .m{border-style:dashed;border-color:var(--line-strong)}
+.plan .note{font-size:.9rem;color:var(--muted)}
+.plan .status{justify-content:flex-start;padding:0}
+.plan-brief{margin-top:8px;font-size:.86rem}
+.say{display:flex;gap:8px;padding:12px;border-top:1.5px solid var(--line)}
+.say input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--canvas);color:var(--text)}
+.say input::placeholder{color:var(--muted)}
+.term{display:flex;flex-direction:column;min-height:0;background:var(--term);color:var(--term-text)}
+.term .log{overflow:auto}
+.term-say{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.1)}
+.term-say input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 10px;color:#fff;font-family:var(--mono);font-size:.86rem}
+.term-say input::placeholder{color:var(--term-dim)}
+.term-say .btn,:root .term-say .btn:not(.line){background:#EDE8FA;color:#1B1530}
+.pane{display:flex;flex-direction:column;gap:14px;padding:14px 18px 20px;container-type:inline-size}
+.tryline{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:11px 15px;border-radius:15px;font-size:.94rem}
+.tryline:focus{outline:none}
+.tryline .t{flex:1 1 280px;min-width:0}
+.tryline b{font-family:var(--display)}
+.tryline .acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.tryline.ready{background:var(--pink-soft);border:2px solid var(--pink)}
+.tryline.building{background:var(--purple-soft);border:1.5px solid var(--purple-line)}
+.tryline.done{background:var(--go-soft);border:1.5px solid var(--go)}
+.tryline.info{background:var(--panel);border:1.5px solid var(--line)}
+.frame{flex:1 1 auto;min-height:340px;display:flex;flex-direction:column;border:1.5px solid var(--line-strong);border-radius:16px;background:#FFFDF8}
+.fbar{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;padding:8px 12px;border-bottom:1.5px solid var(--line);border-radius:14px 14px 0 0;background:var(--canvas);font-size:.85rem;white-space:nowrap}
+.fbar .tc{flex:none;font-weight:700;background:var(--purple-soft);border:1.5px solid var(--purple-line);border-radius:999px;padding:1px 10px}
+.fbar .fmid{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.fbar .addr{font-family:var(--mono)}
+.fbar button{flex:none;margin-left:auto;background:none;border:0;padding:0;color:var(--text);font-size:.85rem;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+@media (max-width:640px){.fbar .fmid{display:none}}
+/* The test copy, drawn: the app's own page, light as a screenshot is */
+.tc-site{flex:1 1 auto;padding:22px 26px;border-radius:0 0 14px 14px;color:#2B2340;font-family:Georgia,"Times New Roman",serif;background:#FFFDF8;line-height:1.45}
+.tc-site .tc-h{font-size:1.55rem;font-weight:700;line-height:1.15;margin-bottom:4px}
+.tc-site .tc-sub{color:#6E624D;margin-bottom:16px}
+.tc-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;max-width:600px;padding:14px;border:1px solid #E7DCC8;border-radius:12px;background:#fff;margin-bottom:18px}
+.tc-form.one{grid-template-columns:minmax(0,1fr)}
+.tc-site .in{border:1px solid #CFC2AA;border-radius:8px;padding:8px 10px;color:#6E624D;font-size:.9rem;background:#fff}
+.tc-form .wide{grid-column:1/-1;min-height:54px}
+.tc-form .photo{justify-self:start;border:1px dashed #BFAF90;border-radius:8px;padding:6px 10px;color:#5A4E38;font-size:.9rem}
+.tc-site .post{justify-self:end;grid-column:-2/-1;background:#7A4E2D;color:#fff;border-radius:8px;padding:8px 16px;font-family:var(--body);font-weight:700;font-size:.9rem}
+.tc-form.one .post{grid-column:auto;justify-self:start}
+.tc-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:600px;margin-bottom:14px}
+.tc-tools .in{flex:1 1 180px}
+.tc-entry{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;max-width:600px;padding:12px 0;border-top:1px solid #EFE6D6}
+.tc-entry.nopic{grid-template-columns:minmax(0,1fr)}
+.tc-entry .pic{width:90px;height:68px;border-radius:8px;background:linear-gradient(160deg,#F9C9A3,#F3A2B9 55%,#B9A6E6);position:relative;overflow:hidden}
+.tc-entry .pic::after{content:"";position:absolute;left:17px;bottom:0;width:56px;height:32px;border-radius:30px 30px 0 0;background:#FFE7A8}
+.tc-entry b{display:block}
+.tc-entry small{color:#6E624D}
+.tc-empty{color:#6E624D;padding:12px 0;border-top:1px solid #EFE6D6;max-width:600px}
+@container (max-width:520px){
+  .tc-site{padding:16px}
+  .tc-form{grid-template-columns:minmax(0,1fr)}
+  .tc-site .post{grid-column:auto}
+  .tc-entry .pic{width:64px;height:50px}
+}
+/* Live */
+.lcard{padding:16px 18px}
+.lcard:focus{outline:none}
+.lcard h2{font-size:1.15rem;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.lcard p{margin-top:6px;color:var(--muted);font-size:.94rem}
+.lcard .acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.strong.lcard{border-radius:18px}
+.safety{list-style:none;margin:16px 0 4px;padding:0;position:relative;display:grid;gap:10px}
+.safety::before,.safety::after{content:"";position:absolute;left:15px;top:16px;width:3px;border-radius:2px}
+.safety::before{bottom:16px;background:var(--line)}
+.safety::after{height:calc((100% - 32px) * var(--f,0));background:var(--go);transition:height .5s}
+.safety li{position:relative;display:flex;align-items:center;gap:12px;font-weight:700;font-size:.93rem}
+.safety .g{width:33px;height:33px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);background:var(--panel);z-index:1;flex:none}
+.safety .g svg{width:16px;height:16px}
+.safety .done .g{background:var(--go);border-color:#1B1530}
+.safety .now .g{background:var(--sun-soft);border-color:var(--sun)}
+.safety .now .g::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--sun);animation:blink .6s steps(2,start) infinite}
+.safety .next{color:var(--muted)}
+.vers{margin-top:8px}
+.vrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;padding:12px 0;border-top:1.5px solid var(--line)}
+.vrow:first-child{border-top:0}
+.vrow b{font-family:var(--display)}
+.lcard .vrow p{margin-top:2px}
+/* Code */
+.code-intro{color:var(--muted);font-size:.94rem;max-width:70ch}
+@container (max-width:620px){.files{grid-template-columns:minmax(0,1fr)}.tree{border-right:0;border-bottom:1.5px solid var(--line)}}
+/* Up to 1080 px: one row of tabs, Chat, Preview, Code in advanced mode, and Live */
+@media (max-width:1080px){
+  .work{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .left{border-right:0}
+  .rtabs{display:none}
+  .mtabs{display:flex;gap:2px;padding:0 8px;background:var(--panel)}
+  .mtabs button{flex:1 1 0;min-width:0;padding:11px 4px;font-size:.92rem}
+  .work[data-m="chat"] .right{display:none}
+  .work:not([data-m="chat"]) .lside{display:none}
+  .chat,.term .log{height:clamp(260px,50vh,520px)}
+  .pane{padding:12px 12px 24px}
+}
+/* From 1081 px: two sides, the height of the window, each scrolling on its own */
+@media (min-width:1081px){
+  body.appview .main-wrap{height:100vh;height:100dvh}
+  body.appview main{flex:1;min-height:0;display:flex;flex-direction:column}
+  body.appview .work{flex:1;min-height:0}
+  .lside{flex:1}
+  .lpane{flex:1;overflow-y:auto}
+  .term{flex:1}
+  .chat,.term .log{flex:1;min-height:140px}
+  .pane{flex:1;min-height:0;overflow-y:auto}
 }
 </style>
 </head>
@@ -578,6 +640,7 @@ p{margin:0}
 </div>
 <div class="modal" id="modal" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" id="dialog"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr" id="announce" role="status" aria-live="polite"></div>
 
 <script>
 (() => {
@@ -585,10 +648,14 @@ p{margin:0}
   const wait = ms => reduce ? Math.min(ms, 120) : ms;
   const $ = s => document.querySelector(s);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
   const CHECK = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 9.5l3.2 3.2L14 5.5" fill="none" stroke="#1B1530" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const WARN = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 4.5v6M9 13.5v.2" fill="none" stroke="#1B1530" stroke-width="2.6" stroke-linecap="round"/></svg>';
   let timers = [];
   const later = (fn, ms) => { const t = setTimeout(fn, wait(ms)); timers.push(t); return t; };
+  /* Up to 1080 px the app view is one row of tabs; from 1081 px, two sides. */
+  const narrowMQ = matchMedia('(max-width:1080px)');
+  const narrow = () => narrowMQ.matches;
 
   const EXPLAIN = {
     migration: 'A migration is a small file that changes how the data is stored. "Only adds" means older versions of the app still work with the data, so going back never loses anything.',
@@ -616,7 +683,8 @@ Rules
 
   function initial(){
     return {
-      view: 'home', projectId: null, tab: 'build', advanced: false, introSeen: false, htab: 'architect', aiMode: 'panel', profile: 'balanced', file: 'src/server.js',
+      view: 'home', projectId: null, advanced: false, left: 'plan', right: 'preview', m: 'preview', moreOpen: false,
+      aiMode: 'panel', profile: 'balanced', file: 'src/server.js',
       failUpdate: false,
       services: {
         pihole: { installed: true },
@@ -624,22 +692,22 @@ Rules
       },
       projects: [
         {
-          id: 'guestbook', name: "Grandma's guestbook", live: 2, prodPort: 8100, devPort: 8101, count: 42, countWord: 'messages',
+          id: 'guestbook', kind: 'guestbook', name: "Grandma's guestbook", live: 2, prodPort: 8100, devPort: 8101, count: 42, countWord: 'messages',
           plan: { title: 'Let guests add a photo', steps: [
-            { t: 'A photo button on the form', c: 'you can pick a photo and see it before you post.', s: 'tried' },
-            { t: 'Photos are kept with the message', c: 'a posted photo is still there after you restart the test copy.', s: 'ready' },
-            { t: 'Big photos are made smaller', c: 'a large photo from your phone shows up quickly.', s: 'next' }
+            { t: 'A photo button on the form', c: 'you can pick a photo and see it before you post.', y: 'pick a photo. You should see it before you post.', s: 'tried' },
+            { t: 'Photos are kept with the message', c: 'a posted photo is still there after you restart the test copy.', y: 'post a message with a photo, press "Restart the test copy", and check that the photo is still there.', s: 'ready' },
+            { t: 'Big photos are made smaller', c: 'a large photo from your phone shows up quickly.', y: 'post a big photo from your phone. It should show up quickly.', s: 'next' }
           ]},
           chat: [
             ['you', 'Let guests add a photo to their message.'],
             ['arch', 'Nice idea. Two quick questions first: should everyone who can see the guestbook see the photos? And is one photo per message enough?'],
             ['you', 'Yes to both.'],
-            ['arch', 'Then here is the plan, in three steps. I have written it as a brief for the builder, and I check its work after each step before I ask you to try anything.'],
-            ['done', 'The builder finished step 1'],
-            ['try', 'Step 1 is ready. I checked the builder\'s report: the photo button is on the form, and the photo shows before posting. Try it: pick a photo in the test copy. You should see it before you post.'],
+            ['arch', 'Then here is the plan, in three steps, shown above. After each step I check the work, and then I stop so that you can try it.'],
+            ['done', 'Step 1 built and checked'],
+            ['try', 'Step 1 is ready. I checked the work: the photo button is on the form, and the photo shows before posting. Try it: pick a photo in the preview. You should see it before you post.'],
             ['you', 'Step 1 works.'],
-            ['done', 'The builder finished step 2'],
-            ['try', 'Step 2 is ready. The builder made room for the photo in the database, and it only adds, so older versions keep working. Try it: post a message with a photo, restart the test copy, and check that the photo is still there.']
+            ['done', 'Step 2 built and checked'],
+            ['try', 'Step 2 is ready. The database now has room for the photo, and the change only adds, so older versions keep working. Try it: post a message with a photo, restart the test copy, and check that the photo is still there.']
           ],
           log: [
             ['tool', 'Read briefs/let-guests-add-a-photo.md'],
@@ -669,20 +737,20 @@ Rules
           ship: null
         },
         {
-          id: 'recipes', name: 'Recipe box', live: 0, prodPort: 8102, devPort: 8103, count: 0, countWord: 'recipes',
+          id: 'recipes', kind: 'recipes', name: 'Recipe box', live: 0, prodPort: 8102, devPort: 8103, count: 0, countWord: 'recipes',
           plan: { title: 'A place for the family recipes', steps: [
-            { t: 'A page that lists your recipes', c: 'you can open the test copy and see the list.', s: 'tried' },
-            { t: 'Add a recipe with a photo', c: 'a recipe you add is still there after a restart.', s: 'building' },
-            { t: 'Search by ingredient', c: 'typing "egg" shows only recipes with eggs.', s: 'next' },
-            { t: 'Share a recipe with a link', c: 'the link opens that recipe on your phone.', s: 'next' }
+            { t: 'A page that lists your recipes', c: 'you can open the test copy and see the list.', y: 'look at the preview. You should see an empty recipe list.', s: 'tried' },
+            { t: 'Add a recipe with a photo', c: 'a recipe you add is still there after a restart.', y: 'add a recipe with a photo, restart the test copy, and check that it is still there.', s: 'building' },
+            { t: 'Search by ingredient', c: 'typing "egg" shows only recipes with eggs.', y: 'type "egg" in the search box. Only recipes with eggs should show.', s: 'next' },
+            { t: 'Share a recipe with a link', c: 'the link opens that recipe on your phone.', y: 'share a recipe and open the link on your phone.', s: 'next' }
           ]},
           chat: [
             ['you', 'A place for the family recipes, with photos.'],
-            ['arch', 'Here is a plan in four steps. I have given it to the builder, and I will tell you what to try after each one.'],
-            ['done', 'The builder finished step 1'],
-            ['try', 'Step 1 is ready. Open the test copy. You should see an empty recipe list.'],
+            ['arch', 'Here is a plan in four steps, shown above. I will tell you what to try after each one.'],
+            ['done', 'Step 1 built and checked'],
+            ['try', 'Step 1 is ready. Look at the preview. You should see an empty recipe list.'],
             ['you', 'Step 1 works.'],
-            ['working', 'The builder is working on step 2']
+            ['working', 'Building step 2']
           ],
           log: [['tool', 'Read briefs/family-recipes.md'], ['ai', 'Step 1 done. Stopping for the person to try it.'], ['ai', 'Working on step 2: adding a recipe with a photo.']],
           brief: '# Brief: a place for the family recipes\n\n1. A page that lists your recipes.\n2. Add a recipe with a photo.\n3. Search by ingredient.\n4. Share a recipe with a link.\n\nRules\n- Migrations only add.\n- Stop after each step.',
@@ -693,30 +761,58 @@ Rules
   }
   let S = initial();
   const proj = () => S.projects.find(p => p.id === S.projectId);
+  const mcp = () => S.aiMode === 'mcp';
   const triedCount = p => p.plan ? p.plan.steps.filter(s => s.s === 'tried').length : 0;
-  const allTried = p => p.plan && p.plan.steps.length > 0 && p.plan.steps.every(s => s.s === 'tried');
-  const stepOf = p => p.plan ? p.plan.steps.findIndex(s => s.s !== 'tried') : null;
+  const allTried = p => !!p.plan && p.plan.steps.length > 0 && p.plan.steps.every(s => s.s === 'tried');
+  const proposed = p => !!p.plan && p.plan.steps.every(s => s.s === 'proposed');
+  const current = p => p.plan ? p.plan.steps.findIndex(s => s.s !== 'tried') : -1;
+  /* Who the person talks to: "Your AI" in simple mode, the architect in advanced mode (D55). */
+  const AI = () => mcp() ? { the: 'your AI app', The: 'Your AI app' } : S.advanced ? { the: 'the architect', The: 'The architect' } : { the: 'your AI', The: 'Your AI' };
   function nextAction(p){
+    if (proposed(p)) return 'Look at the plan';
     if (!p.plan) return null;
-    const st = p.plan.steps, i = st.findIndex(s => s.s !== 'tried');
+    const st = p.plan.steps, i = current(p);
     if (i === -1) return `Put v${(p.live || 0) + 1} live`;
     if (st[i].s === 'ready') return `Try step ${i + 1}`;
     return null;
   }
   function dotOf(p){
     if (nextAction(p)) return 'act';
-    if (p.plan && p.plan.steps.some(s => s.s === 'building')) return 'work';
+    if (p.making || (p.plan && p.plan.steps.some(s => s.s === 'building'))) return 'work';
     return p.live ? 'live' : 'idle';
   }
   function workText(p){
+    if (p.making) return 'Making a plan with you.';
+    if (proposed(p)) return `A plan in ${p.plan.steps.length} steps is waiting for you.`;
     if (!p.plan) return 'Nothing in progress.';
-    const st = p.plan.steps, i = st.findIndex(s => s.s !== 'tried');
+    const st = p.plan.steps, i = current(p);
     if (i === -1) return `All steps tried: ready to put v${(p.live || 0) + 1} live.`;
     const n = `step ${i + 1} of ${st.length}`;
     if (st[i].s === 'ready') return `Ready for you to try: ${n}.`;
     if (st[i].s === 'building') return `The builder is working on ${n}.`;
     return `Waiting to start: ${n}.`;
   }
+
+  /* ---------- Focus and announcements ---------- */
+  /* A selector for an element that a re-render replaces with an equal one. */
+  function keyOf(el){
+    if (!el || el === document.body || !el.getAttribute) return null;
+    if (el.id) return '#' + CSS.escape(el.id);
+    const d = el.dataset || {};
+    if (d.action) return `[data-action="${d.action}"]` + (d.i ? `[data-i="${d.i}"]` : '') + (d.v ? `[data-v="${d.v}"]` : '') + (d.s ? `[data-s="${d.s}"]` : '');
+    if (d.file) return `[data-file="${CSS.escape(d.file)}"]`;
+    return null;
+  }
+  /* Re-render, and give focus back to the same control if the re-render took it away. */
+  function keepFocus(fn){
+    const a = document.activeElement, k = $('#main').contains(a) ? keyOf(a) : null;
+    fn();
+    const now = document.activeElement;
+    if (k && (!now || now === document.body)){ const el = $('#main').querySelector(k); if (el && el.getClientRects().length) el.focus({preventScroll: true}); }
+  }
+  /* Where focus goes when the control that had it is gone for good. */
+  function focusIfLost(sel){ const a = document.activeElement; if (!a || a === document.body){ const el = $(sel); if (el && el.getClientRects().length) el.focus({preventScroll: true}); } }
+  const announce = t => { $('#announce').textContent = t; };
 
   /* ---------- Navigation ---------- */
   function renderNav(){
@@ -735,11 +831,17 @@ Rules
     h += item(`Your own services${S.advanced ? '' : '<span class="sr">, </span><span class="tag-adv">Advanced</span>'}`, 'data-go="services"', S.view === 'services');
     h += item('Settings', 'data-go="settings"', S.view === 'settings');
     h += '</div>';
-    $('#nav').innerHTML = h;
+    keepFocusIn('#nav', () => { $('#nav').innerHTML = h; });
     $('#side-status').innerHTML = '<span class="led"></span><span>No problems found. Last night\'s backup was restored and checked.</span>';
     $('#mode-switch').setAttribute('aria-checked', String(S.advanced));
     $('#mode-name').textContent = S.advanced ? 'Advanced mode' : 'Simple mode';
-    $('#adv-strip').hidden = !S.advanced;
+    /* In the app view, the way back to simple mode is on the app's own line, so that nothing moves. */
+    $('#adv-strip').hidden = !S.advanced || S.view === 'project';
+  }
+  function keepFocusIn(sel, fn){
+    const box = $(sel), a = document.activeElement, k = box && box.contains(a) ? keyOf(a) || (a.dataset && a.dataset.open ? `[data-open="${a.dataset.open}"]` : a.dataset && a.dataset.go ? `[data-go="${a.dataset.go}"]` : null) : null;
+    fn();
+    if (k && (!document.activeElement || document.activeElement === document.body)){ const el = box.querySelector(k); if (el) el.focus({preventScroll: true}); }
   }
 
   /* ---------- Home ---------- */
@@ -747,7 +849,8 @@ Rules
     const cards = S.projects.map(p => {
       const status = p.live ? `<span class="chip live">v${p.live} is live</span>` : '<span class="chip idle">Not live yet</span>';
       const act = nextAction(p);
-      const btn = act ? `<button type="button" class="btn small pink" data-open="${p.id}">${act}</button>` : `<button type="button" class="btn small line" data-open="${p.id}">Open</button>`;
+      const where = !act ? '' : proposed(p) ? ' data-show="chat"' : act.startsWith('Put') ? ' data-right="live"' : '';
+      const btn = act ? `<button type="button" class="btn small pink" data-open="${p.id}"${where}>${act}</button>` : `<button type="button" class="btn small line" data-open="${p.id}">Open</button>`;
       return `<article class="app-card"><h3><button type="button" class="card-link" data-open="${p.id}">${esc(p.name)}</button></h3>${status}<p class="muted">${p.plan ? esc(p.plan.title) + '. ' : ''}${workText(p)}</p><div class="card-foot">${S.advanced ? `<span class="addr">allvibe.local:${p.prodPort}</span>` : '<span></span>'}${btn}</div></article>`;
     }).join('');
     return `
@@ -758,159 +861,174 @@ Rules
       <div class="notice" style="margin-top:0"><p><b>3 updates are ready to try.</b> They were prepared in your test copies, so nothing live has changed.</p><button type="button" class="btn small line" data-action="see-updates">See the updates</button></div>`;
   }
 
-  /* ---------- Project ---------- */
+  /* ---------- The app view (D55) ---------- */
   function viewProject(){
     const p = proj();
-    const status = p.live ? `<span class="chip live">v${p.live} is live</span>` : '<span class="chip idle">Not live yet</span>';
-    const list = [['build','Build'],['versions','Versions'],['backups','Backups'],['keys','Service keys']];
-    if (S.advanced) list.push(['files','Files']);
-    if (!S.advanced && S.tab === 'files') S.tab = 'build';
-    const tabs = list.map(([id, l]) => `<button type="button" role="tab" id="tab-${id}" aria-controls="tabpanel" aria-selected="${S.tab === id}" tabindex="${S.tab === id ? 0 : -1}" data-tab="${id}">${l}</button>`).join('');
-    let body = '';
-    const intro = S.introSeen ? '' : `<div class="intro-card"><p><b>How this works.</b> You tell the architect what you want. The builder makes it one small step at a time. You try every step in the test copy, and when every step works, you put it live. Your data is backed up and checked first. <button type="button" class="linkbtn" data-action="intro-ok">Got it</button></p></div>`;
-    if (S.tab === 'build') body = intro + `<div class="build"><div class="build-left"><section class="strong plan" id="plan"></section><section class="strong ship" id="ship" aria-live="polite"></section></div><section class="helper" id="helper" aria-label="AI helper" tabindex="-1"></section></div>`;
-    if (S.tab === 'versions') body = tabVersions(p);
-    if (S.tab === 'backups') body = tabBackups(p);
-    if (S.tab === 'keys') body = tabKeys(p);
-    if (S.tab === 'files') body = tabFiles(p);
-    return `
-      <div class="head">
-        <div><h1>${esc(p.name)}</h1><p>${status} <span class="muted">${p.live ? `${p.count} ${p.countWord}` : 'Only the test copy exists so far.'}</span></p></div>
-        <div class="proj-links">
-          <button type="button" class="btn line" data-action="open-link" data-port="${p.prodPort}" ${p.live ? '' : 'disabled'}>Open the live app${S.advanced ? ` <span class="mono">:${p.prodPort}</span>` : ''}</button>
-          <button type="button" class="btn line" data-action="open-link" data-port="${p.devPort}">Open the test copy${S.advanced ? ` <span class="mono">:${p.devPort}</span>` : ''}</button>
+    return `<div class="work" id="work" data-m="${S.m}">
+      <section class="left" aria-label="Who you talk to">
+        <div class="apphead" id="apphead"></div>
+        <div class="mtabs" id="mtabs" role="tablist" aria-label="${esc(p.name)}"></div>
+        <div class="lside" id="lside">
+          <div class="ltabs" id="ltabs" role="tablist" aria-label="Who you talk to" hidden></div>
+          <div class="lpane" id="lpane"></div>
         </div>
-      </div>
-      <div class="tabs" role="tablist" aria-label="${esc(p.name)}">${tabs}</div>
-      <div role="tabpanel" id="tabpanel" aria-labelledby="tab-${S.tab}">${body}</div>`;
+      </section>
+      <section class="right" aria-label="What you look at">
+        <div class="rtabs" id="rtabs" role="tablist" aria-label="${esc(p.name)}"></div>
+        <div class="pane" id="rpane"></div>
+      </section>
+    </div>`;
+  }
+  function renderApp(){ keepFocus(() => { renderHead(); renderTabs(); renderLeft(); renderRight(); }); }
+
+  function renderHead(){
+    const el = $('#apphead'); if (!el) return; const p = proj();
+    const chip = p.live ? `<span class="chip live">v${p.live} is live</span>` : '<span class="chip idle">Not live yet</span>';
+    el.innerHTML = `<h1 id="app-name">${esc(p.name)}</h1>
+      <div class="more" id="more"><button type="button" class="more-btn" id="more-btn" aria-expanded="${S.moreOpen}" aria-controls="more-menu" data-action="more">More</button>
+        <div class="more-menu" id="more-menu"${S.moreOpen ? '' : ' hidden'}>
+          <button type="button" data-action="more-backups">Backups<small>${p.live ? "Last night's was restored and checked" : 'They start when the app goes live'}</small></button>
+          <button type="button" data-action="more-keys">Service keys<small>Keys for services outside your machine</small></button>
+          <button type="button" data-action="more-settings">App settings<small>${S.advanced ? 'Its name, its address, and who can use it' : 'Its name, and who can use it'}</small></button>
+        </div></div>
+      <div class="chipline">${chip}${S.advanced ? '<button type="button" class="modeback" data-action="to-simple">Back to simple mode</button>' : ''}</div>`;
+  }
+  function setMore(open){
+    S.moreOpen = open;
+    const b = $('#more-btn'), m = $('#more-menu');
+    if (b) b.setAttribute('aria-expanded', String(open));
+    if (m) m.hidden = !open;
   }
 
-  function renderPlan(){
-    const el = $('#plan'); if (!el) return; const p = proj();
-    if (!p.plan){ el.innerHTML = `<h2>What's next?</h2><p class="empty-plan">Nothing is in progress. Tell the architect what you want to change, in your own words, and it will make a plan with you.</p>`; return; }
-    const steps = p.plan.steps.map((s, i) => {
-      let state = '';
-      if (s.s === 'tried') state = '<p class="state">Tried by you</p>';
-      if (s.s === 'building') state = '<p class="state muted">The builder is working on this</p>';
-      if (s.s === 'ready') state = `
-        <div class="try-box">
-          <p><b>Ready for you to try.</b> The architect has checked the builder's work. Now check it yourself in the test copy.</p>
-          <div class="try-actions">
-            <button type="button" class="btn small go" data-action="works" data-i="${i}">${CHECK} It works</button>
-            <button type="button" class="btn small line" data-action="open-link" data-port="${p.devPort}">Open the test copy</button>
-          </div>
-          <button type="button" class="linkbtn wrongbtn" data-action="report" data-i="${i}">Something is wrong</button>
-        </div>`;
-      const mark = s.s === 'tried' ? CHECK : `<span>${i + 1}</span>`;
-      return `<li class="step ${s.s}"><span class="marker">${mark}</span><div><h3>${esc(s.t)}</h3><p class="check">Done when ${esc(s.c)}</p>${state}</div></li>`;
-    }).join('');
-    el.innerHTML = `<h2>The plan: ${esc(p.plan.title)}</h2><p class="muted ask">${triedCount(p)} of ${p.plan.steps.length} steps tried by you.</p><ol class="steps">${steps}</ol>`;
+  function rightList(){ const t = [['preview', 'Preview']]; if (S.advanced) t.push(['code', 'Code']); t.push(['live', 'Live']); return t; }
+  function renderTabs(){
+    const p = proj(); if (!$('#rtabs')) return;
+    if (!S.advanced && S.right === 'code') S.right = 'preview';
+    if (!S.advanced && S.m === 'code') S.m = 'preview';
+    const needs = allTried(p) && !p.ship;
+    const dot = id => id === 'live' && needs ? '<span class="tdot" aria-hidden="true"></span><span class="sr">, needs you</span>' : '';
+    const tab = (pre, id, label, sel, controls) => `<button type="button" role="tab" id="${pre}-${id}" aria-controls="${controls}" aria-selected="${sel}" tabindex="${sel ? 0 : -1}" data-${pre}="${id}">${label}${dot(id)}</button>`;
+    $('#rtabs').innerHTML = rightList().map(([id, l]) => tab('rtab', id, l, S.right === id, 'rpane')).join('');
+    $('#mtabs').innerHTML = [['chat', 'Chat'], ...rightList()].map(([id, l]) => tab('mtab', id, l, S.m === id, id === 'chat' ? 'lside' : 'rpane')).join('');
+    $('#rtabs').setAttribute('aria-label', p.name); $('#mtabs').setAttribute('aria-label', p.name);
+    const lt = $('#ltabs');
+    lt.hidden = !S.advanced;
+    lt.innerHTML = S.advanced ? [['plan', 'Plan'], ['build', 'Build']].map(([id, l]) => tab('ltab', id, l, S.left === id, 'lpane')).join('') : '';
+    $('#work').dataset.m = S.m;
+    const n = narrow(), ls = $('#lside'), lp = $('#lpane'), rp = $('#rpane');
+    if (n){ ls.setAttribute('role', 'tabpanel'); ls.setAttribute('aria-labelledby', 'mtab-chat'); } else { ls.removeAttribute('role'); ls.removeAttribute('aria-labelledby'); }
+    if (S.advanced){ lp.setAttribute('role', 'tabpanel'); lp.setAttribute('aria-labelledby', 'ltab-' + S.left); } else { lp.removeAttribute('role'); lp.removeAttribute('aria-labelledby'); }
+    rp.setAttribute('role', 'tabpanel'); rp.setAttribute('aria-labelledby', (n ? 'mtab-' : 'rtab-') + S.right);
   }
+  function goRight(id){ S.right = id; S.m = id; renderTabs(); renderRight(); }
 
-  function renderHelper(){
-    const el = $('#helper'); if (!el) return; const p = proj();
-    const old = $('#say'); const keep = old ? old.value : '';
-    const oldBox = $('#chat') || $('#log');
-    const nearBottom = !oldBox || oldBox.scrollTop + oldBox.clientHeight >= oldBox.scrollHeight - 40;
-    const oldTop = oldBox ? oldBox.scrollTop : 0;
-    const tab = S.advanced ? S.htab : 'architect';
-    const mcp = S.aiMode === 'mcp';
-    el.classList.toggle('light', tab === 'architect');
-    const tabs = S.advanced ? `<div class="htabs" role="tablist" aria-label="AI helper">${[['architect', mcp ? 'Your AI app' : 'Architect'],['builder','Builder'],['brief','Instructions']].map(([id, l]) => `<button type="button" role="tab" id="htab-${id}" aria-controls="hpanel" aria-selected="${tab === id}" tabindex="${tab === id ? 0 : -1}" data-htab="${id}">${l}</button>`).join('')}</div>` : '';
-    const heads = {
-      architect: mcp ? ['Your AI app', 'The conversation happens in your own AI app. Here you see what it posted and did.'] : ['Your architect', 'Plans with you and checks the builder\'s work'],
-      builder: ['The builder', mcp ? 'The coding part of your own AI app, working in the test copy' : 'Claude Code, working in your test copy'],
-      brief: ['Instructions for the builder', 'Written by the architect. Also called the brief.']
-    };
-    let body = '';
-    if (tab === 'architect' && !mcp){
-      const items = p.chat.map(([k, t]) => {
-        if (k === 'done') return `<p class="status done"><i></i>${esc(t)}</p>`;
-        if (k === 'working') return `<p class="status working"><i></i>${esc(t)}</p>`;
-        if (k === 'saved') return `<p class="status saved"><i></i>${esc(t)}</p>`;
-        return `<p class="msg ${k}">${esc(t)}</p>`;
-      }).join('');
-      body = `<div class="chat" id="chat" role="log" aria-live="polite">${items}</div>
-        <form class="prompt" id="prompt"><label class="sr" for="say">Message to the architect</label><input id="say" autocomplete="off" placeholder="Tell the architect what you want"><button class="btn small" type="submit">Send</button></form>`;
-    }
-    if (tab === 'architect' && mcp){
-      const items = p.chat.filter(([k]) => k !== 'you').map(([k, t]) => {
-        if (k === 'done') return `<p class="status done"><i></i>${esc(t)}</p>`;
-        if (k === 'working') return `<p class="status working"><i></i>${esc(t)}</p>`;
-        if (k === 'saved') return `<p class="status saved"><i></i>${esc(t)}</p>`;
-        return `<p class="msg ${k === 'try' ? 'try' : 'arch'}"><span class="posted">Your AI app posted</span>${esc(t)}</p>`;
-      }).join('');
-      const i = stepOf(p);
-      const st = p.plan && i !== -1 ? p.plan.steps[i].s : null;
-      let cont;
-      if (st === 'ready') cont = `<p><b>Nothing to send right now.</b> Try step ${i + 1} in the test copy, then press It works or Something is wrong in the plan. Your AI app sees your answer.</p>`;
+  /* The left side: who you talk to. */
+  function whoHTML(t, d){ return `<div class="who"><h2 id="who-h" tabindex="-1">${t}</h2><p>${d}</p></div>`; }
+  function planBox(p){
+    if (p.making) return '<div class="plan" id="plan-box"><p class="status working"><i></i>Making a plan with you</p></div>';
+    if (!p.plan) return `<div class="plan" id="plan-box"><p class="note">Nothing is in progress. Tell ${AI().the} what you want to change, in your own words.</p></div>`;
+    const pr = proposed(p);
+    const head = pr ? 'Proposed' : `${triedCount(p)} of ${p.plan.steps.length} tried`;
+    const words = { tried: 'tried by you', ready: 'ready for you to try', building: 'being built', proposed: 'proposed', next: 'not started' };
+    const items = p.plan.steps.map((s, i) => `<li class="${s.s}"><span class="m" aria-hidden="true">${s.s === 'tried' ? CHECK : `<span>${i + 1}</span>`}</span><span>${esc(s.t)}<span class="sr">, ${words[s.s]}</span>${pr ? `<small>Done when ${esc(s.c)}</small>` : ''}</span></li>`).join('');
+    const brief = S.advanced ? '<button type="button" class="linkbtn plan-brief" data-action="brief">The brief for the builder</button>' : '';
+    return `<div class="plan" id="plan-box"><div class="plan-top"><h3>Plan: ${esc(lc(p.plan.title))}</h3><span class="muted">${head}</span></div><ol>${items}</ol>${brief}</div>`;
+  }
+  function msgHTML(p, k, t){
+    if (k === 'done' || k === 'working' || k === 'saved') return `<p class="status ${k}"><i></i>${esc(t)}</p>`;
+    const posted = mcp() ? '<span class="posted">Your AI app posted</span>' : '';
+    if (k === 'plan') return `<div class="msg arch">${posted}${esc(t)}${proposed(p) ? '<br><button type="button" class="btn pink small" id="approve" data-action="approve">Looks good, start building</button>' : ''}</div>`;
+    if (k === 'you') return `<p class="msg you">${esc(t)}</p>`;
+    return `<p class="msg ${k === 'try' ? 'try' : 'arch'}">${posted}${esc(t)}</p>`;
+  }
+  function chatItems(p){ return p.chat.filter(([k]) => !(mcp() && k === 'you')).map(([k, t]) => msgHTML(p, k, t)).join(''); }
+  function continueHTML(p){
+    const i = current(p), st = p.plan && i !== -1 ? p.plan.steps[i].s : null;
+    if (p.making) return '<p><b>Your AI app is making a plan.</b> It shows here when it is ready.</p>';
+    if (proposed(p)) return '<p><b>Nothing to send right now.</b> Read the plan, then press "Looks good, start building". Your AI app sees your answer.</p>';
+    if (st === 'ready') return `<p><b>Nothing to send right now.</b> Try step ${i + 1} in the preview, then press It works or Something is wrong above it. Your AI app sees your answer.</p>`;
+    const next = !p.plan ? `Let us change something in ${p.name}.` : (i === -1 ? 'Every step is tried. What should we change next?' : 'Continue with the plan.');
+    return `<p><b>Continue in your AI app.</b> Type this there:</p><p class="mono say-this">${esc(next)}</p><button type="button" class="btn small" data-action="copy-next" data-text="${esc(next)}">Copy the message</button>`;
+  }
+  function leftShape(p){ return [p.id, S.advanced ? S.left : 'plan', S.advanced, S.aiMode].join('|'); }
+  function renderLeft(){
+    const el = $('#lpane'); if (!el) return; const p = proj();
+    const shape = leftShape(p), tab = S.advanced ? S.left : 'plan';
+    const box0 = $('#chat') || $('#log');
+    const nearBottom = !box0 || box0.scrollTop + box0.clientHeight >= box0.scrollHeight - 40;
+    if (el.dataset.shape === shape){
+      /* The same screen: change what changed, and leave what the person is typing alone. */
+      if (tab === 'build'){ $('#log').innerHTML = p.log.map(([k, t]) => `<p class="${k}">${esc(t)}</p>`).join(''); }
       else {
-        const next = !p.plan ? `Let us change something in ${p.name}.` : (i === -1 ? 'Every step is tried. What should we change next?' : 'Continue with the plan.');
-        cont = `<p><b>Continue in your AI app.</b> Type this there:</p><p class="mono say-this">${esc(next)}</p><button type="button" class="btn small" data-action="copy-next" data-text="${esc(next)}">Copy the message</button>`;
+        $('#plan-box').outerHTML = planBox(p);
+        $('#chat').innerHTML = chatItems(p);
+        const c = $('#continue'); if (c) c.innerHTML = continueHTML(p);
       }
-      body = `<div class="chat" id="chat" role="log" aria-live="polite">${items}</div>
-        <div class="continue">${cont}</div>`;
+    } else {
+      el.dataset.shape = shape;
+      if (tab === 'build'){
+        const say = mcp() ? '' : '<form class="term-say" id="say-form"><label class="sr" for="say">Message to the builder</label><input id="say" autocomplete="off" placeholder="Talk to the builder directly"><button class="btn small" type="submit">Send</button></form>';
+        el.innerHTML = whoHTML('The builder', mcp() ? 'The coding part of your own AI app, working in the test copy.' : 'Claude Code, working in the test copy.') +
+          `<div class="term"><div class="log" id="log" role="log" aria-labelledby="who-h">${p.log.map(([k, t]) => `<p class="${k}">${esc(t)}</p>`).join('')}</div>${say}</div>`;
+      } else {
+        const who = mcp() ? whoHTML('Your AI app', 'The conversation happens in your own AI app. Here you see what it posted and did.')
+          : S.advanced ? whoHTML('The architect', 'Plans with you and checks the builder\'s work.')
+          : whoHTML('Your AI', 'Plans with you, builds one step at a time, and checks its own work before you try it.');
+        const foot = mcp() ? `<div class="continue" id="continue">${continueHTML(p)}</div>`
+          : `<form class="say" id="say-form"><label class="sr" for="say">Message to ${AI().the}</label><input id="say" autocomplete="off" placeholder="Tell ${AI().the} what you want"><button class="btn small" type="submit">Send</button></form>`;
+        el.innerHTML = `${who}${planBox(p)}<div class="chat" id="chat" role="log" aria-labelledby="who-h">${chatItems(p)}</div>${foot}`;
+      }
     }
-    if (tab === 'builder'){
-      body = `<div class="log" id="log" role="log" aria-live="polite">${p.log.map(([k, t]) => `<p class="${k}">${esc(t)}</p>`).join('')}</div>
-        ${mcp ? '' : '<form class="prompt" id="prompt"><label class="sr" for="say">Message to the builder</label><input id="say" autocomplete="off" placeholder="Talk to the builder directly"><button class="btn small" type="submit">Send</button></form>'}`;
-    }
-    if (tab === 'brief'){
-      body = `<div class="brief"><label class="sr" for="brief-text">Instructions for the builder</label><textarea id="brief-text" spellcheck="false">${esc(p.brief)}</textarea><p>In advanced mode you can change the instructions before the builder gets them. The architect reads your changes too.</p><div><button type="button" class="btn small" data-action="save-brief">Save the instructions</button></div></div>`;
-    }
-    el.innerHTML = `<div class="helper-head"><div class="who"><i aria-hidden="true"></i><div><h2>${heads[tab][0]}</h2><p>${heads[tab][1]}</p></div></div></div>${tabs}<div id="hpanel" ${S.advanced ? `role="tabpanel" aria-labelledby="htab-${tab}"` : ''} class="hpanel">${body}</div>`;
     const box = $('#chat') || $('#log');
-    if (box) box.scrollTop = nearBottom ? box.scrollHeight : oldTop;
-    const inp = $('#say'); if (inp && keep) inp.value = keep;
+    if (box && (nearBottom || !box0 || box0 !== box)) box.scrollTop = box.scrollHeight;
   }
+  /* A chat that was hidden (on a phone, under another tab) opens at its latest message. */
+  function toBottom(){ const box = $('#chat') || $('#log'); if (box) box.scrollTop = box.scrollHeight; }
 
-  function renderShip(){
-    const el = $('#ship'); if (!el) return; const p = proj();
-    const nextV = (p.live || 0) + 1;
-    const sh = p.ship; const gv = sh ? sh.v : nextV;
-    const gates = ['Tried by you', 'Backup taken', 'Backup restored and checked', `v${gv} started`, `v${gv} answers`, 'Live'];
-    const stage = sh ? sh.stage : -1; const ready = allTried(p);
-    const railItems = gates.map((g, i) => {
-      let cls = '';
-      if (ready && i === 0) cls = 'done';
-      if (sh){ if (i < stage) cls = 'done'; else if (i === stage && !sh.done) cls = 'checking'; if (sh.done) cls = 'done'; }
-      return `<li class="gate ${cls}"><span class="g">${CHECK}</span><span>${g}</span></li>`;
-    }).join('');
-    const doneCount = sh ? (sh.done ? gates.length : stage) : (ready ? 1 : 0);
-    const frac = Math.max(0, Math.min(doneCount, gates.length) - 1) / (gates.length - 1);
-    el.className = 'ship ' + (ready || sh ? 'strong' : 'quiet');
-    let top;
-    if (sh && sh.done) top = `<div><h2>v${sh.v} is live.</h2><p>${p.count} ${p.countWord}, nothing lost. The version before is kept, so you can go back any time.</p></div>`;
-    else if (sh) top = `<div><h2>Putting v${sh.v} live</h2><p>${esc(sh.msg || '')}</p></div>`;
-    else if (!p.plan) top = `<div><h2>Nothing to put live yet</h2><p>When the builder has made something and you have tried it, you put it live from here.</p></div>`;
-    else if (ready) top = `<div><h2>Ready to put v${nextV} live</h2><p>You have tried all ${p.plan.steps.length} steps. The safety checks below run first: if one fails, nothing live changes.</p></div><button type="button" class="btn pink" data-action="ship">Put v${nextV} live</button>`;
-    else top = `<div><h2>Put v${nextV} live</h2><p>Try every step first. ${triedCount(p)} of ${p.plan.steps.length} tried so far. Then the safety checks below run before anything goes live.</p></div><button type="button" class="btn pink" disabled>Put v${nextV} live</button>`;
-    el.innerHTML = `<div class="ship-top">${top}</div><ol class="rail" aria-label="The safety checks" style="--frac:${frac.toFixed(3)}">${railItems}<span class="fill"></span></ol>${sh && sh.done ? `<div class="ship-result"><span>Next time, just tell the architect what you want to change.</span><button type="button" class="btn small line" data-action="open-link" data-port="${p.prodPort}">Open the live app</button></div>` : ''}`;
+  /* The right side: what you look at. */
+  function built(p, i){ return p.plan ? ['ready', 'tried'].includes(p.plan.steps[i] && p.plan.steps[i].s) : p.live > 0; }
+  function tryLine(p){
+    const i = current(p), st = p.plan && i !== -1 ? p.plan.steps[i] : null;
+    const line = (cls, text, acts = '') => `<div class="tryline ${cls}" id="tryline" tabindex="-1"><p class="t">${text}</p>${acts ? `<div class="acts">${acts}</div>` : ''}</div>`;
+    if (p.making) return line('info', '<b>This is your app as it is now:</b> the starter app every new app begins with. The plan comes in the chat.');
+    if (proposed(p)) return line('info', '<b>This is your app as it is now.</b> The plan in the chat says what will change. Nothing is built until you say so.');
+    if (!p.plan) return line('info', '<b>Nothing is in progress.</b> Say in the chat what you want to change next.');
+    if (p.ship && !p.ship.done) return line('done', `<b>Putting v${p.ship.v} live.</b> The safety checks are running in Live.`, '<button type="button" class="btn pink small" data-action="to-live">Go to Live</button>');
+    if (i === -1) return line('done', `<b>All ${p.plan.steps.length} steps are tried.</b> Go to Live when you want the family to get v${(p.live || 0) + 1}.`, '<button type="button" class="btn pink small" data-action="to-live">Go to Live</button>');
+    if (st.s === 'ready') return line('ready', `<b>Step ${i + 1} is ready.</b> Try it: ${esc(st.y)}`, `<button type="button" class="btn small go" data-action="works" data-i="${i}">${CHECK} It works</button><button type="button" class="linkbtn" data-action="report" data-i="${i}">Something is wrong</button>`);
+    if (st.s === 'building') return line('building', `<b>Building step ${i + 1}:</b> ${esc(lc(st.t))}. The test copy keeps working, so you can look around meanwhile.`);
+    return line('info', `<b>Step ${i + 1} is next:</b> ${esc(lc(st.t))}.`);
   }
-
-  function tabVersions(p){
-    if (!p.versions.length) return `<p class="intro">Nothing has been put live yet. When you put the first version live, it shows up here, and every version after it is kept.</p>`;
-    const rows = p.versions.map(v => {
-      const isLive = v.v === p.live;
-      const act = isLive ? '<span class="chip live">Live now</span>' : `<button type="button" class="btn small line" data-action="rollback" data-v="${v.v}">Go back to v${v.v}</button>`;
-      const adv = S.advanced ? `<div class="mig"><span>commit ${esc(v.commit || 'pending')}</span>${(v.migs || []).map(m => `<span>${esc(m)}</span>`).join('')}<button type="button" class="explain" data-action="explain" data-k="migration">Explain this</button></div>` : '';
-      return `<div class="row"><div><h3>v${v.v} <span class="muted" style="font-family:var(--body);font-weight:400;font-size:.95rem">${esc(v.when)}</span></h3><p>${esc(v.what)}</p>${adv}</div>${act}</div>`;
-    }).join('');
-    return `<p class="intro">Every version you put live is kept. Going back to an older version keeps your data: ${esc(p.countWord)} written since then stay where they are.</p><div class="quiet rows">${rows}</div>`;
+  function drawGuestbook(p){
+    const photo = built(p, 0), kept = built(p, 1);
+    const label = `A picture of the test copy: the guestbook page, with a form for a name${photo ? ', a photo' : ''} and a message, and messages from Ada${kept ? ', with a photo of a birthday cake,' : ''} and Bo.`;
+    return `<div class="tc-site" role="img" aria-label="${esc(label)}"><p class="tc-h">${esc(p.name)}</p><p class="tc-sub">Leave a message for Grandma's 90th birthday.</p>
+      <div class="tc-form"><span class="in">Your name</span>${photo ? '<span class="photo">Add a photo</span>' : '<span></span>'}<span class="in wide">Your message</span><span class="post">Post</span></div>
+      <div class="tc-entry${kept ? '' : ' nopic'}">${kept ? '<span class="pic"></span>' : ''}<div><b>Ada</b>Happy birthday, Grandma! ${kept ? 'Here is the cake from last year.' : 'See you on Sunday.'}<br><small>Just now</small></div></div>
+      <div class="tc-entry nopic"><div><b>Bo</b>See you at the party, save me some cake!<br><small>2 hours ago</small></div></div></div>`;
   }
-
-  function tabBackups(p){
-    if (!p.live) return `<p class="intro">Backups start when the app goes live. The test copy has nothing worth keeping yet.</p>`;
-    const rows = p.backups.map(b => b.ok
-      ? `<div class="row"><div><h3>${esc(b.when)} <span class="chip live">Restored and checked</span></h3><p>${esc(b.size)}, encrypted, on the USB disk.${S.advanced ? ' Encrypted to this machine\'s key and your recovery key; the restore ran in a scratch copy and the health check answered.' : ''}</p></div></div>`
-      : `<div class="row"><div><h3>${esc(b.when)} <span class="chip warn">No backup</span></h3><p>${esc(b.why)}</p></div></div>`).join('');
-    return `<h2 class="section-title" style="margin-top:0">Backups of ${esc(p.name)}</h2><div class="head" style="margin-bottom:14px"><p class="intro" style="margin:0">Every night at 03:30 the app's data is copied to the USB disk, then restored into a scratch copy and checked.</p><button type="button" class="btn small" data-action="backup-now">Back up now</button></div><div class="quiet rows">${rows}</div>`;
+  function drawRecipes(p){
+    const add = built(p, 1), search = built(p, 2), share = built(p, 3);
+    const has = !p.plan || p.plan.steps[1].s === 'tried';
+    const list = has ? [['Apple cake', 'From Grandma, with a photo.', true], ['Pea soup', 'For cold Thursdays.', false]] : [];
+    const label = `A picture of the test copy: the recipe box, ${has ? 'with two recipes' : 'with no recipes yet'}${add ? ', a button to add a recipe' : ''}${search ? ', a search box' : ''}.`;
+    const tools = (search ? '<span class="in">Search by ingredient</span>' : '') + (add ? '<span class="post">Add a recipe</span>' : '');
+    const rows = list.length ? list.map(([t, d, pic]) => `<div class="tc-entry${pic ? '' : ' nopic'}">${pic ? '<span class="pic"></span>' : ''}<div><b>${t}</b>${d}${share ? '<br><small>Share with a link</small>' : ''}</div></div>`).join('') : '<p class="tc-empty">No recipes yet.</p>';
+    return `<div class="tc-site" role="img" aria-label="${esc(label)}"><p class="tc-h">${esc(p.name)}</p><p class="tc-sub">The family's recipes, in one place.</p>${tools ? `<div class="tc-tools">${tools}</div>` : ''}${rows}</div>`;
   }
-
-  function tabKeys(p){
-    const rows = p.keys.map(k => `<tr><td>${esc(k.name)}</td><td>${k.dev ? '<span class="hidden-val" aria-label="set, hidden">••••••</span>' : '<span class="muted">not set</span>'}</td><td>${k.prod ? '<span class="hidden-val" aria-label="set, hidden">••••••</span>' : '<span class="muted">not set</span>'}</td><td class="muted">${esc(k.when)}</td></tr>`).join('');
-    return `<div class="head" style="margin-bottom:14px"><p class="intro" style="margin:0">Service keys let your app use services outside your machine, like a weather service. They are not the same as your recovery key. They are stored encrypted, handed to the app when it runs, and never shown again, not even here. The test copy and the live app have separate keys.</p><button type="button" class="btn small" data-action="add-key">Add a service key</button></div>
-      <div class="quiet">${p.keys.length ? `<table class="keys-table"><thead><tr><th>Name</th><th>Test copy</th><th>Live app</th><th>Changed</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="intro" style="padding:18px 20px;margin:0">No keys yet. Add one when your app needs a service outside the machine, like a weather or payment service.</p>'}</div>`;
+  function drawNew(p){
+    if (!built(p, 0)) return `<div class="tc-site" role="img" aria-label="A picture of the test copy: the starter app every new app begins with, a guestbook page with a form and no entries yet."><p class="tc-h">Guestbook</p>
+      <div class="tc-form one"><span class="in">Your name</span><span class="in wide">Say something</span><span class="post">Sign the guestbook</span></div><p class="tc-empty">No entries yet. Be the first.</p></div>`;
+    const kept = built(p, 1);
+    const first = p.idea.split(/(?<=[.!?])\s/)[0];
+    const sub = first.length > 110 ? first.slice(0, first.lastIndexOf(' ', 107)) + '...' : first;
+    return `<div class="tc-site" role="img" aria-label="${esc(`A picture of the test copy: a first page for ${p.name}${kept ? ', with a form to add something' : ''}, and nothing in it yet.`)}"><p class="tc-h">${esc(p.name)}</p><p class="tc-sub">${esc(sub)}</p>
+      ${kept ? '<div class="tc-tools"><span class="in">Add something</span><span class="post">Add</span></div>' : ''}<p class="tc-empty">Nothing here yet.</p></div>`;
+  }
+  function previewView(p){
+    const draw = p.kind === 'guestbook' ? drawGuestbook(p) : p.kind === 'recipes' ? drawRecipes(p) : drawNew(p);
+    const mid = S.advanced ? `<span class="fmid addr">allvibe.local:${p.devPort}</span>` : '<span class="fmid">Try anything here. The live app is not touched.</span>';
+    return `${tryLine(p)}<section class="frame" id="preview-frame" aria-label="The test copy"><div class="fbar"><span class="tc">Test copy</span>${mid}<button type="button" data-action="restart-test">Restart the test copy</button></div>${draw}</section>`;
   }
 
   const FILES = {
@@ -922,22 +1040,129 @@ Rules
       ['c', '  await db.query('], ['a', "    'insert into entries (name, message, photo) values ($1, $2, $3)',"], ['a', '    [name, message, photo]'],
       ['c', '  );'], ['c', "  res.redirect('/');"], ['c', '});'] ] },
     'migrations/004_add_photo.sql': { changed: 'step 2', lines: [['a', '-- A place for one photo per message.'], ['a', 'alter table entries add column photo text;']] },
+    'src/views/form.html': { changed: 'step 1', lines: [['c', '<form method="post" enctype="multipart/form-data">'], ['c', '  <input name="name" placeholder="Your name">'], ['a', '  <label class="photo"><input type="file" name="photo" accept="image/*"> Add a photo</label>'], ['c', '  <textarea name="message"></textarea>'], ['c', '</form>']] },
     'AGENTS.md': { changed: '', lines: [['c', '# How to work on Grandma\'s guestbook'], ['c', ''], ['c', 'These are the instructions for any AI coding agent working in this project.'], ['c', 'Read all of it before you change anything, and follow it every time.'], ['c', ''], ['c', '## Start with a plan'], ['c', 'When the person tells you their idea, do not start building.']] },
     'STATE.md': { changed: 'step 2', lines: [['c', "# Grandma's guestbook: where things stand"], ['c', ''], ['c', '## The plan: let guests add a photo'], ['c', '1. A photo button on the form. Tried by the person.'], ['a', '2. Photos are kept with the message. Built, waiting to be tried.'], ['c', '3. Big photos are made smaller.']] }
   };
-  function tabFiles(p){
-    if (p.id !== 'guestbook') return `<p class="intro">The files of ${esc(p.name)} appear here once the builder has made its first step.</p>`;
-    const f = FILES[S.file];
-    const tree = Object.keys(FILES).map(n => `<button type="button" data-file="${n}" aria-current="${S.file === n}">${esc(n)}${FILES[n].changed ? '<span class="ch">changed</span>' : ''}</button>`).join('');
+  /* Any other app: its instructions and its plan, as the starter app keeps them. */
+  function filesOf(p){
+    if (p.kind === 'guestbook') return FILES;
+    const words = { tried: 'Tried by the person.', ready: 'Built, waiting to be tried.', building: 'Being built.', proposed: 'Proposed.', next: '' };
+    const plan = p.plan ? [['c', `## The plan: ${lc(p.plan.title)}`], ...p.plan.steps.map((s, i) => [s.s === 'ready' ? 'a' : 'c', `${i + 1}. ${s.t}. ${words[s.s]}`.trim()])] : [['c', 'Nothing in progress.']];
+    return {
+      'STATE.md': { changed: p.plan && p.plan.steps.some(s => s.s === 'ready') ? `step ${current(p) + 1}` : '', lines: [['c', `# ${p.name}: where things stand`], ['c', ''], ...plan] },
+      'AGENTS.md': { changed: '', lines: [['c', `# How to work on ${p.name}`], ['c', ''], ['c', 'These are the instructions for any AI coding agent working in this project.'], ['c', ''], ['c', '## Start with a plan'], ['c', 'When the person tells you their idea, do not start building.']] }
+    };
+  }
+  function codeView(p){
+    const files = filesOf(p);
+    if (!files[S.file]) S.file = Object.keys(files)[0];
+    const f = files[S.file];
+    const tree = Object.keys(files).map(n => `<button type="button" data-file="${esc(n)}" aria-current="${S.file === n}"><span>${esc(n)}</span>${files[n].changed ? '<span class="ch">changed</span>' : ''}</button>`).join('');
     const code = f.lines.map(([k, t]) => `<span class="ln ${k === 'a' ? 'add' : 'ctxl'}">${esc(t) || ' '}</span>`).join('');
-    return `<p class="intro">The project's files, as the builder left them. Changes from the latest step are marked. You can read everything here; changing code is done through the architect, so every change is tried before it goes live.</p>
-      <div class="quiet files"><div class="tree">${tree}</div><div class="code"><div class="fh"><span>${esc(S.file)}${f.changed ? `, changed in ${f.changed}` : ''}</span><button type="button" class="explain" style="color:var(--term-dim);border-color:rgba(255,255,255,.2)" data-action="explain" data-k="diff">Explain this</button></div><pre>${code}</pre></div></div>`;
+    return `<p class="code-intro">The app's files, as the builder left them. Changes from the latest steps are marked. You can read everything here; changing code is done through the architect, so every change is tried before it goes live.</p>
+      <div class="quiet files"><div class="tree" role="group" aria-label="Files">${tree}</div><div class="code"><div class="fh"><span>${esc(S.file)}${f.changed ? `, changed in ${f.changed}` : ''}</span><button type="button" class="explain" style="color:var(--term-dim);border-color:rgba(255,255,255,.2)" data-action="explain" data-k="diff">Explain this</button></div><pre>${code}</pre></div></div>`;
+  }
+
+  const GATES = v => ['Tried by you', 'Backup taken', 'Backup restored and checked', `v${v} started`, `v${v} answers`, 'Live'];
+  function safetyList(v, stage, done){
+    const words = { done: ', done', now: ', checking now', next: ', waiting' };
+    const items = GATES(v).map((g, i) => { const st = done || i < stage ? 'done' : i === stage ? 'now' : 'next'; return `<li class="${st}"><span class="g">${st === 'done' ? CHECK : ''}</span><span>${g}<span class="sr">${words[st]}</span></span></li>`; }).join('');
+    const f = done ? 1 : Math.min(stage, 5) / 5;
+    return `<ol class="safety" aria-label="The safety checks" style="--f:${f.toFixed(3)}">${items}</ol>`;
+  }
+  function liveView(p){
+    const nextV = (p.live || 0) + 1, sh = p.ship;
+    const top = p.live
+      ? `<section class="quiet lcard"><h2>v${p.live} is live <span class="chip live">for the family</span></h2><p>This is the version everyone uses.${S.advanced ? ` It answers at <span class="mono">allvibe.local:${p.prodPort}</span>.` : ''}</p><div class="acts"><button type="button" class="btn small line" data-action="open-link" data-port="${p.prodPort}">Open the live app</button></div></section>`
+      : '<section class="quiet lcard"><h2>Not live yet</h2><p>Only the test copy exists so far. When you put the first version live, the family uses it from here on.</p></section>';
+    let next = '';
+    const back = v => v > 1 ? `v${v - 1} comes straight back` : 'nothing live changes';
+    if (sh && !sh.done){
+      next = `<section class="strong lcard" id="shipcard" tabindex="-1"><h2>Putting v${sh.v} live</h2><p>${esc(sh.msg)}</p><p>Nothing the family sees changes until every check has passed. If v${sh.v} does not answer, ${back(sh.v)}.</p>${safetyList(sh.v, sh.stage, false)}</section>`;
+    } else if (sh && sh.done && p.live === sh.v){
+      next = `<section class="strong lcard" id="shipcard" tabindex="-1"><h2>v${sh.v} is live.</h2><p>${p.count} ${esc(p.countWord)}, nothing lost. ${sh.v > 1 ? `v${sh.v - 1} is kept below, so you can go back any time.` : 'Every version you put live is kept below.'}</p><p>Next time, just tell ${AI().the} what you want to change.</p>${safetyList(sh.v, 6, true)}</section>`;
+    } else if (allTried(p)){
+      next = `<section class="strong lcard" id="shipcard" tabindex="-1"><h2>v${nextV} is ready: ${esc(lc(p.plan.title))}</h2><p>You have tried all ${p.plan.steps.length} steps. Before anything changes, your data is backed up and the backup is restored and checked. Then v${nextV} starts, and if it does not answer, ${back(nextV)}.</p><div class="acts"><button type="button" class="btn pink" data-action="ship">Put v${nextV} live</button></div></section>`;
+    } else if (p.plan && !p.making){
+      const left = p.plan.steps.length - triedCount(p);
+      const say = proposed(p) ? 'Not built yet. When the plan is approved and every step is tried, you put it live from here.' : `${left} step${left > 1 ? 's' : ''} left to try before v${nextV} can go live.`;
+      next = `<section class="quiet lcard"><h2>v${nextV}: ${esc(lc(p.plan.title))}</h2><p>${say}</p><div class="acts"><button type="button" class="btn small line" data-action="to-preview">Back to the preview</button></div></section>`;
+    }
+    const rows = p.versions.map(v => {
+      const act = v.v === p.live ? '<span class="chip live">Live now</span>' : `<button type="button" class="btn small line" data-action="rollback" data-v="${v.v}">Go back to v${v.v}</button>`;
+      const adv = S.advanced ? `<div class="mig"><span>commit ${esc(v.commit || 'pending')}</span>${(v.migs || []).map(m => `<span>${esc(m)}</span>`).join('')}<button type="button" class="explain" data-action="explain" data-k="migration">Explain this</button></div>` : '';
+      return `<div class="vrow"><div><b>v${v.v}</b> <span class="muted">${esc(v.when)}</span><p>${esc(v.what)}</p>${adv}</div>${act}</div>`;
+    }).join('');
+    const vers = p.versions.length
+      ? `<section class="quiet lcard"><h2>Earlier versions</h2><p>Every version you put live is kept. Going back keeps your data: ${esc(p.countWord)} written since then stay where they are.</p><div class="vers">${rows}</div></section>`
+      : '<section class="quiet lcard"><h2>Earlier versions</h2><p>Nothing has been put live yet. When you put the first version live, it shows up here, and every version after it is kept.</p></section>';
+    return top + next + vers;
+  }
+  function renderRight(){
+    const el = $('#rpane'); if (!el) return; const p = proj();
+    el.innerHTML = S.right === 'code' ? codeView(p) : S.right === 'live' ? liveView(p) : previewView(p);
+  }
+
+  /* ---------- More: backups, service keys and the app's settings ---------- */
+  function backupsDialog(p, opener){
+    const rows = p.backups.map(b => b.ok
+      ? `<div class="row"><div><h3>${esc(b.when)} <span class="chip live">Restored and checked</span></h3><p>${esc(b.size)}, encrypted, on the USB disk.${S.advanced ? ' Encrypted to this machine\'s key and your recovery key; the restore ran in a scratch copy and the health check answered.' : ''}</p></div></div>`
+      : `<div class="row"><div><h3>${esc(b.when)} <span class="chip warn">No backup</span></h3><p>${esc(b.why)}</p></div></div>`).join('');
+    const body = p.live
+      ? `<p>Every night at 03:30 the app's data is copied to the USB disk, then restored into a scratch copy and checked.</p><div class="dialog-actions" style="justify-content:flex-start;margin-top:14px"><button type="button" class="btn small" data-action="backup-now">Back up now</button></div><div class="quiet rows" style="margin-top:14px">${rows}</div>`
+      : '<p>Backups start when the app goes live. The test copy has nothing worth keeping yet.</p>';
+    openModal(`<h2 id="dialog-title">Backups of ${esc(p.name)}</h2>${body}<div class="dialog-actions"><button type="button" class="btn line" data-action="close">Close</button></div>`, false, null, opener, 'backups');
+  }
+  function keysDialog(p, opener){
+    const hid = on => on ? '<span class="hidden-val" aria-label="set, hidden">••••••</span>' : '<span class="muted">not set</span>';
+    const rows = p.keys.map(k => `<tr><td>${esc(k.name)}</td><td>${hid(k.dev)}</td><td>${hid(k.prod)}</td><td class="muted">${esc(k.when)}</td></tr>`).join('');
+    openModal(`<h2 id="dialog-title">Service keys of ${esc(p.name)}</h2>
+      <p>Service keys let your app use services outside your machine, like a weather service. They are not the same as your recovery key. They are stored encrypted, handed to the app when it runs, and never shown again, not even here. The test copy and the live app have separate keys.</p>
+      <div class="quiet" style="margin-top:14px">${p.keys.length ? `<table class="keys-table"><thead><tr><th>Name</th><th>Test copy</th><th>Live app</th><th>Changed</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="intro" style="padding:18px 20px;margin:0">No keys yet. Add one when your app needs a service outside the machine, like a weather or payment service.</p>'}</div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Close</button><button type="button" class="btn" data-action="add-key">Add a service key</button></div>`, true, null, opener, 'keys');
+  }
+  function addKeyDialog(){
+    openModal(`<h2 id="dialog-title">Add a service key</h2>
+      <p>For a service outside your machine. The value is stored encrypted and is never shown again, not even to you.</p>
+      <div class="field"><label for="k-name">Name</label><input id="k-name" placeholder="For example: WEATHER_API_KEY" autocomplete="off" spellcheck="false"></div>
+      <div class="field"><label for="k-env">Where it is used</label><select id="k-env"><option value="dev">Test copy</option><option value="prod">Live app</option><option value="both">Both, with the same value</option></select></div>
+      <div class="field"><label for="k-val">Value</label><input id="k-val" type="password" autocomplete="off" placeholder="Paste the key here"><span class="hint">In the demo, whatever you type is thrown away.</span></div>
+      <p class="consent" style="display:block"><b>Check the value carefully.</b> You will not be able to see it again after saving. If it is wrong, you add it again.</p>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="keys-back">Cancel</button><button type="button" class="btn" data-action="save-key">Save the service key</button></div>`, false, null, null, 'add-key');
+  }
+  function saveKey(){
+    const p = proj();
+    const name = ($('#k-name').value || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    if (!name){ $('#k-name').focus(); toast('Give the key a name first.'); return; }
+    const env = $('#k-env').value; $('#k-val').value = '';
+    let k = p.keys.find(x => x.name === name);
+    if (!k){ k = { name, dev: false, prod: false, when: 'Just now' }; p.keys.push(k); }
+    if (env === 'dev' || env === 'both') k.dev = true;
+    if (env === 'prod' || env === 'both') k.prod = true;
+    k.when = 'Just now'; keysDialog(p); toast(`${name} is saved and will not be shown again.`);
+  }
+  function settingsDialog(p, opener){
+    openModal(`<h2 id="dialog-title">Settings of ${esc(p.name)}</h2>
+      <div class="field"><label for="as-name">Name</label><input id="as-name" value="${esc(p.name)}" maxlength="40" autocomplete="off"></div>
+      <div class="quiet rows" style="margin-top:16px">
+        <div class="row"><div><h3>Who can use it</h3><p>Anyone on your home network, like the family's phones and computers.</p></div><span class="chip live">Home network only</span></div>
+        <div class="row"><div><h3>Publish</h3><p>Makes the app reachable from the internet, with a sign-in so that only you and the people you invite can use it.</p></div><span class="chip idle">Planned</span></div>
+        ${S.advanced ? `<div class="row"><div><h3>Address</h3><p>The live app answers at <span class="mono">allvibe.local:${p.prodPort}</span> and the test copy at <span class="mono">allvibe.local:${p.devPort}</span>, on your home network.</p></div></div>` : ''}
+      </div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="save-settings">Save</button></div>`, false, '#as-name', opener, 'settings');
+  }
+  function briefDialog(p){
+    openModal(`<h2 id="dialog-title">Instructions for the builder</h2>
+      <p>Written by the architect. Also called the brief. In advanced mode you can change them before the builder gets them; the architect reads your changes too.</p>
+      <div class="field"><label for="brief-text">The brief</label><textarea id="brief-text" class="brief-text" spellcheck="false">${esc(p.brief)}</textarea></div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="save-brief">Save the instructions</button></div>`, true, '#brief-text', null, 'brief');
   }
 
   /* ---------- Backups, machine, services, settings ---------- */
   function viewBackups(){
-    const rows = S.projects.filter(p => p.live).map(p => `<div class="row"><div><h3>${esc(p.name)} <span class="chip live">Restored and checked</span></h3><p>Last night, 03:30. ${esc(p.backups[0] ? p.backups[0].size : '')}, encrypted.</p></div><button type="button" class="btn small line" data-open="${p.id}" data-tab-go="backups">See backups</button></div>`).join('');
-    return `<div class="head"><div><h1>Backups of all your apps</h1><p class="muted">Where your data is kept, and whether it can be brought back. Each app's own backups are under its Backups tab.</p></div></div>
+    const rows = S.projects.filter(p => p.live).map(p => `<div class="row"><div><h3>${esc(p.name)} <span class="chip live">Restored and checked</span></h3><p>Last night, 03:30. ${esc(p.backups[0] ? p.backups[0].size : '')}, encrypted.</p></div><button type="button" class="btn small line" data-action="see-backups" data-id="${p.id}">See backups</button></div>`).join('');
+    return `<div class="head"><div><h1>Backups of all your apps</h1><p class="muted">Where your data is kept, and whether it can be brought back. Each app's own backups are under More, next to its name.</p></div></div>
       <section class="quiet setting" style="margin-bottom:22px"><div><h2>USB disk, 1 TB</h2><p>Plugged in, 612 GB free. It is a separate disk from the computer's own, so your data survives if the computer dies.</p></div><span class="chip live">Plugged in</span></section>
       <div class="quiet rows">${rows}</div>`;
   }
@@ -1014,7 +1239,7 @@ Rules
       let upd = '';
       if (u){
         const g = ['Backup of its data', `${esc(u.to)} started`, `${esc(u.to)} answers`, 'Live'];
-        const rail = g.map((t, i) => { let cls = ''; if (i < u.stage) cls = 'done'; else if (i === u.stage && !u.end) cls = u.fail && i === 2 ? 'checking' : 'checking'; if (u.end === 'ok') cls = 'done'; if (u.end === 'back') cls = i < 2 ? 'done' : ''; return `<li class="gate ${cls}"><span class="g">${CHECK}</span><span>${t}</span></li>`; }).join('');
+        const rail = g.map((t, i) => { let cls = ''; if (i < u.stage) cls = 'done'; else if (i === u.stage && !u.end) cls = 'checking'; if (u.end === 'ok') cls = 'done'; if (u.end === 'back') cls = i < 2 ? 'done' : ''; return `<li class="gate ${cls}"><span class="g">${CHECK}</span><span>${t}</span></li>`; }).join('');
         upd = `<div class="upd"><p><b>${esc(u.msg)}</b></p><ol class="rail r4">${rail}</ol></div>`;
       }
       const canUpdate = ha.version !== ha.next && !u;
@@ -1045,7 +1270,7 @@ Rules
         ${S.aiMode === 'mcp' ? '<div style="margin-top:14px"><button type="button" class="btn small" data-action="mcp-how">Show how to connect</button></div>' : ''}
       </section>`;
     if (S.advanced && S.aiMode === 'mcp'){
-      const calls = [['read_file', 'src/server.js'], ['write_file', 'src/photos.js'], ['deploy_dev', "Grandma's guestbook"], ['run_checks', 'test copy, 12 of 12 passed'], ['commit', 'key check passed'], ['propose_release', 'v3, waiting for you']];
+      const calls = [['read_file', 'src/server.js'], ['write_file', 'src/photos.js'], ['start_test_copy', "Grandma's guestbook"], ['run_checks', 'test copy, 12 of 12 passed'], ['commit', 'key check passed'], ['propose_release', 'v3, waiting for you']];
       h += `<section class="quiet setting" style="display:block"><h2>What your AI app did</h2><p>Every call your AI app made to this machine. It can only reach test copies.</p><div class="log-view">${calls.map(([a, b]) => `${a}  ${esc(b)}`).join('<br>')}</div></section>`;
     }
     h += s('Backup disk', "USB disk, 1 TB. Backups are encrypted to this machine's key and to your recovery key.", '<button type="button" class="btn small line" data-action="demo-only">Choose another disk</button>');
@@ -1061,30 +1286,46 @@ Rules
 
   function renderMain(){
     const m = $('#main');
+    document.body.classList.toggle('appview', S.view === 'project');
     if (S.view === 'home') m.innerHTML = viewHome();
-    if (S.view === 'project') m.innerHTML = viewProject();
+    if (S.view === 'project'){ m.innerHTML = viewProject(); renderHead(); renderTabs(); renderLeft(); renderRight(); }
     if (S.view === 'backups') m.innerHTML = viewBackups();
     if (S.view === 'machine') m.innerHTML = viewMachine();
     if (S.view === 'services') m.innerHTML = viewServices();
     if (S.view === 'settings') m.innerHTML = viewSettings();
-    if (S.view === 'project' && S.tab === 'build'){ renderPlan(); renderHelper(); renderShip(); }
   }
   function render(){ renderNav(); renderMain(); }
   function closeMenu(){ $('#side').classList.remove('open'); $('#menu-btn').setAttribute('aria-expanded', 'false'); }
-  function go(view, id, tab){
-    closeMenu();
+  function go(view){
+    closeMenu(); S.moreOpen = false;
     if (view === 'services' && !S.advanced){ modeDialog('services'); return; }
-    S.view = view; if (id) S.projectId = id; if (tab) S.tab = tab;
+    S.view = view;
+    render(); window.scrollTo({top: 0}); $('#main').focus({preventScroll: true});
+  }
+  /* An app opens on its preview, or where its next action is. */
+  function openApp(id, o = {}){
+    closeMenu(); S.moreOpen = false;
+    S.view = 'project'; S.projectId = id;
+    S.right = o.right || 'preview'; S.m = o.show || S.right;
     render(); window.scrollTo({top: 0}); $('#main').focus({preventScroll: true});
   }
 
   /* ---------- Toast and modal ---------- */
   let toastT;
   function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 3600); }
-  let lastFocus;
+  let lastFocus, lastKey;
   const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),textarea,select,[tabindex]:not([tabindex="-1"])';
-  function openModal(html, wide, focusSel){ if ($('#modal').hidden) lastFocus = document.activeElement; const d = $('#dialog'); d.className = 'dialog' + (wide ? ' wide' : ''); d.innerHTML = html; $('#modal').hidden = false; const f = (focusSel && d.querySelector(focusSel)) || d.querySelector(FOCUSABLE); f && f.focus(); }
-  function closeModal(){ $('#modal').hidden = true; if (lastFocus && lastFocus.isConnected) lastFocus.focus(); else $('#main').focus(); }
+  function openModal(html, wide, focusSel, opener, kind){
+    if ($('#modal').hidden){ lastFocus = opener || document.activeElement; lastKey = keyOf(lastFocus); }
+    const d = $('#dialog'); d.className = 'dialog' + (wide ? ' wide' : ''); d.dataset.kind = kind || ''; d.innerHTML = html; $('#modal').hidden = false;
+    const f = (focusSel && d.querySelector(focusSel)) || d.querySelector(FOCUSABLE); f && f.focus();
+  }
+  function closeModal(){
+    $('#modal').hidden = true;
+    let back = lastFocus && lastFocus.isConnected && lastFocus.getClientRects().length ? lastFocus : null;
+    if (!back && lastKey){ const el = document.querySelector(lastKey); if (el && el.getClientRects().length) back = el; }
+    if (back && back !== $('#main')) back.focus(); else $('#main').focus({preventScroll: true});
+  }
 
   /* ---------- Modes ---------- */
   function modeDialog(then){
@@ -1097,48 +1338,64 @@ Rules
       <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Stay in simple mode</button><button type="button" class="btn" id="adv-go" data-action="to-advanced" data-then="${then || ''}" disabled>Turn on advanced mode</button></div>`);
   }
   function toAdvanced(then){ S.advanced = true; closeModal(); if (then === 'services'){ S.view = 'services'; } render(); toast('Advanced mode is on. "Back to simple mode" is always at the top.'); }
-  function toSimple(){ S.advanced = false; if (S.view === 'services') S.view = 'home'; S.htab = 'architect'; render(); toast('Back in simple mode. Nothing you set was lost.'); }
+  function toSimple(){ S.advanced = false; if (S.view === 'services') S.view = 'home'; S.left = 'plan'; render(); focusIfLost('#main'); toast('Back in simple mode. Nothing you set was lost.'); }
 
-  /* ---------- Architect and builder ---------- */
-  function refreshHelper(p){ if (S.projectId === p.id && S.view === 'project' && S.tab === 'build') renderHelper(); }
-  function chat(p, k, t){ p.chat.push([k, t]); refreshHelper(p); }
-  function blog(p, k, t){ p.log.push([k, t]); refreshHelper(p); }
+  /* ---------- The AI and the builder, scripted ---------- */
+  function refreshAll(p){ if (S.projectId === p.id && S.view === 'project') renderApp(); keepFocusIn('#nav', renderNav); }
+  const here = p => S.projectId === p.id && S.view === 'project';
+  function chat(p, k, t){ p.chat.push([k, t]); refreshAll(p); }
+  function blog(p, k, t){ p.log.push([k, t]); if (here(p)) keepFocus(renderLeft); }
   function dropWorking(p){ p.chat = p.chat.filter(c => c[0] !== 'working'); }
-  function refreshAll(p){ if (S.projectId === p.id && S.view === 'project' && S.tab === 'build'){ renderPlan(); renderShip(); renderHelper(); } renderNav(); }
   const SCRIPT = {
-    guestbook: [null, null, { tools: ['Edited src/photos.js', 'Photos are now made smaller when they are saved', 'Committed: make big photos smaller'], tries: 'Step 3 is ready. I checked it: the builder now makes big photos smaller when they are saved. Try it: post a big photo from your phone. It should show up quickly.' }],
+    guestbook: [null, null, { tools: ['Edited src/photos.js', 'Photos are now made smaller when they are saved', 'Committed: make big photos smaller'], tries: 'Step 3 is ready. I checked it: big photos are now made smaller when they are saved. Try it: post a big photo from your phone. It should show up quickly.' }],
     recipes: [null,
       { tools: ['Edited src/recipes.js', 'Added migrations/002_recipes.sql (only adds)', 'Committed: add a recipe with a photo'], tries: 'Step 2 is ready. Try it: add a recipe with a photo, restart the test copy, and check that it is still there.' },
       { tools: ['Edited src/search.js', 'Committed: search by ingredient'], tries: 'Step 3 is ready. Try it: type "egg" in the search box. Only recipes with eggs should show.' },
-      { tools: ['Edited src/share.js', 'Committed: share a recipe with a link'], tries: 'Step 4 is ready. Try it: share a recipe and open the link on your phone.' }]
+      { tools: ['Edited src/share.js', 'Committed: share a recipe with a link'], tries: 'Step 4 is ready. Try it: share a recipe and open the link on your phone.' }],
+    new: [{ tools: ['Edited server.js', 'Committed: a first page'], tries: 'Step 1 is ready. I checked it: the first page is there. Have a look at it in the preview.' }]
   };
+  const scriptOf = (p, n) => (SCRIPT[p.id] || SCRIPT[p.kind] || [])[n] || { tools: ['Edited the app', 'Committed the step'], tries: `Step ${n + 1} is ready. Try it in the preview.` };
   function build(p, i, tools, tries){
     p.plan.steps[i].s = 'building';
-    dropWorking(p); p.chat.push(['working', `The builder is working on step ${i + 1}`]);
-    blog(p, 'ai', `Working on step ${i + 1}: ${p.plan.steps[i].t.toLowerCase()}.`);
+    dropWorking(p); p.chat.push(['working', `Building step ${i + 1}`]);
+    p.log.push(['ai', `Working on step ${i + 1}: ${lc(p.plan.steps[i].t)}.`]);
     refreshAll(p);
+    if (here(p)) announce(`Building step ${i + 1}.`);
     let t = 800;
     tools.forEach(x => { later(() => blog(p, 'tool', x), t); t += 900; });
     later(() => {
-      blog(p, 'ai', `Step ${i + 1} done. Stopping for the person to try it.`);
-      dropWorking(p); p.chat.push(['done', `The builder finished step ${i + 1}`]);
+      p.log.push(['ai', `Step ${i + 1} done. Stopping for the person to try it.`]);
+      dropWorking(p); p.chat.push(['done', `Step ${i + 1} built and checked`]);
       p.plan.steps[i].s = 'ready';
       refreshAll(p);
+      if (here(p)) announce(`Step ${i + 1} is ready to try.`);
       later(() => chat(p, 'try', tries), 500);
     }, t + 300);
   }
   function stepWorks(p, i){
     p.plan.steps[i].s = 'tried';
-    chat(p, 'you', `Step ${i + 1} works.`);
+    p.chat.push(['you', `Step ${i + 1} works.`]);
     const n = p.plan.steps.findIndex(x => x.s !== 'tried');
     if (n === -1){
-      chat(p, 'arch', `All ${p.plan.steps.length} steps are tried. When you are ready, put it live with the green button. The safety checks take care of the backup.`);
+      const v = (p.live || 0) + 1;
+      p.chat.push(['arch', `All ${p.plan.steps.length} steps are tried. You can put v${v} live from Live whenever you like. The safety checks take care of the backup.`]);
+      refreshAll(p);
+      announce(`All steps are tried. v${v} can go live from Live.`);
     } else {
-      const sc = (SCRIPT[p.id] || [])[n] || { tools: ['Edited the app', 'Committed the step'], tries: `Step ${n + 1} is ready. Open the test copy and try it.` };
-      chat(p, 'arch', `Good. I have asked the builder for step ${n + 1}: ${p.plan.steps[n].t.toLowerCase()}.`);
+      const sc = scriptOf(p, n);
+      p.chat.push(['arch', `Good. Now step ${n + 1}: ${lc(p.plan.steps[n].t)}.`]);
       build(p, n, sc.tools, sc.tries);
     }
-    refreshAll(p);
+    focusIfLost('#tryline');
+  }
+  function approvePlan(p){
+    if (!proposed(p)) return;
+    p.plan.steps.forEach(s => { s.s = 'next'; });
+    p.chat.push(['you', 'Looks good, start building.']);
+    p.log.push(['you', 'The plan is approved. Build it one step at a time.'], ['tool', 'Read the plan in STATE.md']);
+    const sc = scriptOf(p, 0);
+    build(p, 0, sc.tools, sc.tries);
+    focusIfLost('#who-h');
   }
 
   /* ---------- The report builder ---------- */
@@ -1147,8 +1404,9 @@ Rules
     marks = [];
     const step = p.plan.steps[i];
     const ctxOpen = S.advanced ? 'open' : '';
+    const ai = AI();
     openModal(`<h2 id="dialog-title">Report a problem with step ${i + 1}</h2>
-      <p>Mark what looks wrong on this picture of the test copy, and answer the questions as well as you can. The last one is the one the architect needs most. The report goes to the architect, who passes it on to the builder.</p>
+      <p>Mark what looks wrong on this picture of the test copy, and answer the questions as well as you can. The last one is the one ${ai.the} needs most. The report goes to ${ai.the}, and the builder reproduces the problem before it fixes it.</p>
       <div class="report">
         <div>
           <div class="shot" id="shot" tabindex="0" role="application" aria-roledescription="marking tool" aria-label="Picture of the test copy, for marking the problem" aria-describedby="shot-how">
@@ -1174,7 +1432,7 @@ Rules
           <div class="field"><label for="r-got">What happened instead? <span class="need">(needed)</span></label><textarea id="r-got" aria-describedby="r-err" placeholder="For example: the message is there, but the photo is gone."></textarea><span class="err" id="r-err" aria-live="polite"></span></div>
         </div>
       </div>
-      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="send-report" data-i="${i}">Send to the architect</button></div>`, true, '#r-did');
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="send-report" data-i="${i}">Send to ${ai.the}</button></div>`, true, '#r-did', null, 'report');
     wireShot();
   }
   let activeMark = null;
@@ -1206,31 +1464,31 @@ Rules
   }
   function sendReport(p, i){
     const got = ($('#r-got').value || '').trim();
-    if (!got){ $('#r-err').textContent = 'Tell the architect what happened, in your own words. One sentence is enough.'; $('#r-got').focus(); return; }
+    if (!got){ $('#r-err').textContent = `Tell ${AI().the} what happened, in your own words. One sentence is enough.`; $('#r-got').focus(); return; }
     const n = marks.length || 1;
-    closeModal(); lastFocus = null; const hp = $('#helper'); hp && hp.focus();
-    chat(p, 'you', `Step ${i + 1} does not work. ${got} (report with ${marks.length ? `${n} marked area${n > 1 ? 's' : ''}` : 'no marks'})`);
+    closeModal();
+    p.chat.push(['you', `Step ${i + 1} does not work. ${got} (report with ${marks.length ? `${n} marked area${n > 1 ? 's' : ''}` : 'no marks'})`]);
     chat(p, 'saved', `Saved as reports/2026-09-28-step-${i + 1}.md with 1 picture`);
     later(() => chat(p, 'arch', 'Thanks, the report is clear. The test copy\'s server log says the database has no place for the photo yet, so the step\'s migration never ran there. I have asked the builder to reproduce it first, then fix it. I will tell you when to try again.'), 700);
-    later(() => { blog(p, 'tool', `Read reports/2026-09-28-step-${i + 1}.md and 1 picture`); build(p, i, ['Reproduced it: the photo is lost after a restart', 'Found the cause: the migration had not run in the test copy', 'Fixed the start-up so migrations always run first', 'Ran the checks: 12 of 12 passed', 'Committed: run migrations before the app starts'], `Step ${i + 1} is ready again. The builder reproduced the problem, fixed it, and I checked its report. Please try it once more: post a message with a photo, restart the test copy, and check that the photo is still there.`); }, 1400);
+    later(() => { blog(p, 'tool', `Read reports/2026-09-28-step-${i + 1}.md and 1 picture`); build(p, i, ['Reproduced it: the photo is lost after a restart', 'Found the cause: the migration had not run in the test copy', 'Fixed the start-up so migrations always run first', 'Ran the checks: 12 of 12 passed', 'Committed: run migrations before the app starts'], `Step ${i + 1} is ready again. The builder reproduced the problem, fixed it, and I checked its work. Please try it once more: post a message with a photo, restart the test copy, and check that the photo is still there.`); }, 1400);
   }
 
-  /* ---------- Shipping and going back ---------- */
+  /* ---------- Putting it live, and going back ---------- */
   function ship(p){
     const v = (p.live || 0) + 1;
     p.ship = { v, stage: 1, done: false, msg: 'Checking that the test copy runs exactly what you tried.' };
-    renderShip();
+    refreshAll(p); focusIfLost('#shipcard'); announce(`Putting v${v} live. ${p.ship.msg}`);
     const steps = [[1, 'Taking a fresh backup of the live app.'], [2, 'Restoring the backup into a scratch copy and checking it.'], [3, `Starting v${v}.`], [4, `Checking that v${v} answers.`], [5, `v${v} answers. Switching over.`]];
     let t = 900;
-    steps.forEach(([stage, msg]) => { later(() => { p.ship.stage = stage; p.ship.msg = msg; if (S.projectId === p.id && S.tab === 'build') renderShip(); }, t); t += 1100; });
+    steps.forEach(([stage, msg]) => { later(() => { p.ship.stage = stage; p.ship.msg = msg; refreshAll(p); if (here(p)) announce(msg); }, t); t += 1100; });
     later(() => {
       p.ship.done = true; p.live = v;
-      p.versions.unshift({ v, when: 'Just now', what: p.plan.title + '.', commit: 'b7d2c19', migs: p.id === 'guestbook' ? ['004_add_photo.sql: only adds'] : [] });
+      p.versions.unshift({ v, when: 'Just now', what: p.plan.title + '.', commit: 'b7d2c19', migs: p.kind === 'guestbook' ? ['004_add_photo.sql: only adds'] : [] });
       if (!p.backups.length) p.backups.push({ when: 'Just now', size: '1 MB', ok: true });
       p.plan = null;
-      chat(p, 'arch', `v${v} is live. Tell me what you want to change next.`);
-      if (S.projectId === p.id && S.view === 'project') renderMain();
-      renderNav();
+      p.chat.push(['arch', `v${v} is live. Tell me what you want to change next.`]);
+      refreshAll(p);
+      if (here(p)) announce(`v${v} is live.`);
     }, t + 300);
   }
   function rollbackDialog(p, v){
@@ -1239,64 +1497,44 @@ Rules
       <p>The changes since v${v} only added things to the data, so v${v} works with today's data. Before switching, a fresh backup is taken and checked, like every release.</p>
       <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Keep v${p.live}</button><button type="button" class="btn" data-action="do-rollback" data-v="${v}">Go back to v${v}</button></div>`);
   }
-  function doRollback(p, v){ closeModal(); toast(`Going back to v${v}: backup taken and checked, v${v} started and answering.`); later(() => { p.live = v; renderMain(); renderNav(); toast(`v${v} is live again. Nothing was lost.`); }, 1600); }
+  function doRollback(p, v){ closeModal(); toast(`Going back to v${v}: backup taken and checked, v${v} started and answering.`); later(() => { p.live = v; refreshAll(p); toast(`v${v} is live again. Nothing was lost.`); }, 1600); }
 
-  /* ---------- New app ---------- */
+  /* ---------- A new app: it opens in planning ---------- */
   function newAppDialog(){
     openModal(`<h2 id="dialog-title">Start a new app</h2>
-      <p>Describe it in your own words. The architect asks a question or two, writes a short plan, and you try every step before anything goes live.</p>
+      <p>Describe it in your own words. ${AI().The} asks a question or two and makes a short plan with you, and you try every step before anything goes live.</p>
       <div class="field"><label for="na-name">Name</label><input id="na-name" placeholder="For example: Chore chart" maxlength="40"></div>
       <div class="field"><label for="na-idea">What should it do?</label><textarea id="na-idea" placeholder="For example: a chore chart for the kids, where they tick off what they did and see their points for the week."></textarea></div>
       <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="make-plan">Make a plan</button></div>`);
   }
   function makePlan(){
-    const name = ($('#na-name').value || 'Chore chart').trim();
-    const idea = ($('#na-idea').value || 'A chore chart for the kids, where they tick off what they did and see their points for the week.').trim();
-    $('#dialog').innerHTML = `<h2 id="dialog-title" tabindex="-1">Making a plan</h2><p>The architect is reading your idea<span aria-hidden="true">...</span></p>`; $('#dialog-title').focus();
-    later(() => {
-      $('#dialog').innerHTML = `<h2 id="dialog-title">The plan for ${esc(name)}</h2>
-        <p>Three steps. After each one the builder stops, the architect checks the work, and you try it.</p>
-        <ol class="mini-plan"><li><b>A first page for your idea</b><span>Done when you can open the test copy and see it.</span></li><li><b>What people enter is kept</b><span>Done when it is still there after a restart.</span></li><li><b>Make it yours</b><span>Done when it looks and works the way you want.</span></li></ol>
-        <p class="hint">In the real control panel, the architect asks about your idea and the plan follows it. In the demo it is always these three steps.</p>
-        <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" id="create-go" data-action="create-app" data-name="${esc(name)}" data-idea="${esc(idea)}">Create the app</button></div>`;
-      $('#create-go').focus();
-    }, 1400);
-  }
-  function createApp(name, idea){
+    const name = ($('#na-name').value || '').trim() || 'Chore chart';
+    const idea = ($('#na-idea').value || '').trim() || 'A chore chart for the kids, where they tick off what they did and see their points for the week.';
     const id = 'app' + Date.now(); const port = 8100 + S.projects.length * 2;
-    const p = { id, name, live: 0, prodPort: port, devPort: port + 1, count: 0, countWord: 'entries',
-      plan: { title: name, steps: [
-        { t: 'A first page for your idea', c: 'you can open the test copy and see it.', s: 'next' },
-        { t: 'What people enter is kept', c: 'it is still there after a restart.', s: 'next' },
-        { t: 'Make it yours', c: 'it looks and works the way you want.', s: 'next' } ]},
-      chat: [['you', idea], ['arch', 'Here is a plan in three steps. I have written it as a brief for the builder. I will check its work after each step and tell you what to try.']],
-      log: [['tool', 'Created the project from the starter template'], ['tool', 'Read briefs/first-plan.md']],
-      brief: `# Brief: ${name}\n\n1. A first page for your idea.\n2. What people enter is kept.\n3. Make it yours.\n\nRules\n- Migrations only add.\n- Stop after each step.`,
-      versions: [], backups: [], keys: [], ship: null };
-    S.projects.push(p); closeModal(); go('project', id, 'build');
-    build(p, 0, ['Edited src/server.js', 'Committed: a first page'], 'Step 1 is ready. I checked it: the first page is there. Open the test copy and have a look.');
-  }
-
-  /* ---------- Keys ---------- */
-  function addKeyDialog(){
-    openModal(`<h2 id="dialog-title">Add a service key</h2>
-      <p>For a service outside your machine. The value is stored encrypted and is never shown again, not even to you.</p>
-      <div class="field"><label for="k-name">Name</label><input id="k-name" placeholder="For example: WEATHER_API_KEY" autocomplete="off" spellcheck="false"></div>
-      <div class="field"><label for="k-env">Where it is used</label><select id="k-env"><option value="dev">Test copy</option><option value="prod">Live app</option><option value="both">Both, with the same value</option></select></div>
-      <div class="field"><label for="k-val">Value</label><input id="k-val" type="password" autocomplete="off" placeholder="Paste the key here"><span class="hint">In the demo, whatever you type is thrown away.</span></div>
-      <p class="consent" style="display:block"><b>Check the value carefully.</b> You will not be able to see it again after saving. If it is wrong, you add it again.</p>
-      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="save-key">Save the service key</button></div>`);
-  }
-  function saveKey(){
-    const p = proj();
-    const name = ($('#k-name').value || '').trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
-    if (!name){ $('#k-name').focus(); toast('Give the key a name first.'); return; }
-    const env = $('#k-env').value; $('#k-val').value = '';
-    let k = p.keys.find(x => x.name === name);
-    if (!k){ k = { name, dev: false, prod: false, when: 'Just now' }; p.keys.push(k); }
-    if (env === 'dev' || env === 'both') k.dev = true;
-    if (env === 'prod' || env === 'both') k.prod = true;
-    k.when = 'Just now'; closeModal(); renderMain(); toast(`${name} is saved and will not be shown again.`);
+    const p = { id, kind: 'new', name, idea, live: 0, prodPort: port, devPort: port + 1, count: 0, countWord: 'entries', making: true, plan: null,
+      chat: [['you', idea], ['working', 'Making a plan']],
+      log: [['tool', 'Created the project from the starter template'], ['you', `plan mode: ${idea}`]],
+      brief: '', versions: [], backups: [], keys: [], ship: null };
+    S.projects.push(p);
+    closeModal(); lastFocus = null; lastKey = null;
+    openApp(id, { show: 'chat' });
+    later(() => {
+      p.making = false;
+      p.plan = { title: `A first version of ${name}`, steps: [
+        { t: 'A first page for your idea', c: 'you can see it in the preview.', y: 'look at the preview. You should see a first page for your idea.', s: 'proposed' },
+        { t: 'What people enter is kept', c: 'it is still there after a restart.', y: 'enter something, restart the test copy, and check that it is still there.', s: 'proposed' },
+        { t: 'Make it yours', c: 'it looks and works the way you want.', y: 'look around, and check that it looks and works the way you want.', s: 'proposed' } ]};
+      p.brief = `# Brief: a first version of ${name}\n\n1. A first page for your idea.\n2. What people enter is kept.\n3. Make it yours.\n\nRules\n- Migrations only add.\n- Stop after each step.`;
+      dropWorking(p);
+      p.chat.push(['plan', 'Here is a plan in three steps, shown above. I stop after each one so that you can try it, and nothing is built until you say so. (In the demo, the plan is always these three steps.)']);
+      p.log.push(['tool', 'Read AGENTS.md and STATE.md'], ['tool', 'Wrote the plan to STATE.md'], ['ai', 'Proposed 3 steps. Waiting for approval.']);
+      refreshAll(p);
+      if (here(p)){
+        announce('The plan is ready. Read it, then press Looks good, start building.');
+        const a = document.activeElement, b = $('#approve');
+        if (b && b.getClientRects().length && (!a || a === document.body || a === $('#main'))) b.focus();
+      }
+    }, 1400);
   }
 
   /* ---------- Own services ---------- */
@@ -1331,11 +1569,11 @@ Rules
       ${install ? `<div class="consent"><input type="checkbox" id="svc-ok" data-action="svc-consent"><label for="svc-ok">I understand what ${P.name} will be able to access.</label></div>` : ''}
       <div class="dialog-actions">${install ? `<button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" id="svc-go" data-action="svc-do-install" data-s="${sid}" disabled>Install ${P.name}</button>` : '<button type="button" class="btn" data-action="close">Close</button>'}</div>`);
   }
-  function installHA(){ closeModal(); toast('Installing Home Assistant: fetching it, giving it what you allowed, and checking that it answers.'); later(() => { S.services.ha.installed = true; if (S.view === 'services') renderMain(); toast('Home Assistant is running. Its data is included in tonight\'s backup.'); }, 2000); }
+  function installHA(){ closeModal(); toast('Installing Home Assistant: fetching it, giving it what you allowed, and checking that it answers.'); later(() => { S.services.ha.installed = true; if (S.view === 'services') keepFocus(renderMain); toast('Home Assistant is running. Its data is included in tonight\'s backup.'); }, 2000); }
   function updateHA(){
     const ha = S.services.ha; const fail = S.failUpdate;
     ha.upd = { to: ha.next, stage: 0, msg: 'Backing up Home Assistant\'s data.', fail };
-    const r = () => { if (S.view === 'services') renderMain(); };
+    const r = () => { if (S.view === 'services') keepFocus(renderMain); };
     r();
     later(() => { ha.upd.stage = 1; ha.upd.msg = `Starting ${ha.next}.`; r(); }, 1200);
     later(() => { ha.upd.stage = 2; ha.upd.msg = `Checking that ${ha.next} answers.`; r(); }, 2400);
@@ -1358,47 +1596,59 @@ Rules
 
   /* ---------- Events ---------- */
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-go],[data-open],[data-tab],[data-htab],[data-file],[data-action]'); if (!t) return;
+    if (S.moreOpen && !e.target.closest('#more')) setMore(false);
+    const t = e.target.closest('[data-go],[data-open],[data-rtab],[data-mtab],[data-ltab],[data-file],[data-action]'); if (!t) return;
     if (t.dataset.go){ go(t.dataset.go); return; }
-    if (t.dataset.open){ go('project', t.dataset.open, t.dataset.tabGo || 'build'); return; }
-    if (t.dataset.tab){ S.tab = t.dataset.tab; renderMain(); return; }
-    if (t.dataset.htab){ S.htab = t.dataset.htab; renderHelper(); return; }
-    if (t.dataset.file){ S.file = t.dataset.file; renderMain(); return; }
+    if (t.dataset.open){ openApp(t.dataset.open, { right: t.dataset.right, show: t.dataset.show }); return; }
+    if (t.dataset.rtab){ goRight(t.dataset.rtab); return; }
+    if (t.dataset.mtab){ if (t.dataset.mtab === 'chat'){ S.m = 'chat'; renderTabs(); toBottom(); } else goRight(t.dataset.mtab); return; }
+    if (t.dataset.ltab){ S.left = t.dataset.ltab; renderTabs(); renderLeft(); return; }
+    if (t.dataset.file){ S.file = t.dataset.file; keepFocus(renderRight); return; }
     const a = t.dataset.action, p = proj();
-    if (a === 'reset'){ timers.forEach(clearTimeout); timers = []; S = initial(); closeModal(); go('home'); background(); toast('The demo is back where it started.'); }
+    if (a === 'reset'){ timers.forEach(clearTimeout); timers = []; S = initial(); closeModal(); go('home'); background(); announce(''); toast('The demo is back where it started.'); }
     if (a === 'toggle-mode'){ closeMenu(); if (S.advanced) toSimple(); else modeDialog(); }
     if (a === 'to-simple') toSimple();
     if (a === 'adv-consent') $('#adv-go').disabled = !t.checked;
     if (a === 'to-advanced') toAdvanced(t.dataset.then);
     if (a === 'open-link') toast(S.advanced ? `In the demo there is no app behind this. In the real panel it opens allvibe.local:${t.dataset.port}.` : 'In the demo there is no app behind this. In the real panel it opens in a new tab.');
     if (a === 'open-svc') toast('In the demo there is no service behind this.');
+    if (a === 'restart-test') toast('In the demo there is no app behind this. In the real panel, the test copy restarts, and the preview shows it again.');
+    if (a === 'more') setMore(!S.moreOpen);
+    if (a === 'more-backups'){ setMore(false); backupsDialog(p, $('#more-btn')); }
+    if (a === 'more-keys'){ setMore(false); keysDialog(p, $('#more-btn')); }
+    if (a === 'more-settings'){ setMore(false); settingsDialog(p, $('#more-btn')); }
+    if (a === 'see-backups'){ openApp(t.dataset.id); backupsDialog(proj(), $('#more-btn')); }
     if (a === 'works') stepWorks(p, +t.dataset.i);
     if (a === 'report') reportDialog(p, +t.dataset.i);
+    if (a === 'approve') approvePlan(p);
+    if (a === 'to-live'){ goRight('live'); focusIfLost('[data-action="ship"]'); focusIfLost('#shipcard'); focusIfLost(narrow() ? '#mtab-live' : '#rtab-live'); }
+    if (a === 'to-preview'){ goRight('preview'); focusIfLost(narrow() ? '#mtab-preview' : '#rtab-preview'); }
     if (a === 'clear-marks'){ document.querySelectorAll('#shot .mark').forEach(m => m.remove()); marks = []; activeMark = null; countMarks(); }
-    if (a === 'send-report') sendReport(p, +t.dataset.i);
+    if (a === 'send-report'){ sendReport(p, +t.dataset.i); focusIfLost('#tryline'); }
     if (a === 'ship') ship(p);
     if (a === 'rollback') rollbackDialog(p, +t.dataset.v);
     if (a === 'do-rollback') doRollback(p, +t.dataset.v);
     if (a === 'close') closeModal();
     if (a === 'new-app'){ closeMenu(); newAppDialog(); }
     if (a === 'make-plan') makePlan();
-    if (a === 'create-app') createApp(t.dataset.name, t.dataset.idea);
-    if (a === 'backup-now'){ toast('Taking a backup and checking it.'); later(() => { p.backups.unshift({ when: 'Just now', size: '14 MB', ok: true }); renderMain(); toast('Backup taken, restored into a test copy and checked.'); }, 1500); }
+    if (a === 'backup-now'){ toast('Taking a backup and checking it.'); later(() => { p.backups.unshift({ when: 'Just now', size: '14 MB', ok: true }); if (!$('#modal').hidden && $('#dialog').dataset.kind === 'backups') backupsDialog(p); toast('Backup taken, restored into a test copy and checked.'); }, 1500); }
     if (a === 'add-key') addKeyDialog();
+    if (a === 'keys-back') keysDialog(p);
     if (a === 'save-key') saveKey();
-    if (a === 'save-brief'){ p.brief = $('#brief-text').value; chat(p, 'arch', 'I have read your changes to the instructions. The builder gets them before the next step.'); toast('The instructions are saved.'); }
+    if (a === 'save-settings'){ const n = ($('#as-name').value || '').trim(); if (n) p.name = n; closeModal(); refreshAll(p); toast('Saved. In the demo, the new name lasts until you start over.'); }
+    if (a === 'brief') briefDialog(p);
+    if (a === 'save-brief'){ p.brief = $('#brief-text').value; closeModal(); chat(p, 'arch', 'I have read your changes to the instructions. The builder gets them before the next step.'); toast('The instructions are saved.'); }
     if (a === 'recheck'){ toast('Running the checks.'); later(() => toast('Checked just now. Nothing has changed.'), 1200); }
     if (a === 'demo-only') toast('In the demo, this button does nothing.');
     if (a === 'explain') toast(EXPLAIN[t.dataset.k]);
     if (a === 'logs') openModal(`<h2 id="dialog-title">Logs: ${esc(t.dataset.n)}</h2><div class="log-view">22:14:03 started, healthy<br>22:14:03 listening on the internal network<br>03:30:00 nightly backup: data exported<br>03:30:41 restore check: answered<br>07:02:18 health check: ok</div><div class="dialog-actions"><button type="button" class="btn" data-action="close">Close</button></div>`);
-    if (a === 'intro-ok'){ S.introSeen = true; renderMain(); $('#tab-build') && $('#tab-build').focus(); }
     if (a === 'see-updates'){ go('machine'); const u = $('#updates'); if (u){ u.scrollIntoView(); u.focus({preventScroll: true}); } }
     if (a === 'try-update') toast('In the real panel, this opens a short plan in the test copy. You try it, then put it live as usual.');
     if (a === 'copy-next'){ const txt = t.dataset.text; (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copied. Paste it in your AI app.'), () => toast('Select the message and copy it.')); }
     if (a === 'mcp-how') mcpDialog();
-    if (a === 'profile'){ S.profile = t.dataset.p; renderMain(); toast('Profile changed. In the demo, nothing else happens.'); }
+    if (a === 'profile'){ S.profile = t.dataset.p; keepFocus(renderMain); toast('Profile changed. In the demo, nothing else happens.'); }
     if (a === 'defaults') openModal(`<h2 id="dialog-title">Load safe defaults?</h2><p>This puts back:</p><ul><li>the profile, to Balanced;</li><li>memory limits per app;</li><li>the backup schedule, to every night at 03:30.</li></ul><p class="safe">Your apps, their data, their keys and your own services are not touched.</p><div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="do-defaults">Load safe defaults</button></div>`);
-    if (a === 'do-defaults'){ S.profile = 'balanced'; closeModal(); renderMain(); toast('Safe defaults loaded.'); }
+    if (a === 'do-defaults'){ S.profile = 'balanced'; closeModal(); keepFocus(renderMain); toast('Safe defaults loaded.'); }
     if (a === 'svc-install') permsDialog(t.dataset.s, true);
     if (a === 'svc-perms') permsDialog(t.dataset.s, false);
     if (a === 'svc-consent') $('#svc-go').disabled = !t.checked;
@@ -1407,13 +1657,13 @@ Rules
     if (a === 'fail-toggle') S.failUpdate = t.checked;
   });
   document.addEventListener('submit', e => {
-    if (e.target.id !== 'prompt') return; e.preventDefault();
+    if (e.target.id !== 'say-form') return; e.preventDefault();
     const inp = $('#say'), v = inp.value.trim(), p = proj(); if (!v) return; inp.value = '';
-    const tab = S.advanced ? S.htab : 'architect';
-    if (tab === 'builder'){ blog(p, 'you', v); later(() => blog(p, 'note', 'This is the demo, so the builder follows a script. In the real panel, you can talk to Claude Code directly here.'), 600); }
-    else { chat(p, 'you', v); later(() => chat(p, 'arch', 'This is the demo, so I follow a script and cannot answer freely. In the real panel, I would ask you about it and write a brief for the builder.'), 600); }
+    if (S.advanced && S.left === 'build'){ blog(p, 'you', v); later(() => blog(p, 'note', 'This is the demo, so the builder follows a script. In the real panel, you can talk to Claude Code directly here.'), 600); }
+    else { chat(p, 'you', v); later(() => chat(p, 'arch', 'This is the demo, so I follow a script and cannot answer freely. In the real panel, I would ask you about it and make a plan with you. A small change skips the plan and becomes one step.'), 600); }
   });
   document.addEventListener('change', e => { const m = e.target.dataset && e.target.dataset.mode; if (!m) return; S.aiMode = m; renderMain(); const r = document.querySelector(`input[data-mode="${m}"]`); r && r.focus(); if (m === 'mcp') mcpDialog(); });
+  document.addEventListener('focusin', e => { if (S.moreOpen && !e.target.closest('#more')) setMore(false); });
   $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
   document.addEventListener('keydown', e => {
     const open = !$('#modal').hidden;
@@ -1427,6 +1677,7 @@ Rules
       else if (!$('#dialog').contains(document.activeElement)){ e.preventDefault(); first.focus(); }
       return;
     }
+    if (S.moreOpen && e.key === 'Escape'){ e.preventDefault(); setMore(false); const b = $('#more-btn'); b && b.focus(); return; }
     const t = e.target;
     if (t.getAttribute && t.getAttribute('role') === 'tab' && ['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){
       const tabs = [...t.closest('[role="tablist"]').querySelectorAll('[role="tab"]')];
@@ -1438,12 +1689,14 @@ Rules
     }
   });
   $('#menu-btn').addEventListener('click', () => { const s = $('#side'); const open = !s.classList.contains('open'); s.classList.toggle('open', open); $('#menu-btn').setAttribute('aria-expanded', String(open)); });
+  /* Crossing 1080 px swaps two sides for one row of tabs, and the tab panels' names with them. */
+  narrowMQ.addEventListener('change', () => { if (S.view === 'project') renderApp(); });
 
   function background(){
     const r = S.projects.find(p => p.id === 'recipes');
     later(() => {
       r.log.push(['tool', 'Edited src/recipes.js'], ['tool', 'Added migrations/002_recipes.sql (only adds)'], ['ai', 'Step 2 done. Stopping for the person to try it.']);
-      dropWorking(r); r.chat.push(['done', 'The builder finished step 2'], ['try', SCRIPT.recipes[1].tries]);
+      dropWorking(r); r.chat.push(['done', 'Step 2 built and checked'], ['try', SCRIPT.recipes[1].tries]);
       r.plan.steps[1].s = 'ready'; refreshAll(r);
     }, 6000);
   }

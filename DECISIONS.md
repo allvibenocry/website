@@ -1005,3 +1005,149 @@ the owner can give: moving the pushed tag `v0.3.0` to the fixed commit, which
 rewrites a pushed ref (rule 11), or a release authorised as `v0.3.1` at the
 fixed commit, which carries the same site. The owner's "release" was for
 `v0.3.0` only. So the release and the deploy wait.
+
+## D31. The demo's app view, rebuilt to the product's D55
+
+*2026-09-29. The product's fifth brief, item 6. The product's D55 and "The app
+view" in its docs/design/control-panel.md, read at product commit `f205494`,
+and the owner's mockup of the app view in both modes. Committed and pushed;
+not tagged, released or deployed: a preview for the owner.*
+
+**What.** The demo's page for one app follows the product's app view: the same
+layout in simple and advanced mode, so that nothing moves when the person
+switches.
+
+- **Left, who you talk to.** In simple mode one chat, "Your AI", with the plan
+  as a checklist at its top. In advanced mode two tabs: Plan, the architect,
+  and Build, the builder's session with "Talk to the builder directly".
+- **Right, what you look at.** Preview and Live, and in advanced mode Code: a
+  file tree and the chosen file with its changes. The line for the step being
+  tried, with "It works" and "Something is wrong", sits above the preview.
+- **The preview** draws the test copy, as the mockup does: the guestbook,
+  whose photo button and photo appear as those steps are built; the recipe
+  box's list; and for a new app first the starter app, which is the product's
+  guestbook template, then its own first page.
+- **Live** holds the version the family uses, "Put v3 live" with the six safety
+  checks as progress, and the earlier versions with "Go back".
+- **More**, next to the app's name: Backups, Service keys and App settings, each
+  a dialog. App settings is new: the name, who can use it (anyone on the home
+  network, as today), "Publish" marked Planned, and in advanced mode the two
+  addresses.
+- **Up to 1080 px wide, one row of tabs**: Chat, Preview, Code in advanced mode,
+  and Live. From 1081 px the two sides are the height of the window, and each
+  scrolls on its own.
+- **A new app opens in planning**: the idea in the chat, three proposed steps
+  with "Done when", and "Looks good, start building", which starts step 1. In
+  advanced mode the Build tab shows Claude Code's plan mode writing the plan to
+  STATE.md. The dialogs "Making a plan" and "The plan for ..." with "Create
+  the app" are gone.
+
+**What moved.** The app's tabs: Versions into Live, Files into advanced mode's
+Code, Backups and Service keys under More. The helper's Instructions tab is
+"The brief for the builder", a dialog opened from the plan in advanced mode.
+"Open the live app" is in Live; the test copy is the preview, with "Restart
+the test copy" on its bar and, in advanced mode, its address. "How this works"
+is replaced by the line under "Your AI", as in the mockup. In simple mode the
+chat, the report and the new app dialogs say "your AI" where they said "the
+architect".
+
+**What was kept.** Everything else the demo has and does: home, machine health,
+backups, your own services with Home Assistant's install and update, settings
+with both ways to connect an AI (with your own AI app, the left side shows what
+it posted and did, and the box to continue there), profiles and safe defaults,
+the report dialog and its keyboard marks, the rollback dialog, the scripted
+builder, the guestbook with step 2 ready and the recipe box with step 2 on its
+way, the way from trying the last step to "v3 is live", the colour roles, the
+words, the toasts, the yellow banner with "Start over" and the link back, and
+the real mode switch with its warning and consent. The mockup's own switcher
+of modes and states is not shipped.
+
+**Three changes beyond the layout.**
+
+- "Back to simple mode" is on the app's own line in the app view, instead of
+  the strip at the top, which would move the preview down; every other screen
+  keeps the strip.
+- The call the AI app made to start the test copy was shown as `deploy_dev`.
+  D55 says the panel never says "deploy", so it is `start_test_copy`.
+- On a phone, the dark bar at the top grew when a screen was shorter than the
+  window (the page's grid stretched its rows); it no longer does.
+
+**Checked** (D8, D27). check-page's demo exercise is rewritten for the new
+flows, at 1440, 768, 390, 360 and 320 px, in light and in dark, each from a
+fresh load:
+
+- the report dialog, as before: opened with Enter on "Something is wrong",
+  focus on its first question; a mark made with the keyboard; Tab and
+  Shift-Tab kept inside; an empty last answer refused, with its message and
+  focus on it; Escape giving focus back to "Something is wrong";
+- every tab list it meets, all the way round with the arrow keys, Home and End:
+  in simple mode Preview and Live (on the one row, Chat, Preview and Live), in
+  advanced mode the same with Code, and Plan and Build; each key must focus and
+  select its tab, leave it the only one in the Tab order, and show its panel;
+- More: its three items, Escape closing it, and each of its dialogs giving
+  focus back to More;
+- the preview's box, from the top of the page, before advanced mode, with it on
+  (and again after other screens), and after turning it off: equal within
+  0.5 px; on a phone under the Preview tab, with the switch in the menu,
+  pressed with Enter;
+- a new app: its dialog, "Make a plan", the app in planning with three proposed
+  steps and focus on "Looks good, start building", the starter app in the
+  preview; pressing it builds step 1, which then becomes ready;
+- the way from trying the last step to "v3 is live" in Live: "Go to Live"
+  pressed with Enter, focus on "Put v3 live", "Putting v3 live", all six checks
+  done, the chip "v3 is live", the versions v3, v2 and v1 with "Go back", and
+  the go back dialog;
+- your own AI app: its dialog, then in the app "Your AI app", what it posted,
+  none of the person's own messages, no box to write in, and "Continue in your
+  AI app";
+- "Start over": home, v2 live, two apps, simple mode, the AI in the panel; and
+  the banner's link to `/`;
+- no horizontal overflow in any of the states it passes through (33 on a
+  desktop, 35 with the one row of tabs), measured in the page and inside the
+  app view's own scrolling sides and dialogs;
+
+and, as on every page, no console error, CSP violation, request to another
+origin or failed request. All of the site, at every width: clean, 3 pages and
+15 runs.
+
+**Each check was seen failing.** Fifteen copies of the demo, each with one
+behaviour broken and its own policy, served by a plain local server and checked
+at 1440 and 390 px in light and in dark; an unbroken copy served the same way
+was clean.
+
+| Broken | Failed |
+|---|---|
+| Live's earlier versions wider than the window | overflow |
+| an error logged when Live is drawn | console errors |
+| the report dialog opens with focus on the picture | reportDialog |
+| Enter on the picture makes no mark | keyboardMark |
+| an empty last answer is sent | emptyAnswer, previewStill |
+| Tab not kept inside a dialog | tabInDialog |
+| the report dialog gives focus to the page | dialogClosed |
+| Home does not move to the first tab | tabLists |
+| Escape does not close More | more |
+| the advanced mode strip shown in the app view too | previewStill |
+| "Looks good, start building" starts nothing | newApp |
+| putting it live never finishes | lastStepToLive |
+| with your own AI app, nothing says what it posted | ownAiApp |
+| "Start over" keeps the state | startOver |
+| the banner's link goes to the demo | bannerLink |
+
+The copy that sends an empty report also failed the preview check: the report
+made the builder redo step 2, so the line above the preview changed while the
+preview was measured.
+
+**The claims sheet**, [docs/demo-claims.md](docs/demo-claims.md), read at
+product commit `f205494`: 98 rows, up from 81. Seventeen are new, for the app
+view (DX6, DW1 to DW14, DN3, DN4), each resting on D55 and "The app view"; the
+rows whose things moved say where they are now. 58 are Planned, 22 Built, and
+18 part of each; none is without a source.
+
+**A gallery**, `scripts/demo-gallery.mjs`: every state of the demo, before and
+after, at the five widths, in light, side by side in a local page under
+`out/screenshots/`. check-page exports its browser helpers for it, and runs its
+checks only when it is the script invoked.
+
+**Not checked**: a screen reader reading it, and a real phone. **Not read**: the
+product's commits after `f205494`, whose D56 to D59 build four things the sheet
+still marks Planned.

@@ -27,14 +27,16 @@
  *    scroll-driven steps, the headline replay, both "ship" buttons, the laptop
  *    and the routes replays, and the waitlist form. Under the hood: the release
  *    steps, which light up once when they come into view, the headings, and
- *    every diagram's text alternative. The demo: its report dialog (focus on
- *    its first question, a mark made with the keyboard, an empty last answer
- *   refused, Tab kept inside it, focus given back), its project tabs with the
- *    arrow keys, "Make a plan" leaving focus on "Create the app", the whole way
- *    from trying the last step to "v3 is live", "Start over", and no
- *    horizontal overflow in any of the states it passes through. What each one
- *    left on the page is recorded, so two runs can be compared for behaviour
- *    and not only for looks;
+ *    every diagram's text alternative. The demo (D27, D31): its report dialog
+ *    (focus on its first question, a mark made with the keyboard, an empty
+ *    last answer refused, Tab kept inside it, focus given back), every tab
+ *    list of the app view with the arrow keys, Home and End, "More", the
+ *    preview not moving when advanced mode is turned on and off, a new app
+ *    opening in planning and "Looks good, start building", the whole way from
+ *    trying the last step to "v3 is live" in Live, the second way to connect
+ *    an AI, "Start over", and no horizontal overflow in any of the states it
+ *    passes through. What each one left on the page is recorded, so two runs
+ *    can be compared for behaviour and not only for looks;
  *  - no horizontal overflow: nothing wider than the window;
  *  - no en or em dash anywhere in the page's text or its text alternatives;
  *  - its icons (D26): every one its head declares, and every one its web
@@ -61,6 +63,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 import { decode, encode } from "./compare-shots.mjs";
 
 /**
@@ -415,9 +418,16 @@ async function press(cdp, key, { shift = false } = {}) {
 
 /** How far the page is wider than its window, in CSS pixels; 0 when it is not. */
 const OVERFLOW = "Math.max(0, Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth)";
+/**
+ * The same inside the demo's own scrolling parts: from 1081 px its app view is
+ * two sides the height of the window, each scrolling on its own, so something
+ * too wide there would widen a side, not the page. Its code viewer and its map
+ * scroll sideways on purpose and are not among these.
+ */
+const INNER_OVERFLOW = "Math.max(0, ...[...document.querySelectorAll('#rpane, #lpane, #chat, #log, #dialog, #more-menu')].filter(e => e.getClientRects().length).map(e => e.scrollWidth - e.clientWidth))";
 
 /**
- * The control panel's demo (D27), the way a person would use it, from the
+ * The control panel's demo (D27, D31), the way a person would use it, from the
  * keyboard where the brief asks for it. Plain data, like the other pages'; each
  * `ok` says whether the step did what it must.
  */
@@ -426,18 +436,27 @@ async function exerciseDemo(cdp) {
   const q = (selector) => JSON.stringify(selector);
   // A missing element is a failed step, seen in its result, not a stopped run.
   const click = (selector) => evaluate(cdp, `document.querySelector(${q(selector)})?.click() ?? "missing"`);
+  const text = (selector) => evaluate(cdp, `document.querySelector(${q(selector)})?.textContent.trim() ?? null`);
+  const count = (selector) => evaluate(cdp, `document.querySelectorAll(${q(selector)}).length`);
+  const shown = (selector) => evaluate(cdp, `(document.querySelector(${q(selector)})?.getClientRects().length ?? 0) > 0`);
   const active = () => evaluate(cdp, "(() => { const a = document.activeElement; return a ? (a.id || a.dataset.action || a.tagName.toLowerCase()) : null; })()");
   const inDialog = "!!document.querySelector('#dialog')?.contains(document.activeElement)";
-  const overflowAt = async (state) => { did.overflow[state] = await evaluate(cdp, OVERFLOW); };
+  const overflowAt = async (state) => { did.overflow[state] = await evaluate(cdp, `Math.max(${OVERFLOW}, ${INNER_OVERFLOW})`); };
   await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+
+  /* Up to 1080 px the app view is one row of tabs (Chat, Preview, Code, Live);
+     from 1081 px, two sides with a tab list each. */
+  const narrow = await evaluate(cdp, "matchMedia('(max-width:1080px)').matches");
+  did.layout = narrow ? "one row of tabs" : "two sides";
+  const showRight = async (id) => { await click(narrow ? `#mtab-${id}` : `#rtab-${id}`); await sleep(150); };
+  const openGuestbook = async () => { await click('#nav [data-open="guestbook"]'); await sleep(300); if (narrow) await showRight("preview"); };
 
   await overflowAt("home");
   did.bannerLink = await evaluate(cdp, "(() => { const a = document.querySelector('.demo-banner a.back'); return a && { href: a.getAttribute('href'), text: a.textContent, visible: a.getClientRects().length > 0 }; })()");
 
-  /* Grandma's guestbook: step 2 is ready to try. */
-  await click('[data-open="guestbook"]');
-  await sleep(300);
-  await overflowAt("project");
+  /* Grandma's guestbook: step 2 is ready to try, on the line above the preview. */
+  await openGuestbook();
+  await overflowAt("app, simple: preview");
 
   /* The report dialog, opened from the keyboard, with focus on its first question. */
   await evaluate(cdp, "document.querySelector('[data-action=\"report\"][data-i=\"1\"]')?.focus()");
@@ -476,49 +495,198 @@ async function exerciseDemo(cdp) {
   did.dialogClosed = { hidden: await evaluate(cdp, "document.querySelector('#modal').hidden"), focus: await active() };
   did.dialogClosed.ok = did.dialogClosed.hidden && did.dialogClosed.focus === "report";
 
-  /* The project tabs follow the tab pattern: arrows, Home and End. */
-  await evaluate(cdp, "document.querySelector('#tab-build')?.focus()");
-  const tabsSeen = [];
-  for (const key of ["ArrowRight", "ArrowRight", "End", "Home", "ArrowLeft", "Home"]) {
-    await press(cdp, key);
-    tabsSeen.push(await evaluate(cdp, "(() => { const a = document.activeElement; return a ? a.id + (a.getAttribute('aria-selected') === 'true' ? '' : ' (not selected)') : null; })()"));
-  }
-  did.projectTabs = { seen: tabsSeen, ok: tabsSeen.join() === "tab-versions,tab-backups,tab-keys,tab-build,tab-keys,tab-build" };
+  /* One tab list, from the keyboard (the product's control-panel rule 7): each
+     arrow, Home and End must move focus to the tab it names, select it, leave
+     it the only tab in the Tab order, and show its panel. The tabs and where
+     they start come from the page; the keys go all the way round. */
+  const tabList = async (list, state) => {
+    const tabs = `${list} [role="tab"]`;
+    const ids = await evaluate(cdp, `[...document.querySelectorAll(${q(tabs)})].map(t => t.id)`);
+    const visible = await shown(list);
+    if (!ids.length || !visible) return { list, visible, ids, ok: false };
+    let i = Math.max(0, await evaluate(cdp, `[...document.querySelectorAll(${q(tabs)})].findIndex(t => t.getAttribute('aria-selected') === 'true')`));
+    await evaluate(cdp, `document.querySelectorAll(${q(tabs)})[${i}]?.focus()`);
+    const n = ids.length;
+    const expected = [];
+    const seen = [];
+    for (const key of [...Array(n).fill("ArrowRight"), "End", "Home", "ArrowLeft", "Home"]) {
+      i = key === "ArrowRight" ? (i + 1) % n : key === "ArrowLeft" ? (i + n - 1) % n : key === "Home" ? 0 : n - 1;
+      expected.push(ids[i]);
+      await press(cdp, key);
+      await sleep(100);
+      seen.push(await evaluate(cdp, `(() => { const a = document.activeElement;
+        if (!a || a.getAttribute('role') !== 'tab') return a ? 'focus on ' + (a.id || a.tagName.toLowerCase()) : null;
+        const all = [...a.closest('[role=tablist]').querySelectorAll('[role=tab]')];
+        const alone = all.filter(t => t.getAttribute('aria-selected') === 'true').length === 1 && all.filter(t => t.tabIndex === 0).length === 1 && a.tabIndex === 0;
+        const panel = document.getElementById(a.getAttribute('aria-controls'));
+        return a.id + (a.getAttribute('aria-selected') === 'true' ? '' : ' (not selected)') + (alone ? '' : ' (not the only one)') + (panel && panel.getClientRects().length ? '' : ' (its panel not shown)'); })()`));
+      await overflowAt(`${state}: ${ids[i]}`);
+    }
+    return { list, seen, ok: seen.join() === expected.join() };
+  };
+  const lists = {};
+  lists["simple #" + (narrow ? "mtabs" : "rtabs")] = await tabList(narrow ? "#mtabs" : "#rtabs", "app, simple");
+  await showRight("preview");
 
-  /* "Make a plan" leaves focus on "Create the app". */
-  await click('[data-action="new-app"]');
+  /* "More", next to the app's name: the backups, the service keys and the app's settings. */
+  await click("#more-btn");
+  await sleep(100);
+  did.more = { open: await shown("#more-menu"), items: await evaluate(cdp, "[...document.querySelectorAll('#more-menu button')].map(b => b.firstChild.textContent.trim())") };
+  await overflowAt("app: More");
+  await press(cdp, "Escape");
+  did.more.closed = !(await shown("#more-menu"));
+  did.more.focus = await active();
+  for (const [action, name] of [["more-backups", "backups"], ["more-keys", "keys"], ["more-settings", "settings"]]) {
+    await click("#more-btn");
+    await click(`[data-action="${action}"]`);
+    await sleep(200);
+    did.more[name] = await text("#dialog-title");
+    await overflowAt(`app: More, ${name}`);
+    await press(cdp, "Escape");
+    did.more[`${name}, focus back`] = await active();
+  }
+  did.more.ok = did.more.open && did.more.items.join() === "Backups,Service keys,App settings" && did.more.closed && did.more.focus === "more-btn" &&
+    did.more.backups === "Backups of Grandma's guestbook" && did.more.keys === "Service keys of Grandma's guestbook" && did.more.settings === "Settings of Grandma's guestbook" &&
+    ["backups", "keys", "settings"].every((name) => did.more[`${name}, focus back`] === "more-btn");
+
+  /* Turning advanced mode on and off does not move the preview (D55): where it
+     is, from the top of the page, before, with advanced mode on, and after. On
+     a phone the switch is in the menu, and the preview is under its tab. */
+  const frame = () => evaluate(cdp, "(() => { scrollTo(0, 0); const f = document.querySelector('#preview-frame'); if (!f || !f.getClientRects().length) return null; const r = f.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()");
+  const same = (a, b) => !!a && !!b && ["x", "y", "width", "height"].every((k) => Math.abs(a[k] - b[k]) <= 0.5);
+  const still = { simple: await frame() };
+  if (narrow) await click("#menu-btn");
+  await evaluate(cdp, "document.querySelector('#mode-switch')?.focus()");
+  await press(cdp, "Enter");
   await sleep(200);
+  still.dialog = await text("#dialog-title");
+  await overflowAt("advanced mode dialog");
+  await click("#adv-ok");
+  await click("#adv-go");
+  await sleep(300);
+  still.mode = await evaluate(cdp, "document.querySelector('#mode-switch')?.getAttribute('aria-checked') ?? null");
+  still.advanced = await frame();
+  await overflowAt("app, advanced: preview");
+
+  /* In advanced mode: the right side gains Code, and the left side Plan and Build. */
+  lists["advanced #" + (narrow ? "mtabs" : "rtabs")] = await tabList(narrow ? "#mtabs" : "#rtabs", "app, advanced");
+  if (narrow) await click("#mtab-chat");
+  lists["advanced #ltabs"] = await tabList("#ltabs", "app, advanced");
+  did.tabLists = { lists, ok: Object.keys(lists).length === 3 && Object.values(lists).every((l) => l.ok) };
+  await showRight("code");
+  await click('[data-file="STATE.md"]');
+  did.code = { file: await text("#rpane .code .fh span") };
+  await overflowAt("app, advanced: code, STATE.md");
+
+  /* The other screens that only advanced mode has, or shows more of. */
+  for (const view of ["services", "machine", "settings"]) { await click(`#nav [data-go="${view}"]`); await sleep(200); await overflowAt(`${view}, advanced`); }
+  await openGuestbook();
+  still.advancedAgain = await frame();
+  await click('.chipline [data-action="to-simple"]');
+  await sleep(300);
+  still.back = await frame();
+  still.ok = still.dialog === "Turn on advanced mode?" && still.mode === "true" && same(still.simple, still.advanced) && same(still.simple, still.advancedAgain) && same(still.simple, still.back);
+  did.previewStill = still;
+
+  /* A new app opens in planning, and "Looks good, start building" starts it. */
+  const fresh = {};
+  await click('#nav [data-action="new-app"]');
+  await sleep(200);
+  fresh.dialog = await text("#dialog-title");
   await overflowAt("new app dialog");
   await click('[data-action="make-plan"]');
-  await until(cdp, "document.activeElement && document.activeElement.id === 'create-go'", 5000);
-  did.makePlan = { focus: await active(), text: await evaluate(cdp, "document.activeElement?.textContent ?? null") };
-  did.makePlan.ok = did.makePlan.focus === "create-go" && did.makePlan.text === "Create the app";
-  await overflowAt("plan dialog");
-  await press(cdp, "Escape");
+  fresh.planned = await until(cdp, "!!document.querySelector('#approve')", 5000);
+  fresh.name = await text("#app-name");
+  fresh.proposed = await count("#plan-box li.proposed");
+  fresh.button = await text("#approve");
+  fresh.focus = await active();
+  await overflowAt("new app: planning");
+  if (narrow) await showRight("preview");
+  fresh.line = await text("#tryline");
+  fresh.starter = await text("#preview-frame .tc-h");
+  await overflowAt("new app: planning, preview");
+  if (narrow) await click("#mtab-chat");
+  await click("#approve");
+  await sleep(200);
+  fresh.building = await count("#plan-box li.building");
+  fresh.said = await evaluate(cdp, "[...document.querySelectorAll('#chat .status')].map(s => s.textContent.trim()).pop() ?? null");
+  if (narrow) await showRight("preview");
+  fresh.lineAfter = await text("#tryline");
+  await overflowAt("new app: building");
+  fresh.ready = await until(cdp, "!!document.querySelector('[data-action=\"works\"][data-i=\"0\"]')", 10_000);
+  fresh.ok = fresh.dialog === "Start a new app" && fresh.planned && fresh.name === "Chore chart" && fresh.proposed === 3 && fresh.button === "Looks good, start building" && fresh.focus === "approve" &&
+    /^This is your app as it is now\./.test(fresh.line ?? "") && fresh.starter === "Guestbook" &&
+    fresh.building === 1 && fresh.said === "Building step 1" && /^Building step 1:/.test(fresh.lineAfter ?? "") && fresh.ready;
+  did.newApp = fresh;
 
-  /* The whole way from trying the last step to "v3 is live". */
+  /* The whole way from trying the last step to "v3 is live", in Live. */
   const flow = {};
+  await openGuestbook();
   await click('[data-action="works"][data-i="1"]');
   flow.lastStepReady = await until(cdp, "!!document.querySelector('[data-action=\"works\"][data-i=\"2\"]')", 10_000);
   if (flow.lastStepReady) await click('[data-action="works"][data-i="2"]');
-  flow.shipReady = await until(cdp, "(() => { const b = document.querySelector('[data-action=\"ship\"]'); return !!b && !b.disabled; })()", 5000);
-  flow.button = flow.shipReady ? await evaluate(cdp, "document.querySelector('[data-action=\"ship\"]').textContent") : null;
-  if (flow.shipReady) await click('[data-action="ship"]');
-  flow.live = await until(cdp, "document.querySelector('#ship h2')?.textContent === 'v3 is live.'", 15_000);
-  flow.result = await evaluate(cdp, "document.querySelector('#ship h2')?.textContent ?? null");
-  flow.gatesDone = await evaluate(cdp, "document.querySelectorAll('#ship .gate.done').length");
-  flow.ok = flow.lastStepReady && flow.button === "Put v3 live" && flow.live && flow.gatesDone === 6;
+  flow.allTried = await until(cdp, "!!document.querySelector('#tryline [data-action=\"to-live\"]')", 5000);
+  await evaluate(cdp, "document.querySelector('#tryline [data-action=\"to-live\"]')?.focus()");
+  await press(cdp, "Enter");
+  await sleep(200);
+  flow.liveTab = await evaluate(cdp, `document.querySelector(${q(narrow ? "#mtab-live" : "#rtab-live")})?.getAttribute('aria-selected') ?? null`);
+  flow.button = await text('[data-action="ship"]');
+  flow.focus = await active();
+  await overflowAt("app: Live, ready to put live");
+  await click('[data-action="ship"]');
+  await sleep(1200);
+  flow.putting = await text("#shipcard h2");
+  await overflowAt("app: Live, putting v3 live");
+  flow.live = await until(cdp, "document.querySelector('#shipcard h2')?.textContent === 'v3 is live.'", 15_000);
+  flow.result = await text("#shipcard h2");
+  flow.checksDone = await count("#shipcard .safety li.done");
+  flow.chip = await text("#apphead .chip");
+  flow.versions = await evaluate(cdp, "[...document.querySelectorAll('#rpane .vrow')].map(r => r.querySelector('b')?.textContent + ' ' + (r.querySelector('.chip, button')?.textContent ?? ''))");
+  await overflowAt("app: Live, v3 is live");
+  await click('[data-action="rollback"][data-v="2"]');
+  await sleep(200);
+  flow.goBack = await text("#dialog-title");
+  await overflowAt("go back dialog");
+  await press(cdp, "Escape");
+  flow.ok = flow.lastStepReady && flow.allTried && flow.liveTab === "true" && flow.button === "Put v3 live" && flow.focus === "ship" && flow.putting === "Putting v3 live" &&
+    flow.live && flow.checksDone === 6 && flow.chip === "v3 is live" && flow.versions.join() === "v3 Live now,v2 Go back to v2,v1 Go back to v1" && flow.goBack === "Go back to v2?";
   did.lastStepToLive = flow;
-  await overflowAt("v3 is live");
+
+  /* The other screens, and the second way to connect an AI: in the app, what
+     the person's own AI app posted and did, and the box to continue there. */
+  for (const view of ["machine", "backups"]) { await click(`#nav [data-go="${view}"]`); await sleep(200); await overflowAt(view); }
+  await click('#nav [data-go="settings"]');
+  await sleep(200);
+  await overflowAt("settings");
+  const own = {};
+  await click('input[data-mode="mcp"]');
+  await sleep(200);
+  own.dialog = await text("#dialog-title");
+  await overflowAt("connect your own AI app");
+  await press(cdp, "Escape");
+  await openGuestbook();
+  if (narrow) await click("#mtab-chat");
+  own.who = await text("#who-h");
+  own.posted = await count("#chat .posted");
+  own.said = await count("#chat .msg.you");
+  own.box = await text("#continue b");
+  own.input = await count("#say");
+  await overflowAt("app, your own AI app");
+  own.ok = own.dialog === "Connect your own AI app" && own.who === "Your AI app" && own.posted > 0 && own.said === 0 && own.box === "Continue in your AI app." && own.input === 0;
+  did.ownAiApp = own;
 
   /* "Start over" puts everything back. */
   await click('[data-action="reset"]');
   await sleep(300);
-  did.startOver = await evaluate(cdp, "({ heading: document.querySelector('#main h1')?.textContent, guestbook: document.querySelector('.app-card .chip')?.textContent })");
-  did.startOver.ok = did.startOver.heading === "Your apps" && did.startOver.guestbook === "v2 is live";
+  did.startOver = await evaluate(cdp, "({ heading: document.querySelector('#main h1')?.textContent, guestbook: document.querySelector('.app-card .chip')?.textContent, apps: document.querySelectorAll('#nav [data-open]').length, advanced: document.querySelector('#mode-switch')?.getAttribute('aria-checked') })");
+  await click('#nav [data-go="settings"]');
+  await sleep(200);
+  did.startOver.panel = await evaluate(cdp, "document.querySelector('input[data-mode=\"panel\"]')?.checked ?? null");
+  await click('#nav [data-go="home"]');
+  did.startOver.ok = did.startOver.heading === "Your apps" && did.startOver.guestbook === "v2 is live" && did.startOver.apps === 2 && did.startOver.advanced === "false" && did.startOver.panel === true;
 
   did.overflowMax = Math.max(...Object.values(did.overflow));
-  did.failed = ["reportDialog", "keyboardMark", "tabInDialog", "emptyAnswer", "dialogClosed", "projectTabs", "makePlan", "lastStepToLive", "startOver"].filter((k) => !did[k].ok);
+  did.failed = ["reportDialog", "keyboardMark", "tabInDialog", "emptyAnswer", "dialogClosed", "tabLists", "more", "previewStill", "newApp", "lastStepToLive", "ownAiApp", "startOver"].filter((k) => !did[k]?.ok);
   if (!did.bannerLink || did.bannerLink.href !== "/" || !did.bannerLink.visible) did.failed.push("bannerLink");
   if (did.overflowMax > 0) did.failed.push("overflow");
   return did;
@@ -893,7 +1061,13 @@ async function main() {
   if (problems > 0) process.exitCode = 1;
 }
 
-main().catch((error) => {
-  process.stderr.write(`check-page: ${error instanceof Error ? error.message : error}\n`);
-  process.exitCode = 1;
-});
+/* Run when invoked, not when imported: scripts/demo-gallery.mjs uses the browser helpers above. */
+const invokedDirectly = process.argv[1] !== undefined && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) {
+  main().catch((error) => {
+    process.stderr.write(`check-page: ${error instanceof Error ? error.message : error}\n`);
+    process.exitCode = 1;
+  });
+}
+
+export { VIEWPORTS, launch, connect, open, evaluate, until, press };
