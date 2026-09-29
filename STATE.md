@@ -1,6 +1,6 @@
 # State
 
-*Updated 2026-09-29: the product's sixth brief, items 1 and 3 done (D32, D33); `v0.3.0` was never released, and `v0.4.0` is next.*
+*Updated 2026-09-29: the product's sixth brief, items 1, 3, 4 and 5 done (D32, D33); `v0.4.0` is live; `v0.3.0` was never released.*
 
 This repository is public (D14). It describes the production host only
 generically; its address, its port and every other detail of the network it
@@ -8,36 +8,53 @@ runs on are in `local.env`, which is gitignored (see `local.example.env`).
 
 ## Live
 
-**`v0.2.0` is live, and public on allvibenocry.com.** Deployed 2026-09-28 at
-01:26 UTC, over `v0.1.0`; the owner published the site (rule 1, D20), and the
-edge in front of the production host is theirs. Seen from outside on
-2026-09-28: `https://allvibenocry.com/` and `https://allvibenocry.com/under-the-hood`
-answer `200` through the edge, each with `v0.2.0`'s own Content-Security-Policy;
-`/under-the-hood/` and `/under-the-hood.html` answer `301` to `/under-the-hood`;
-plain `http://` answers `301` to `https://`.
+**`v0.4.0` is live, and public on allvibenocry.com.** Deployed 2026-09-29 at
+06:35 UTC, over `v0.2.0` (the product's sixth brief, item 5, released with the
+owner's approval in that brief). `v0.3.0` was never released (D30, D33). Seen
+from outside on 2026-09-29: `https://allvibenocry.com/`, `/under-the-hood` and
+`/demo` answer `200` through the edge, each with `v0.4.0`'s own
+Content-Security-Policy and no cookie; the six icon paths answer `200` with
+their own types and a day's cache.
 
 | | |
 |---|---|
-| Version released | `v0.2.0`, commit `54e3a5e` (its `site/` and `nginx/` are `c38765f`'s) |
-| Image | `ghcr.io/allvibenocry/website:v0.2.0` = `:sha-54e3a5eb53bab83187b300dac26816f098f53bd3`, digest `sha256:8041b7b4695eb756498dd93e1cfd7804355bd7e2e7dc0b664616b74339aedb36`; built, tested and pushed by release run 36365874752; public, pulled without credentials (D15) |
+| Version released | `v0.4.0`, commit `1224d95` |
+| Image | `ghcr.io/allvibenocry/website:v0.4.0` = `:sha-1224d952f52428a788329b1d3c7fdbe55255615e`, digest `sha256:933896288f270f405c0f980d87433cbbef9dcf45d458fa3cff5b56712aab27cc`; built, tested and pushed by release run 36531658534; public, pulled without credentials (D15), seen from an anonymous pull on a machine that never logged in |
 | Production host | the production Docker host, managed by Portainer (x86_64) |
-| Stack | `allvibenocry-website`, running `v0.2.0`; its container healthy, 64 MiB, 64 processes, read-only root, no capabilities, uid 101 |
+| Stack | `allvibenocry-website`, running `v0.4.0`; its container healthy, 64 MiB, 64 processes, read-only root, no capabilities, uid 101 |
 | On the LAN | the host's LAN address and a port, both in `local.env`; `node scripts/check-page.mjs --deployed` checks it |
-| In public | `https://allvibenocry.com/` and `/under-the-hood`, published by the owner |
-| Rollback | `node scripts/stack.mjs deploy v0.1.0 --yes`; `v0.1.0` is still on GHCR, digest `sha256:04dd874272c1da490344776e825eb6debf22fb42635d82f356a12123634a7f72` |
+| In public | `https://allvibenocry.com/`, `/under-the-hood` and `/demo`, published by the owner |
+| Rollback | `node scripts/stack.mjs deploy v0.2.0 --yes`; `v0.2.0` is still on GHCR, digest `sha256:8041b7b4695eb756498dd93e1cfd7804355bd7e2e7dc0b664616b74339aedb36` |
+
+**Checked before the tag** (the lesson of the product's mistake 37): the
+release workflow's own steps, taken from `release.yml` at `1224d95` and run
+the way GitHub Actions runs them, on a scratch machine: every step green. The
+same runner on `c27db1d`, `v0.3.0`'s commit, fails in the step where that
+release failed, so the local run sees what the workflow sees.
 
 **Checked after the deploy**: the deploy's snapshots of the host before and
-after show this stack's container replaced, `v0.1.0` to `v0.2.0`, and
+after show this stack's container replaced, `v0.2.0` to `v0.4.0`, and
 everything else the same: the same stacks and containers, ids, images, start
-times and restart counts. `check-page --deployed --widths all` is clean for both
-pages at 1440, 390, 360, 430 and 768 px, with every behaviour as in the local
-container. The public pages are the new ones: their policies are `v0.2.0`'s,
-and the edge did not serve them from its cache.
+times and restart counts. `check-page --deployed --widths all` is clean for all
+three pages at every width, the demo's checks as they must be in light and
+dark. The public pages are the new ones: their policies are the local build's
+of `1224d95`, page by page. **The phone preview is removed.**
 
 **A deploy is public at once** (D20), so a new version is looked at by the
 owner in the local container first.
 
-**What `v0.2.0` added**, beyond `v0.1.0`:
+**What `v0.4.0` added**, beyond `v0.2.0`:
+
+- **Icons** (D26) at the names browsers look for, and a web manifest.
+- **The control panel's demo at `/demo`** (D27, D31), with the app view of the
+  product's D55, linked from the navigation and the main page's hero.
+- **Under the hood** read again at product `3bfa5e8` (D28, D33): what the
+  product built up to its fifth brief, the release in 16 steps among it.
+- **Claims sheets** for the main page and the demo, every row sourced (D29,
+  D33), and the release workflow's test caught up with the icons and the demo
+  (D30).
+
+**What `v0.2.0` added**, beyond `v0.1.0`, for the record:
 
 - **`/under-the-hood`** (D17, D23, D24): how the product is built, for a
   technical reader, 110 statements each labelled Built, Verified on hardware or
@@ -66,28 +83,28 @@ section of both pages before and after, at every phone and tablet width, is in
 
 ## In progress
 
-**The product's fifth brief, item 6: the demo's app view (D31). Committed and
-pushed, not tagged, released or deployed**: the page for one app rebuilt to the
+**The product's fifth brief, item 6: the demo's app view (D31). Released in
+`v0.4.0`**: the page for one app rebuilt to the
 product's D55 (the same layout in simple and advanced mode; Versions into Live,
 Files into Code, Backups and Service keys under More; a new app opens in
 planning with "Looks good, start building"), everything else kept;
 check-page's demo checks rewritten and each seen failing on its own break;
 `docs/demo-claims.md` read at product `f205494`, 98 rows, none without a
-source; a before-and-after gallery in `out/screenshots/`. The phone preview now
-shows it. Waiting for the owner to look at it.
+source; a before-and-after gallery in `out/screenshots/`. The phone preview showed
+it until `v0.4.0` went live.
 
 **The product's sixth brief.** Item 1: Claude Code's deny rules, in
 `.claude/settings.json` (D32). Item 3: Under the hood and both claims sheets
 read again at product `3bfa5e8`, what the product built at its fifth brief now
 Built, the demo's file names no longer broken inside a word, and two of its
-words brought to the product's (D33). Items 4 and 5, releasing and deploying
-`v0.4.0`, follow in this brief.
+words brought to the product's (D33). Items 4 and 5: `v0.4.0`
+released and deployed, see "Live" above.
 
 **`v0.3.0` was never released** (D30, D33): its release workflow stopped
 before pushing anything, because its own test still expected the old favicon
 answer. The tag stays at `c27db1d`, unmoved (rule 11). There is no `v0.3.1`:
-the next release is `v0.4.0`, from `main`. Until it is live, `v0.2.0` stays
-live and the phone preview keeps running.
+the next release was `v0.4.0`, from `main`, now live; the phone preview is
+removed.
 
 **The product's fourth brief**, its website items (the product's items 1 and 2
 are in its own repository). Waiting for the owner at the stop after item 6: to
