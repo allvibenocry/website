@@ -1151,3 +1151,27 @@ checks only when it is the script invoked.
 **Not checked**: a screen reader reading it, and a real phone. **Not read**: the
 product's commits after `f205494`, whose D56 to D59 build four things the sheet
 still marks Planned.
+
+## D32. Claude Code may not run the most dangerous commands in this repository
+
+*2026-09-29. The product's sixth brief, item 1, after its mistake 41: text ran
+as shell commands on the owner's workstation, and nothing was written or
+deleted only by luck. The same file, and the reasons, are in the product's
+repository (its D61).*
+
+**What.** `.claude/settings.json` denies, to Claude Code's Bash and PowerShell
+tools, in any mode: force-pushing and moving or deleting pushed refs (rule 11
+here too: the tag `v0.3.0` stays where it is), `git reset --hard`, `git clean
+-f`, every kind of Docker prune, removing Docker volumes, and recursive
+deletion outside the repository (a target starting with `/`, `~`, `..`, `$`, a
+quote or a drive letter; every recursive `Remove-Item` in PowerShell).
+
+**Proved** with the pinned Claude Code on the product's test host, with this
+file as the project's settings (the product's `test/host/deny-probe.mjs`):
+201 of 201, every rule refusing its command and the controls running, and
+without the file every command running (110 of 110).
+
+**Limits**: the same as the product's D61. A command inside `bash -c` is not
+looked into; a relative path after `cd` is not seen as outside; and the rules
+apply only to a session whose project is this repository, not to one opened on
+a folder above it.
