@@ -2,8 +2,15 @@
 /**
  * Nothing about the owner's own network in this public repository (D14).
  *
- *   node scripts/guard.mjs              # every file about to be committed
- *   node scripts/guard.mjs --history    # every file in every committed revision
+ *   node scripts/guard.mjs                   # every file about to be committed
+ *   node scripts/guard.mjs --staged          # and every file as it is staged (the pre-commit hook)
+ *   node scripts/guard.mjs --message <file>  # a commit message (the commit-msg hook)
+ *   node scripts/guard.mjs --history         # every file in every committed revision
+ *
+ * The hooks are scripts/hooks/pre-commit and scripts/hooks/commit-msg, copied
+ * into .git/hooks/ of the owner's clone (D34): a commit the guard refuses is
+ * not made. The staged copy is read too, because a file can be staged with a
+ * finding and then changed in the working tree.
  *
  * Generically: no private IPv4 address (10/8, 172.16/12, 192.168/16, 100.64/10)
  * and no Windows user profile path. On the owner's workstation also every
@@ -94,6 +101,16 @@ if (process.argv.includes("--history")) {
     `guard --history: ${revisions.length} revisions, ${byBlob.size} distinct file versions and every commit message` +
       `${local ? `, with ${local.length} local private strings` : ""}\n`,
   );
+} else if (process.argv.includes("--message")) {
+  const file = process.argv[process.argv.indexOf("--message") + 1];
+  if (!file || !existsSync(file)) {
+    process.stdout.write("guard: --message needs the commit message's file\n");
+    process.exit(2);
+  }
+  // git's own comment lines are not part of the message.
+  const text = readFileSync(file, "utf8").split("\n").filter((l) => !l.startsWith("#")).join("\n");
+  for (const { line, kind } of inspect(text)) findings.push(`the commit message:${line}: ${kind}`);
+  process.stdout.write(`guard: the commit message${local ? `, with ${local.length} local private strings` : ""}\n`);
 } else {
   const files = git("ls-files", "-z", "--cached", "--others", "--exclude-standard").split("\0").filter(Boolean);
   for (const file of files) {
@@ -102,7 +119,28 @@ if (process.argv.includes("--history")) {
     if (buffer.includes(0)) continue;
     for (const { line, kind } of inspect(buffer.toString("utf8"))) findings.push(`${file}:${line}: ${kind}`);
   }
-  process.stdout.write(`guard: ${files.length} files${local ? `, with ${local.length} local private strings` : " (generic checks only: no .local/private-strings.txt here)"}\n`);
+  let staged = 0;
+  if (process.argv.includes("--staged")) {
+    // Every file as it is staged, read from the index in one go.
+    const entries = git("ls-files", "-s", "-z").split("\0").filter(Boolean).map((e) => {
+      const [meta, file] = e.split("\t");
+      return { file, mode: meta.split(" ")[0], blob: meta.split(" ")[1] };
+    }).filter((e) => e.mode !== "160000");
+    if (entries.length) {
+      const out = execFileSync("git", ["cat-file", "--batch"], { cwd: ROOT, input: `${entries.map((e) => e.blob).join("\n")}\n`, maxBuffer: 512 * 1024 * 1024 });
+      let at = 0;
+      for (const entry of entries) {
+        const end = out.indexOf(0x0a, at);
+        const size = Number(out.subarray(at, end).toString("utf8").split(" ")[2]);
+        const buffer = out.subarray(end + 1, end + 1 + size);
+        at = end + 1 + size + 1;
+        if (buffer.includes(0)) continue;
+        for (const { line, kind } of inspect(buffer.toString("utf8"))) findings.push(`${entry.file} (staged):${line}: ${kind}`);
+      }
+    }
+    staged = entries.length;
+  }
+  process.stdout.write(`guard: ${files.length} files${staged ? `, and ${staged} as staged` : ""}${local ? `, with ${local.length} local private strings` : " (generic checks only: no .local/private-strings.txt here)"}\n`);
 }
 
 if (findings.length) {

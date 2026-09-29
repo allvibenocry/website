@@ -1216,3 +1216,33 @@ The product's Commercial Terms gate (its D52) changes nothing on the site. The
 two history sections of the main page's sheet now name the commits they were
 read at, `6a20da8` and `4f22bdf`: they used the current reading's, so the
 fourth brief's named the wrong one.
+
+## D34. Deny rules and a hook for every project, and the guard before every commit
+
+*2026-09-29. The product's seventh brief, item 2; the whole decision, with
+what was seen, is the product's D71.*
+
+- **This repository's project settings** (`.claude/settings.json`) keep D32's
+  deny rules and gain 20 more against skipping the commit hooks (`git commit
+  --no-verify` or `-n`, `git push --no-verify`, `git merge --no-verify`, any
+  git command naming `core.hooksPath`), the same 110 as the product's, and a
+  hook, `scripts/hooks/inline-scripts.mjs` (a copy of the product's, where its
+  tests are), that refuses a heredoc, a PowerShell here-string and any quoted
+  text over several lines before it runs. The owner's user settings hold the
+  same, so that they apply to every project on the workstation.
+- **The guard before every commit, in the owner's clone**:
+  `scripts/hooks/pre-commit` runs `node scripts/guard.mjs --staged` and
+  `scripts/hooks/commit-msg` runs `node scripts/guard.mjs --message <file>`,
+  copied into `.git/hooks/`; each decides by its exit code. The guard gained
+  both modes: `--staged` reads every file as it is staged, as well as the
+  working tree, and `--message` reads the commit's message.
+- **Seen**: in a throwaway clone with the same hooks and the owner's list, a
+  private string in a staged file, only in the staged copy, or in the message
+  was refused, each with a control where the same commit was made, and an
+  ordinary commit went through, 9 of 9; in the real clone, this commit was
+  refused while an untracked file held a private string, and went through once
+  it was gone.
+
+**Why.** D32's rules applied only to a session opened on this repository, and
+the guard's exit code was once lost in a pipe (the product's mistake 42); a
+hook that git runs cannot be piped.
