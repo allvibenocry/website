@@ -290,7 +290,7 @@ p{margin:0}
 .files{display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;overflow:hidden}
 .tree{border-right:1.5px solid var(--line);padding:12px}
 .tree button{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;font-family:var(--mono);font-size:.86rem;color:var(--text)}
-.tree button span:first-child{min-width:0;overflow-wrap:anywhere}
+.tree button span:first-child{min-width:0;overflow-wrap:break-word}
 .tree button[aria-current="true"]{background:var(--pink-soft)}
 .tree .ch{margin-left:auto;font-family:var(--body);font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--go-soft);border:1px solid var(--go)}
 .code{overflow:auto;padding:0;background:var(--term);color:var(--term-text);font-family:var(--mono);font-size:.84rem;line-height:1.6;min-height:320px}
@@ -1058,7 +1058,7 @@ Rules
     const files = filesOf(p);
     if (!files[S.file]) S.file = Object.keys(files)[0];
     const f = files[S.file];
-    const tree = Object.keys(files).map(n => `<button type="button" data-file="${esc(n)}" aria-current="${S.file === n}"><span>${esc(n)}</span>${files[n].changed ? '<span class="ch">changed</span>' : ''}</button>`).join('');
+    const tree = Object.keys(files).map(n => `<button type="button" data-file="${esc(n)}" aria-current="${S.file === n}"><span>${esc(n).replace(/\//g, '/<wbr>')}</span>${files[n].changed ? '<span class="ch">changed</span>' : ''}</button>`).join('');
     const code = f.lines.map(([k, t]) => `<span class="ln ${k === 'a' ? 'add' : 'ctxl'}">${esc(t) || ' '}</span>`).join('');
     return `<p class="code-intro">The app's files, as the builder left them. Changes from the latest steps are marked. You can read everything here; changing code is done through the architect, so every change is tried before it goes live.</p>
       <div class="quiet files"><div class="tree" role="group" aria-label="Files">${tree}</div><div class="code"><div class="fh"><span>${esc(S.file)}${f.changed ? `, changed in ${f.changed}` : ''}</span><button type="button" class="explain" style="color:var(--term-dim);border-color:rgba(255,255,255,.2)" data-action="explain" data-k="diff">Explain this</button></div><pre>${code}</pre></div></div>`;
@@ -1204,7 +1204,7 @@ Rules
         ${c(true, "The computer's own disk", 'An SSD, and its health data looks good.')}
         ${c(true, 'Backup disk', "Plugged in, 612 GB free, and separate from the computer's own disk.")}
         ${c(true, 'Recovery key', 'Confirmed by you. Keep the printed sheet somewhere outside the house.')}
-        ${c(true, 'Power', 'On mains power. The battery is at 80% and keeps things running for about two hours if the power goes.')}
+        ${c(true, 'Power', 'On mains. The battery is at 80% and charging, ready to carry the machine through a power cut.')}
         ${c(false, '3 updates are ready to try', "This month's check-up prepared them in your test copies. They are listed below.")}
       </div>
       <h2 class="section-title" id="updates" tabindex="-1">Updates to try</h2>
@@ -1392,7 +1392,7 @@ Rules
     if (!proposed(p)) return;
     p.plan.steps.forEach(s => { s.s = 'next'; });
     p.chat.push(['you', 'Looks good, start building.']);
-    p.log.push(['you', 'The plan is approved. Build it one step at a time.'], ['tool', 'Read the plan in STATE.md']);
+    p.log.push(['you', 'The plan is approved. Build it one step at a time.'], ['tool', 'Read the plan in plan.json']);
     const sc = scriptOf(p, 0);
     build(p, 0, sc.tools, sc.tries);
     focusIfLost('#who-h');
@@ -1527,7 +1527,7 @@ Rules
       p.brief = `# Brief: a first version of ${name}\n\n1. A first page for your idea.\n2. What people enter is kept.\n3. Make it yours.\n\nRules\n- Migrations only add.\n- Stop after each step.`;
       dropWorking(p);
       p.chat.push(['plan', 'Here is a plan in three steps, shown above. I stop after each one so that you can try it, and nothing is built until you say so. (In the demo, the plan is always these three steps.)']);
-      p.log.push(['tool', 'Read AGENTS.md and STATE.md'], ['tool', 'Wrote the plan to STATE.md'], ['ai', 'Proposed 3 steps. Waiting for approval.']);
+      p.log.push(['tool', 'Read AGENTS.md and STATE.md'], ['tool', 'Wrote the plan to plan.json and STATE.md'], ['ai', 'Proposed 3 steps. Waiting for approval.']);
       refreshAll(p);
       if (here(p)){
         announce('The plan is ready. Read it, then press Looks good, start building.');

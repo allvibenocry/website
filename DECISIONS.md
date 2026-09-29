@@ -1175,3 +1175,44 @@ without the file every command running (110 of 110).
 looked into; a relative path after `cd` is not seen as outside; and the rules
 apply only to a session whose project is this repository, not to one opened on
 a folder above it.
+
+## D33. The architect's review of D30 and D31: v0.3.0 stays unreleased, and the sheets catch up
+
+*2026-09-29. The product's sixth brief, the architect's decisions, and its
+item 3.*
+
+**`v0.3.0` is a tag that was never released.** Its workflow failed its own
+test before pushing anything (D30). The tag stays where it is, at `c27db1d`,
+and is not moved or deleted (rule 11 here too). There is no `v0.3.1`: the next
+release is `v0.4.0`, from `main`, which carries the workflow's fixed test
+(`7830fce`) and the new demo (`415ea52`).
+
+**The demo's judgement calls are accepted** (D31): the one row of tabs up to
+1080 px, the "How this works" card dropped, and `start_test_copy`. **A file's
+name in the Code tab no longer breaks inside a word**: it breaks after a
+slash, and inside a word only when one part cannot fit on a line of its own.
+
+**The status words are the same everywhere.** Built means built and run on the
+test host, not yet tried by the owner. So what the product built at its fifth
+brief is Built on Under the hood and in both claims sheets, read again at the
+product's `3bfa5e8`:
+
+- **Under the hood**: a release is 16 steps, the second that every step of the
+  plan is tried by you (R16), with its diagram redrawn; going back by hand
+  behind a fresh backup (D9); doctor every night (B15) and power (B16); the
+  agent's activity log and its kept conversations (I20, I21), and that the log
+  is a narrative, not proof (I22); the agent's instructions now say what the
+  release enforces (I14); backups taken before going back are kept (B7); and
+  house rule 6 says what the owner has tried.
+- **The main page's claims**: "Nothing moves on until you have seen it work"
+  (M10) and "You try every step before it ships" (M50) are Built.
+- **The demo's claims**: "Tried by you" (DA9), the backup before going back
+  (DV4), checks every night (DM1) and power (DM6) are Built. Two of the demo's
+  words were brought to the product's: on mains, doctor gives the battery's
+  charge, not a time (DM6); and the plan is written to `plan.json`, with a short
+  version in `STATE.md` (DN4).
+
+The product's Commercial Terms gate (its D52) changes nothing on the site. The
+two history sections of the main page's sheet now name the commits they were
+read at, `6a20da8` and `4f22bdf`: they used the current reading's, so the
+fourth brief's named the wrong one.

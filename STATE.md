@@ -1,6 +1,6 @@
 # State
 
-*Updated 2026-09-29: the product's fifth brief, item 6 (the demo's app view, D31) committed, not released; items 3 and 4 blocked (D30); waiting for the owner.*
+*Updated 2026-09-29: the product's sixth brief, items 1 and 3 done (D32, D33); `v0.3.0` was never released, and `v0.4.0` is next.*
 
 This repository is public (D14). It describes the production host only
 generically; its address, its port and every other detail of the network it
@@ -76,13 +76,18 @@ check-page's demo checks rewritten and each seen failing on its own break;
 source; a before-and-after gallery in `out/screenshots/`. The phone preview now
 shows it. Waiting for the owner to look at it.
 
-**The product's fifth brief.** Item 2 is done (D29, `c27db1d`). **Items 3 and
-4 are blocked** (D30): the release workflow for tag `v0.3.0` stopped before
-pushing anything, because its own test still expected the old favicon answer.
-The test is fixed on `main`; the tag cannot be re-run. Releasing needs the
-owner to either allow moving the tag `v0.3.0` to the fixed commit (a rewrite of
-a pushed ref, rule 11), or authorise `v0.3.1` at the fixed commit, with the
-same site. Until then `v0.2.0` stays live and the phone preview keeps running.
+**The product's sixth brief.** Item 1: Claude Code's deny rules, in
+`.claude/settings.json` (D32). Item 3: Under the hood and both claims sheets
+read again at product `3bfa5e8`, what the product built at its fifth brief now
+Built, the demo's file names no longer broken inside a word, and two of its
+words brought to the product's (D33). Items 4 and 5, releasing and deploying
+`v0.4.0`, follow in this brief.
+
+**`v0.3.0` was never released** (D30, D33): its release workflow stopped
+before pushing anything, because its own test still expected the old favicon
+answer. The tag stays at `c27db1d`, unmoved (rule 11). There is no `v0.3.1`:
+the next release is `v0.4.0`, from `main`. Until it is live, `v0.2.0` stays
+live and the phone preview keeps running.
 
 **The product's fourth brief**, its website items (the product's items 1 and 2
 are in its own repository). Waiting for the owner at the stop after item 6: to
@@ -104,9 +109,8 @@ the owner writes "release" (rule 16).
    workstation's home-network address, port 8090, and in no file (the address
    is given in chat only). It is removed once `v0.3.0` is live. This file and
    DECISIONS.md. **Done** with this commit.
-7. Release `v0.3.0`. Waiting for "release".
-8. Deploy and verify `v0.3.0`, then remove the phone preview. Waiting for
-   "release".
+7. Release `v0.3.0`. **Never released** (D30, D33): `v0.4.0` carries it.
+8. Deploy and verify `v0.3.0`. **Superseded** by `v0.4.0`.
 
 **Before that**, the website's own fourth and fifth briefs, both done:
 
