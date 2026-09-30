@@ -1,6 +1,6 @@
 # State
 
-*Updated 2026-09-29: the product's sixth brief, items 1, 3, 4 and 5 done (D32, D33); `v0.4.0` is live; `v0.3.0` was never released.*
+*Updated 2026-09-30: the product's eighth brief, item 6 (D35): the demo shows the guided path and the AI's terminal, locally only; `v0.4.0` is still what is live.*
 
 This repository is public (D14). It describes the production host only
 generically; its address, its port and every other detail of the network it
@@ -82,6 +82,20 @@ section of both pages before and after, at every phone and tablet width, is in
 `out/screenshots/brief5.html`, which is not committed.
 
 ## In progress
+
+**The product's eighth brief, item 6: the demo's guided path and its AI's
+terminal (D35). Local only**: committed and pushed, not tagged, released or
+deployed (the brief's rule 19), so allvibenocry.com still shows `v0.4.0`'s
+demo. The top of an app is the product's guided path (Plan, Try, Live, Done,
+one pink next action, moving on by itself, the ending's three choices); the
+chat is the plan with a picture of the AI's own interface under it, marked as
+a picture; "Start your AI"; a new app from the home screen; how the AI
+connects says only your own API key or your own AI app through MCP.
+check-page clean for all three pages at every width, the demo's checks as
+they must be in light and dark; each demo check seen failing on a broken copy
+(`scripts/broken-demo.mjs`, 15 copies); `docs/demo-claims.md` read again at
+product `5971e58`; before and after in `out/screenshots/demo-brief8.html`. Not
+yet looked at by the owner.
 
 **The product's fifth brief, item 6: the demo's app view (D31). Released in
 `v0.4.0`**: the page for one app rebuilt to the

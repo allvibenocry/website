@@ -454,12 +454,23 @@ async function exerciseDemo(cdp) {
   await overflowAt("home");
   did.bannerLink = await evaluate(cdp, "(() => { const a = document.querySelector('.demo-banner a.back'); return a && { href: a.getAttribute('href'), text: a.textContent, visible: a.getClientRects().length > 0 }; })()");
 
-  /* Grandma's guestbook: step 2 is ready to try, on the line above the preview. */
+  /* Grandma's guestbook: step 2 is ready to try; the guided path (the
+     product's D75) says so at the top, with the one pink next action. */
   await openGuestbook();
   await overflowAt("app, simple: preview");
+  const pinks = () => evaluate(cdp, `[...document.querySelectorAll("body *")].filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== "hidden" && [getComputedStyle(el).backgroundColor, getComputedStyle(el).borderTopColor].includes("rgb(255, 77, 148)")).map(el => (el.dataset.action || el.id || el.className || el.tagName) + ": " + el.textContent.trim().slice(0, 30))`);
+  const guideNow = () => evaluate(cdp, "({ stage: document.querySelector('#guide .stages [aria-current=step] .l')?.firstChild?.textContent.trim() ?? null, text: document.querySelector('#guide-t')?.textContent.trim() ?? null, button: document.querySelector('#guide .guide-acts .btn.pink')?.textContent.trim() ?? null, all: [...document.querySelectorAll('#guide .guide-acts .btn, #guide .guide-acts .linkbtn')].map(b => b.textContent.trim()) })");
+  did.guideAtStart = { ...(await guideNow()), pinks: await pinks() };
+  did.guideAtStart.ok = did.guideAtStart.stage === "Try: 2 of 3" && did.guideAtStart.button === "Try step 2" && did.guideAtStart.pinks.length === 1 && /^guide-try/.test(did.guideAtStart.pinks[0]);
+
+  /* Trying step 2 from the guided path: the test copy in view, and the next action "Step 2 works". */
+  await click('#guide [data-action="guide-try"]');
+  await sleep(200);
+  did.trying = await guideNow();
+  did.trying.ok = did.trying.button === "Step 2 works" && did.trying.all.join() === "Step 2 works,Something is wrong" && /^Try step 2 in the test copy: /.test(did.trying.text ?? "");
 
   /* The report dialog, opened from the keyboard, with focus on its first question. */
-  await evaluate(cdp, "document.querySelector('[data-action=\"report\"][data-i=\"1\"]')?.focus()");
+  await evaluate(cdp, "document.querySelector('#guide [data-action=\"report\"][data-i=\"1\"]')?.focus()");
   await press(cdp, "Enter");
   await sleep(300);
   did.reportDialog = { open: await evaluate(cdp, "!document.querySelector('#modal').hidden"), focus: await active() };
@@ -554,6 +565,8 @@ async function exerciseDemo(cdp) {
      a phone the switch is in the menu, and the preview is under its tab. */
   const frame = () => evaluate(cdp, "(() => { scrollTo(0, 0); const f = document.querySelector('#preview-frame'); if (!f || !f.getClientRects().length) return null; const r = f.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })()");
   const same = (a, b) => !!a && !!b && ["x", "y", "width", "height"].every((k) => Math.abs(a[k] - b[k]) <= 0.5);
+  // From the app as it opens, as each later measure is: trying a step makes the guided path's sentence longer.
+  await openGuestbook();
   const still = { simple: await frame() };
   if (narrow) await click("#menu-btn");
   await evaluate(cdp, "document.querySelector('#mode-switch')?.focus()");
@@ -588,68 +601,121 @@ async function exerciseDemo(cdp) {
   still.ok = still.dialog === "Turn on advanced mode?" && still.mode === "true" && same(still.simple, still.advanced) && same(still.simple, still.advancedAgain) && same(still.simple, still.back);
   did.previewStill = still;
 
-  /* A new app opens in planning, and "Looks good, start building" starts it. */
+  /* A new app from the home screen, as in the panel (the product's D77): a
+     name, and it opens in Plan with "Start your AI" as its one next action;
+     the AI's two ways to connect, as the website may say them (the product's
+     D52); then the AI's own interface, as a plain-text picture of it (D69),
+     where the idea becomes a plan and a go-ahead starts step 1. */
   const fresh = {};
+  const say = async (words) => evaluate(cdp, `(() => { const i = document.querySelector('#say'); if (!i) return "missing"; i.value = ${JSON.stringify(words)}; document.querySelector('#say-form').requestSubmit(); return "said"; })()`);
   await click('#nav [data-action="new-app"]');
   await sleep(200);
   fresh.dialog = await text("#dialog-title");
   await overflowAt("new app dialog");
   await click('[data-action="make-plan"]');
-  fresh.planned = await until(cdp, "!!document.querySelector('#approve')", 5000);
+  await sleep(300);
   fresh.name = await text("#app-name");
-  fresh.proposed = await count("#plan-box li.proposed");
-  fresh.button = await text("#approve");
+  fresh.guide = { ...(await guideNow()), pinks: await pinks() };
   fresh.focus = await active();
+  if (narrow) await click("#mtab-chat");
+  fresh.choices = await evaluate(cdp, "[...document.querySelectorAll('#ai .ai-choice b')].map(b => b.textContent.trim())");
+  fresh.pageText = await evaluate(cdp, "document.body.innerText");
+  await overflowAt("new app: plan, its AI not started");
+  await click('#guide [data-action="start-ai"]');
+  fresh.started = await until(cdp, "!!document.querySelector('#say')", 6000);
+  fresh.picture = await text("#pic-note");
+  fresh.artwork = await count("#ai svg, #ai img, #ai canvas, #ai picture");
+  fresh.greeting = await evaluate(cdp, "document.querySelector('#chat .ai:last-of-type')?.textContent.trim() ?? null");
+  fresh.guideRunning = (await guideNow()).button;
+  await overflowAt("new app: its AI running");
+  fresh.idea = await say("A chore chart for the kids, with points for the week.");
+  fresh.planned = await until(cdp, "document.querySelectorAll('#plan-box li.proposed').length === 3", 6000);
+  fresh.guidePlanned = (await guideNow()).button;
   await overflowAt("new app: planning");
   if (narrow) await showRight("preview");
   fresh.line = await text("#tryline");
   fresh.starter = await text("#preview-frame .tc-h");
   await overflowAt("new app: planning, preview");
   if (narrow) await click("#mtab-chat");
-  await click("#approve");
+  fresh.goAhead = await say("Yes, start.");
   await sleep(200);
   fresh.building = await count("#plan-box li.building");
-  fresh.said = await evaluate(cdp, "[...document.querySelectorAll('#chat .status')].map(s => s.textContent.trim()).pop() ?? null");
+  fresh.said = await evaluate(cdp, "[...document.querySelectorAll('#chat .st')].map(s => s.textContent.trim()).pop() ?? null");
   if (narrow) await showRight("preview");
   fresh.lineAfter = await text("#tryline");
   await overflowAt("new app: building");
-  fresh.ready = await until(cdp, "!!document.querySelector('[data-action=\"works\"][data-i=\"0\"]')", 10_000);
-  fresh.ok = fresh.dialog === "Start a new app" && fresh.planned && fresh.name === "Chore chart" && fresh.proposed === 3 && fresh.button === "Looks good, start building" && fresh.focus === "approve" &&
+  fresh.ready = await until(cdp, "document.querySelector('#guide .guide-acts .btn.pink')?.textContent.trim() === 'Try step 1'", 10_000);
+  fresh.ok = fresh.dialog === "Make a new app" && fresh.name === "Chore chart" && fresh.guide.stage === "Plan" && fresh.guide.button === "Start your AI" && fresh.guide.pinks.length === 1 &&
+    fresh.focus === "start-ai" && fresh.choices.join() === "Your own API key,Your own AI app, through MCP" && fresh.started &&
+    /^A picture of your AI's own interface, in plain text\./.test(fresh.picture ?? "") && fresh.artwork === 0 && /^Ready\. Tell me what Chore chart should become/.test(fresh.greeting ?? "") &&
+    fresh.guideRunning === "Go to your AI" && fresh.idea === "said" && fresh.planned && fresh.guidePlanned === "Go to your AI" &&
     /^This is your app as it is now\./.test(fresh.line ?? "") && fresh.starter === "Guestbook" &&
-    fresh.building === 1 && fresh.said === "Building step 1" && /^Building step 1:/.test(fresh.lineAfter ?? "") && fresh.ready;
+    fresh.goAhead === "said" && fresh.building === 1 && fresh.said === "* Building step 1…" && /^Building step 1:/.test(fresh.lineAfter ?? "") && fresh.ready;
   did.newApp = fresh;
 
-  /* The whole way from trying the last step to "v3 is live", in Live. */
-  const flow = {};
+  /* What the demo says about how the AI connects: your own API key, or your
+     own AI app through MCP, and nothing about signing in with a Claude
+     account (the product's D52), on every screen it has. */
+  const words = {};
+  for (const view of ["home", "settings"]) { await click(`#nav [data-go="${view}"]`); await sleep(150); words[view] = await evaluate(cdp, "document.body.innerText"); }
+  words.all = [fresh.pageText ?? "", ...Object.values(words)].join(" ") + (await evaluate(cdp, "document.documentElement.innerHTML"));
+  did.aiWords = { apiKey: /your own API key/i.test(words.all), mcp: /through MCP|This kind of connection is called MCP/.test(words.all), account: (words.all.match(/Claude account|sign in with (your )?Claude|Claude (Pro|Max)\b|subscription/gi) ?? []) };
+  did.aiWords.ok = did.aiWords.apiKey && did.aiWords.mcp && did.aiWords.account.length === 0;
+  delete fresh.pageText;
+
+  /* The whole way from trying step 2 to "v3 is live", pressing only the next
+     action at the top, the keyboard where it asks for it; one pink thing on
+     the screen at every stage; the demo moving on by itself to the preview,
+     to Live, and to the ending, with its three choices (the product's D75). */
+  const flow = { path: [], pinkCounts: [] };
+  const step = async (label) => { const g = await guideNow(); flow.path.push(`${g.stage}: ${g.button ?? "(none)"}`); flow.pinkCounts.push((await pinks()).length); return g; };
   await openGuestbook();
-  await click('[data-action="works"][data-i="1"]');
-  flow.lastStepReady = await until(cdp, "!!document.querySelector('[data-action=\"works\"][data-i=\"2\"]')", 10_000);
-  if (flow.lastStepReady) await click('[data-action="works"][data-i="2"]');
-  flow.allTried = await until(cdp, "!!document.querySelector('#tryline [data-action=\"to-live\"]')", 5000);
-  await evaluate(cdp, "document.querySelector('#tryline [data-action=\"to-live\"]')?.focus()");
+  await step("start");
+  await click('#guide [data-action="guide-try"]');
+  await step("trying 2");
+  await click('#guide [data-action="works"]');
+  flow.lastStepReady = await until(cdp, "document.querySelector('#guide .guide-acts .btn.pink')?.textContent.trim() === 'Try step 3'", 10_000);
+  await step("step 3 ready");
+  await click('#guide [data-action="guide-try"]');
+  flow.previewInView = await evaluate(cdp, `document.querySelector(${q(narrow ? "#mtab-preview" : "#rtab-preview")})?.getAttribute('aria-selected') ?? null`);
+  await step("trying 3");
+  await evaluate(cdp, "document.querySelector('#guide [data-action=\"works\"]')?.focus()");
   await press(cdp, "Enter");
-  await sleep(200);
-  flow.liveTab = await evaluate(cdp, `document.querySelector(${q(narrow ? "#mtab-live" : "#rtab-live")})?.getAttribute('aria-selected') ?? null`);
-  flow.button = await text('[data-action="ship"]');
+  await sleep(250);
+  const tried = await step("all tried");
+  flow.movedToLive = await evaluate(cdp, `document.querySelector(${q(narrow ? "#mtab-live" : "#rtab-live")})?.getAttribute('aria-selected') ?? null`);
+  flow.text = tried.text;
   flow.focus = await active();
+  flow.liveCardPink = await count("#rpane .btn.pink");
   await overflowAt("app: Live, ready to put live");
-  await click('[data-action="ship"]');
+  await press(cdp, "Enter");
   await sleep(1200);
   flow.putting = await text("#shipcard h2");
+  await step("putting");
   await overflowAt("app: Live, putting v3 live");
   flow.live = await until(cdp, "document.querySelector('#shipcard h2')?.textContent === 'v3 is live.'", 15_000);
-  flow.result = await text("#shipcard h2");
+  const done = await step("done");
+  flow.done = done.text;
+  flow.choices = done.all;
+  flow.doneFocus = await active();
   flow.checksDone = await count("#shipcard .safety li.done");
   flow.chip = await text("#apphead .chip");
   flow.versions = await evaluate(cdp, "[...document.querySelectorAll('#rpane .vrow')].map(r => r.querySelector('b')?.textContent + ' ' + (r.querySelector('.chip, button')?.textContent ?? ''))");
   await overflowAt("app: Live, v3 is live");
-  await click('[data-action="rollback"][data-v="2"]');
+  await click('#guide [data-action="rollback"][data-v="2"]');
   await sleep(200);
   flow.goBack = await text("#dialog-title");
   await overflowAt("go back dialog");
   await press(cdp, "Escape");
-  flow.ok = flow.lastStepReady && flow.allTried && flow.liveTab === "true" && flow.button === "Put v3 live" && flow.focus === "ship" && flow.putting === "Putting v3 live" &&
-    flow.live && flow.checksDone === 6 && flow.chip === "v3 is live" && flow.versions.join() === "v3 Live now,v2 Go back to v2,v1 Go back to v1" && flow.goBack === "Go back to v2?";
+  await click('#guide [data-action="guide-new"]');
+  await sleep(200);
+  flow.newStart = await step("something new");
+  flow.ok = flow.path.join(" > ") === "Try: 2 of 3: Try step 2 > Try: 2 of 3: Step 2 works > Try: 3 of 3: Try step 3 > Try: 3 of 3: Step 3 works > Live: Put v3 live > Live: (none) > Done: Open the app > Plan: Go to your AI" &&
+    flow.pinkCounts.every((n, i) => n === (flow.path[i].endsWith("(none)") ? 0 : 1)) &&
+    flow.lastStepReady && flow.previewInView === "true" && flow.movedToLive === "true" && flow.text === "Every step is tried. Next: put v3 live." && flow.focus === "ship" && flow.liveCardPink === 0 &&
+    flow.putting === "Putting v3 live" && flow.live && flow.done === "v3 is live. Everyone on your home network uses it now." &&
+    flow.choices.join() === "Open the app,Start something new,Something feels wrong? Go back to v2" && flow.doneFocus === "open-link" &&
+    flow.checksDone === 6 && flow.chip === "v3 is live" && flow.versions.join() === "v3 Live now,v2 Go back to v2,v1 Go back to v1" && flow.goBack === "Go back to v2?";
   did.lastStepToLive = flow;
 
   /* The other screens, and the second way to connect an AI: in the app, what
@@ -686,7 +752,7 @@ async function exerciseDemo(cdp) {
   did.startOver.ok = did.startOver.heading === "Your apps" && did.startOver.guestbook === "v2 is live" && did.startOver.apps === 2 && did.startOver.advanced === "false" && did.startOver.panel === true;
 
   did.overflowMax = Math.max(...Object.values(did.overflow));
-  did.failed = ["reportDialog", "keyboardMark", "tabInDialog", "emptyAnswer", "dialogClosed", "tabLists", "more", "previewStill", "newApp", "lastStepToLive", "ownAiApp", "startOver"].filter((k) => !did[k]?.ok);
+  did.failed = ["guideAtStart", "trying", "reportDialog", "keyboardMark", "tabInDialog", "emptyAnswer", "dialogClosed", "tabLists", "more", "previewStill", "newApp", "aiWords", "lastStepToLive", "ownAiApp", "startOver"].filter((k) => !did[k]?.ok);
   if (!did.bannerLink || did.bannerLink.href !== "/" || !did.bannerLink.visible) did.failed.push("bannerLink");
   if (did.overflowMax > 0) did.failed.push("overflow");
   return did;

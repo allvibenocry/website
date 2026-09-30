@@ -612,6 +612,51 @@ body.appview main{max-width:none;padding:0}
   .chat,.term .log{flex:1;min-height:140px}
   .pane{flex:1;min-height:0;overflow-y:auto}
 }
+/* The guided path (the product's D68, D75): at the top of an app, above both
+   sides, the stage it is at and the one next action, the only pink there. */
+.guide{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:12px 18px;background:var(--panel);border-bottom:1.5px solid var(--line)}
+.stages{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;flex:none}
+.stages li{display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:700;color:var(--muted);white-space:nowrap}
+.stages .g{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);background:var(--panel);font-size:.72rem;font-weight:800;flex:none}
+.stages .g svg{width:13px;height:13px}
+.stages .past .g{background:var(--go);border-color:#1B1530;color:#1B1530}
+.stages .now{color:var(--text)}
+.stages .now .g{background:var(--purple-soft);border:2px solid var(--lav);color:var(--text)}
+.guide-t{flex:1 1 260px;min-width:0;font-size:.95rem}
+.guide-t:focus{outline:none}
+.guide-acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;flex:none}
+.guide-acts:empty{display:none}
+/* Only ever one pink (the product's D75): a step ready to try is marked in the
+   structure's purple, the line above the preview too, and an app waiting for
+   you is yellow in the side, something to check. */
+.plan .ready .m{background:var(--purple-soft);border-color:var(--lav);color:var(--text)}
+.tryline.ready{background:var(--purple-soft);border:1.5px solid var(--purple-line)}
+.nav .dot.act{background:var(--sun);box-shadow:0 0 0 3px rgba(255,196,0,.3)}
+@media (max-width:1080px){
+  .guide{padding:10px 12px}
+  .stages{flex:1 1 100%;gap:4px 10px}
+  .guide-acts{flex:1 1 100%}
+  .guide-acts .btn{flex:1 1 auto}
+}
+/* Your AI, under the plan (the product's D69, D77): its choices before it
+   starts, and then a picture of its own interface, in plain text. */
+.ai{display:flex;flex-direction:column;gap:8px;padding:10px 16px 12px;border-top:1.5px solid var(--line);min-height:0}
+.ai-h{font-size:1.05rem}
+.ai-line{font-size:.9rem}
+.ai-choices{border:0;margin:0;padding:0;display:grid;gap:6px;min-width:0}
+.ai-choice{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer}
+.ai-choice input{margin-top:4px;accent-color:var(--lav);flex:none}
+.ai-choice b{display:block;font-size:.92rem}
+.ai-choice small{display:block;color:var(--muted);font-size:.84rem}
+.pic-note{font-size:.84rem;color:var(--muted)}
+.aiterm{border-radius:12px;overflow:hidden;min-height:0}
+.aiterm .log{padding:10px 14px;font-family:var(--mono);font-size:.84rem;line-height:1.55;overflow-wrap:anywhere}
+.aiterm .log p{margin:0 0 6px}
+.aiterm .log .st{color:var(--term-dim)}
+.aiterm .log .you{color:var(--term-text);font-weight:700}
+.aiterm .term-say .prompt{font-family:var(--mono);color:var(--term-dim);align-self:center}
+@media (max-width:1080px){.aiterm .log{height:clamp(220px,45vh,440px)}}
+@media (min-width:1081px){.ai{flex:1 1 auto}.aiterm{flex:1;display:flex;flex-direction:column}.aiterm .log{flex:1;min-height:160px}}
 </style>
 </head>
 <body>
@@ -734,7 +779,7 @@ Rules
             { when: '4 nights ago, 03:30', size: '13 MB', ok: true }
           ],
           keys: [ { name: 'WEATHER_API_KEY', dev: true, prod: true, when: '5 days ago' } ],
-          ship: null
+          ship: null, ai: 'on', trying: null
         },
         {
           id: 'recipes', kind: 'recipes', name: 'Recipe box', live: 0, prodPort: 8102, devPort: 8103, count: 0, countWord: 'recipes',
@@ -754,7 +799,7 @@ Rules
           ],
           log: [['tool', 'Read briefs/family-recipes.md'], ['ai', 'Step 1 done. Stopping for the person to try it.'], ['ai', 'Working on step 2: adding a recipe with a photo.']],
           brief: '# Brief: a place for the family recipes\n\n1. A page that lists your recipes.\n2. Add a recipe with a photo.\n3. Search by ingredient.\n4. Share a recipe with a link.\n\nRules\n- Migrations only add.\n- Stop after each step.',
-          versions: [], backups: [], keys: [], ship: null
+          versions: [], backups: [], keys: [], ship: null, ai: 'on', trying: null
         }
       ]
     };
@@ -769,7 +814,8 @@ Rules
   /* Who the person talks to: "Your AI" in simple mode, the architect in advanced mode (D55). */
   const AI = () => mcp() ? { the: 'your AI app', The: 'Your AI app' } : S.advanced ? { the: 'the architect', The: 'The architect' } : { the: 'your AI', The: 'Your AI' };
   function nextAction(p){
-    if (proposed(p)) return 'Look at the plan';
+    if (p.ai === 'off' && !mcp()) return 'Start your AI';
+    if (proposed(p)) return 'Go to your AI';
     if (!p.plan) return null;
     const st = p.plan.steps, i = current(p);
     if (i === -1) return `Put v${(p.live || 0) + 1} live`;
@@ -824,7 +870,7 @@ Rules
       const sr = d === 'act' ? '<span class="sr">, waiting for you</span>' : d === 'work' ? '<span class="sr">, the builder is working</span>' : '';
       h += item(`<span class="dot ${d}"></span>${esc(p.name)}${sr}`, `data-open="${p.id}"`, S.view === 'project' && S.projectId === p.id, 'nav-app');
     });
-    h += item('<span aria-hidden="true">+</span> Start a new app', 'data-action="new-app"', false, 'nav-app new');
+    h += item('<span aria-hidden="true">+</span> Make a new app', 'data-action="new-app"', false, 'nav-app new');
     h += '<div class="nav-machine"><p class="nav-group">This machine</p>';
     h += item('Machine health', 'data-go="machine"', S.view === 'machine');
     h += item('Backups', 'data-go="backups"', S.view === 'backups');
@@ -846,17 +892,19 @@ Rules
 
   /* ---------- Home ---------- */
   function viewHome(){
+    /* One pink thing at most (the product's D75): only the first app that waits for you has it. */
+    const first = S.projects.find(p => nextAction(p));
     const cards = S.projects.map(p => {
       const status = p.live ? `<span class="chip live">v${p.live} is live</span>` : '<span class="chip idle">Not live yet</span>';
       const act = nextAction(p);
-      const where = !act ? '' : proposed(p) ? ' data-show="chat"' : act.startsWith('Put') ? ' data-right="live"' : '';
-      const btn = act ? `<button type="button" class="btn small pink" data-open="${p.id}"${where}>${act}</button>` : `<button type="button" class="btn small line" data-open="${p.id}">Open</button>`;
+      const where = !act ? '' : act.startsWith('Try') ? ' data-try="1"' : act.startsWith('Put') ? ' data-right="live"' : ' data-show="chat"';
+      const btn = act ? `<button type="button" class="btn small ${p === first ? 'pink' : 'line'}" data-open="${p.id}"${where}>${act}</button>` : `<button type="button" class="btn small line" data-open="${p.id}">Open</button>`;
       return `<article class="app-card"><h3><button type="button" class="card-link" data-open="${p.id}">${esc(p.name)}</button></h3>${status}<p class="muted">${p.plan ? esc(p.plan.title) + '. ' : ''}${workText(p)}</p><div class="card-foot">${S.advanced ? `<span class="addr">allvibe.local:${p.prodPort}</span>` : '<span></span>'}${btn}</div></article>`;
     }).join('');
     return `
       <div class="status-row" role="status"><span class="led" aria-hidden="true"></span><b>No problems found.</b><span class="facts-inline"><span class="fact">Last night's backup restored and checked</span><span class="fact">Disk healthy</span><span class="fact">Recovery key confirmed</span></span><button type="button" class="linkbtn" data-go="machine">Machine health</button></div>
       <div class="head"><div><h1>Your apps</h1><p class="muted">Running on an old laptop in the hall cupboard.</p></div></div>
-      <div class="apps">${cards}<button type="button" class="app-card new" data-action="new-app"><span class="plus" aria-hidden="true">+</span>Start a new app</button></div>
+      <div class="apps">${cards}<button type="button" class="app-card new" data-action="new-app"><span class="plus" aria-hidden="true">+</span>Make a new app</button></div>
       <h2 class="section-title">Updates to try</h2>
       <div class="notice" style="margin-top:0"><p><b>3 updates are ready to try.</b> They were prepared in your test copies, so nothing live has changed.</p><button type="button" class="btn small line" data-action="see-updates">See the updates</button></div>`;
   }
@@ -864,8 +912,9 @@ Rules
   /* ---------- The app view (D55) ---------- */
   function viewProject(){
     const p = proj();
-    return `<div class="work" id="work" data-m="${S.m}">
-      <section class="left" aria-label="Who you talk to">
+    return `<section class="guide" id="guide" aria-label="What comes next"></section>
+    <div class="work" id="work" data-m="${S.m}">
+      <section class="left" aria-label="Your plan and your AI">
         <div class="apphead" id="apphead"></div>
         <div class="mtabs" id="mtabs" role="tablist" aria-label="${esc(p.name)}"></div>
         <div class="lside" id="lside">
@@ -879,7 +928,74 @@ Rules
       </section>
     </div>`;
   }
-  function renderApp(){ keepFocus(() => { renderHead(); renderTabs(); renderLeft(); renderRight(); }); }
+  function renderApp(){ keepFocus(() => { renderGuide(); renderHead(); renderTabs(); renderLeft(); renderRight(); }); }
+
+  /* ---------- The guided path (the product's D68, D75) ---------- */
+  /* Plan, Try, Live, Done: where the app is, and the one thing to do next, in
+     the same place at the top, the only pink on the page. The demo moves on by
+     itself, as the panel does: to the preview to try a step, to Live when the
+     last one is tried, and to the ending when the version is live. */
+  function stageOf(p){
+    if (p.ship && !p.ship.done) return 'live';
+    if (p.plan && !proposed(p) && p.plan.steps.length) return allTried(p) ? 'live' : 'try';
+    if (p.plan || p.making) return 'plan';
+    if (p.ship && p.ship.done && p.live === p.ship.v && !p.fresh) return 'done';
+    return 'plan';
+  }
+  function guide(p){
+    const stage = stageOf(p), v = (p.live || 0) + 1;
+    const i = stage === 'try' ? current(p) : -1, st = i >= 0 ? p.plan.steps[i] : null;
+    const label = { plan: 'Plan', try: `Try: ${i + 1} of ${p.plan ? p.plan.steps.length : 0}`, live: 'Live', done: 'Done' }[stage];
+    const btn = (action, words, extra = '') => `<button type="button" class="btn pink" data-action="${action}"${extra}>${words}</button>`;
+    let text = '', primary = '', second = '';
+    if (stage === 'plan' && mcp()){
+      text = p.making ? 'Your AI app is making a plan with you.' : proposed(p) ? `Your AI app posted a plan in ${p.plan.steps.length} steps. Tell it in your AI app when it may start.` : `Tell your AI app what you want${p.live ? ' next' : ' to build'}. What it posts shows under your plan.`;
+    } else if (stage === 'plan' && p.ai === 'off'){
+      text = `Start your AI, and tell it what you want${p.live ? ' next' : ' to build'}. It works in the test copy, never the live app.`;
+      primary = btn('start-ai', 'Start your AI');
+    } else if (stage === 'plan' && p.ai === 'starting'){
+      text = 'Starting your AI. The first time takes a minute or two.';
+    } else if (stage === 'plan' && p.making){
+      text = 'Your AI is making a plan with you, in its terminal under your plan.';
+    } else if (stage === 'plan' && proposed(p)){
+      text = `Your AI wrote a plan in ${p.plan.steps.length} steps. Read it under "Your plan", and tell your AI in its terminal when it may start.`;
+      primary = btn('focus-ai', 'Go to your AI');
+    } else if (stage === 'plan'){
+      text = `${p.live && p.fresh ? `v${p.live} is live. ` : ''}Tell your AI what you want${p.live ? ' next' : ' to build'}, in its terminal under your plan, in your own words. It writes a plan, with something for you to try at every step.`;
+      primary = btn('focus-ai', 'Go to your AI');
+    } else if (stage === 'try' && st.s === 'ready' && p.trying === i){
+      text = `Try step ${i + 1} in the test copy: ${esc(st.y)}`;
+      primary = btn('works', `Step ${i + 1} works`, ` data-i="${i}"`);
+      second = `<button type="button" class="linkbtn" data-action="report" data-i="${i}">Something is wrong</button>`;
+    } else if (stage === 'try' && st.s === 'ready'){
+      text = `Step ${i + 1} is ready: ${esc(lc(st.t))}.`;
+      primary = btn('guide-try', `Try step ${i + 1}`, ` data-i="${i}"`);
+    } else if (stage === 'try'){
+      text = `Your AI is building step ${i + 1}: ${esc(lc(st.t))}. The test copy keeps working meanwhile.`;
+    } else if (stage === 'live' && p.ship && !p.ship.done){
+      text = `Putting v${p.ship.v} live. Nothing anyone sees changes until every safety check has passed.`;
+    } else if (stage === 'live'){
+      text = `Every step is tried. Next: put v${v} live.`;
+      primary = btn('ship', `Put v${v} live`);
+    } else {
+      text = `<b>v${p.live} is live.</b> Everyone on your home network uses it now.`;
+      primary = `<button type="button" class="btn pink" data-action="open-link" data-port="${p.prodPort}">Open the app</button>`;
+      second = `<button type="button" class="btn line" data-action="guide-new">Start something new</button>${p.live > 1 ? `<button type="button" class="linkbtn" data-action="rollback" data-v="${p.live - 1}">Something feels wrong? Go back to v${p.live - 1}</button>` : ''}`;
+    }
+    return { stage, label, text, primary, second };
+  }
+  function renderGuide(){
+    const el = $('#guide'); if (!el) return; const p = proj(); const g = guide(p);
+    const order = ['plan', 'try', 'live', 'done'], names = { plan: 'Plan', try: 'Try', live: 'Live', done: 'Done' }, now = order.indexOf(g.stage);
+    const stages = order.map((id, i) => {
+      const st = i < now || g.stage === 'done' ? 'past' : i === now ? 'now' : 'next';
+      const here = i === now;
+      return `<li class="${st}"${here ? ' aria-current="step"' : ''}><span class="g" aria-hidden="true">${st === 'past' ? CHECK : `<span>${i + 1}</span>`}</span><span class="l">${here ? esc(g.label) : names[id]}<span class="sr">${here ? ', where it is now' : st === 'past' ? ', done' : ''}</span></span></li>`;
+    }).join('');
+    el.innerHTML = `<ol class="stages" aria-label="How far along ${esc(p.name)} is">${stages}</ol><p class="guide-t" id="guide-t" tabindex="-1">${g.text}</p><div class="guide-acts">${g.primary}${g.second}</div>`;
+  }
+  /* After a press of the next action, the keyboard stays where the next one appears. */
+  function focusGuide(){ const b = $('#guide .guide-acts .btn') || $('#guide-t'); if (b) b.focus(); }
 
   function renderHead(){
     const el = $('#apphead'); if (!el) return; const p = proj();
@@ -905,11 +1021,11 @@ Rules
     const p = proj(); if (!$('#rtabs')) return;
     if (!S.advanced && S.right === 'code') S.right = 'preview';
     if (!S.advanced && S.m === 'code') S.m = 'preview';
-    const needs = allTried(p) && !p.ship;
-    const dot = id => id === 'live' && needs ? '<span class="tdot" aria-hidden="true"></span><span class="sr">, needs you</span>' : '';
+    /* No dot on Live: the one pink thing is the next action at the top (the product's D75). */
+    const dot = () => '';
     const tab = (pre, id, label, sel, controls) => `<button type="button" role="tab" id="${pre}-${id}" aria-controls="${controls}" aria-selected="${sel}" tabindex="${sel ? 0 : -1}" data-${pre}="${id}">${label}${dot(id)}</button>`;
     $('#rtabs').innerHTML = rightList().map(([id, l]) => tab('rtab', id, l, S.right === id, 'rpane')).join('');
-    $('#mtabs').innerHTML = [['chat', 'Chat'], ...rightList()].map(([id, l]) => tab('mtab', id, l, S.m === id, id === 'chat' ? 'lside' : 'rpane')).join('');
+    $('#mtabs').innerHTML = [['chat', 'Plan'], ...rightList()].map(([id, l]) => tab('mtab', id, l, S.m === id, id === 'chat' ? 'lside' : 'rpane')).join('');
     $('#rtabs').setAttribute('aria-label', p.name); $('#mtabs').setAttribute('aria-label', p.name);
     const lt = $('#ltabs');
     lt.hidden = !S.advanced;
@@ -937,20 +1053,47 @@ Rules
   function msgHTML(p, k, t){
     if (k === 'done' || k === 'working' || k === 'saved') return `<p class="status ${k}"><i></i>${esc(t)}</p>`;
     const posted = mcp() ? '<span class="posted">Your AI app posted</span>' : '';
-    if (k === 'plan') return `<div class="msg arch">${posted}${esc(t)}${proposed(p) ? '<br><button type="button" class="btn pink small" id="approve" data-action="approve">Looks good, start building</button>' : ''}</div>`;
+    if (k === 'plan') return `<div class="msg arch">${posted}${esc(t)}</div>`;
     if (k === 'you') return `<p class="msg you">${esc(t)}</p>`;
     return `<p class="msg ${k === 'try' ? 'try' : 'arch'}">${posted}${esc(t)}</p>`;
   }
   function chatItems(p){ return p.chat.filter(([k]) => !(mcp() && k === 'you')).map(([k, t]) => msgHTML(p, k, t)).join(''); }
+  /* The conversation, as a picture of the AI's own interface (the product's
+     D69): plain text in a terminal, what you typed after "> ". No logo, no
+     artwork: in the panel, this is Claude Code's own terminal. */
+  function termLines(p){
+    return p.chat.map(([k, t]) => k === 'you' ? `<p class="you">${esc(t)}</p>`
+      : (k === 'done' || k === 'saved') ? `<p class="st">* ${esc(t)}</p>`
+      : k === 'working' ? `<p class="st">* ${esc(t)}…</p>`
+      : `<p class="ai">${esc(t)}</p>`).join('');
+  }
+  function aiHTML(p){
+    if (p.ai === 'off'){
+      const choice = (id, t, d) => `<label class="ai-choice"><input type="radio" name="aimode-app" value="${id}" data-mode="${id}" ${S.aiMode === id ? 'checked' : ''}><span><b>${t}</b><small>${d}</small></span></label>`;
+      return `<section class="ai" id="ai" aria-labelledby="ai-h"><h3 class="ai-h" id="ai-h">Your AI</h3><p class="ai-line">It works in the test copy, and never reaches the live app. How it connects:</p>
+        <fieldset class="ai-choices"><legend class="sr">How your AI connects</legend>
+          ${choice('panel', 'Your own API key', 'Claude Code runs next to your test copy, with your own API key, billed to you by Anthropic.')}
+          ${choice('mcp', 'Your own AI app, through MCP', 'The AI app you already use, on a computer on your home network.')}
+        </fieldset></section>`;
+    }
+    if (p.ai === 'starting') return `<section class="ai" id="ai" aria-labelledby="ai-h"><h3 class="ai-h" id="ai-h">Your AI</h3><p class="status working"><i></i>Starting your AI</p></section>`;
+    return `<section class="ai on" id="ai" aria-labelledby="ai-h"><h3 class="ai-h" id="ai-h">Your AI</h3>
+      <p class="pic-note" id="pic-note">A picture of your AI's own interface, in plain text. In the panel, Claude Code's own terminal is here, and you talk to it there.</p>
+      <div class="term aiterm"><div class="log" id="chat" role="log" aria-labelledby="ai-h" aria-describedby="pic-note">${termLines(p)}</div>
+      <form class="term-say" id="say-form"><span class="prompt" aria-hidden="true">&gt;</span><label class="sr" for="say">Type to your AI</label><input id="say" autocomplete="off" placeholder="Type here, then press Enter"><button class="btn small" type="submit">Send</button></form></div></section>`;
+  }
   function continueHTML(p){
     const i = current(p), st = p.plan && i !== -1 ? p.plan.steps[i].s : null;
     if (p.making) return '<p><b>Your AI app is making a plan.</b> It shows here when it is ready.</p>';
-    if (proposed(p)) return '<p><b>Nothing to send right now.</b> Read the plan, then press "Looks good, start building". Your AI app sees your answer.</p>';
-    if (st === 'ready') return `<p><b>Nothing to send right now.</b> Try step ${i + 1} in the preview, then press It works or Something is wrong above it. Your AI app sees your answer.</p>`;
+    if (proposed(p)){
+      const go = 'Looks good, start building.';
+      return `<p><b>Tell your AI app when it may start.</b> Type this there:</p><p class="mono say-this">${esc(go)}</p><button type="button" class="btn small" data-action="copy-next" data-then="approve" data-text="${esc(go)}">Copy the message</button>`;
+    }
+    if (st === 'ready') return `<p><b>Nothing to send right now.</b> Try step ${i + 1} in the preview, then press the next action at the top. Your AI app sees your answer.</p>`;
     const next = !p.plan ? `Let us change something in ${p.name}.` : (i === -1 ? 'Every step is tried. What should we change next?' : 'Continue with the plan.');
     return `<p><b>Continue in your AI app.</b> Type this there:</p><p class="mono say-this">${esc(next)}</p><button type="button" class="btn small" data-action="copy-next" data-text="${esc(next)}">Copy the message</button>`;
   }
-  function leftShape(p){ return [p.id, S.advanced ? S.left : 'plan', S.advanced, S.aiMode].join('|'); }
+  function leftShape(p){ return [p.id, S.advanced ? S.left : 'plan', S.advanced, S.aiMode, p.ai].join('|'); }
   function renderLeft(){
     const el = $('#lpane'); if (!el) return; const p = proj();
     const shape = leftShape(p), tab = S.advanced ? S.left : 'plan';
@@ -961,7 +1104,7 @@ Rules
       if (tab === 'build'){ $('#log').innerHTML = p.log.map(([k, t]) => `<p class="${k}">${esc(t)}</p>`).join(''); }
       else {
         $('#plan-box').outerHTML = planBox(p);
-        $('#chat').innerHTML = chatItems(p);
+        const log = $('#chat'); if (log) log.innerHTML = mcp() ? chatItems(p) : termLines(p);
         const c = $('#continue'); if (c) c.innerHTML = continueHTML(p);
       }
     } else {
@@ -970,13 +1113,13 @@ Rules
         const say = mcp() ? '' : '<form class="term-say" id="say-form"><label class="sr" for="say">Message to the builder</label><input id="say" autocomplete="off" placeholder="Talk to the builder directly"><button class="btn small" type="submit">Send</button></form>';
         el.innerHTML = whoHTML('The builder', mcp() ? 'The coding part of your own AI app, working in the test copy.' : 'Claude Code, working in the test copy.') +
           `<div class="term"><div class="log" id="log" role="log" aria-labelledby="who-h">${p.log.map(([k, t]) => `<p class="${k}">${esc(t)}</p>`).join('')}</div>${say}</div>`;
+      } else if (mcp()){
+        el.innerHTML = `${whoHTML('Your AI app', 'The conversation happens in your own AI app. Here you see what it posted and did.')}${planBox(p)}<div class="chat" id="chat" role="log" aria-labelledby="who-h">${chatItems(p)}</div><div class="continue" id="continue">${continueHTML(p)}</div>`;
       } else {
-        const who = mcp() ? whoHTML('Your AI app', 'The conversation happens in your own AI app. Here you see what it posted and did.')
-          : S.advanced ? whoHTML('The architect', 'Plans with you and checks the builder\'s work.')
-          : whoHTML('Your AI', 'Plans with you, builds one step at a time, and checks its own work before you try it.');
-        const foot = mcp() ? `<div class="continue" id="continue">${continueHTML(p)}</div>`
-          : `<form class="say" id="say-form"><label class="sr" for="say">Message to ${AI().the}</label><input id="say" autocomplete="off" placeholder="Tell ${AI().the} what you want"><button class="btn small" type="submit">Send</button></form>`;
-        el.innerHTML = `${who}${planBox(p)}<div class="chat" id="chat" role="log" aria-labelledby="who-h">${chatItems(p)}</div>${foot}`;
+        /* Your plan, and your AI under it (the product's D69, D77). */
+        const who = S.advanced ? whoHTML('The architect', 'Plans with you and checks the builder\'s work, in the AI\'s own terminal under the plan.')
+          : whoHTML('Your plan', 'Your AI builds one step at a time and stops for you to try each one.');
+        el.innerHTML = `${who}${planBox(p)}${aiHTML(p)}`;
       }
     }
     const box = $('#chat') || $('#log');
@@ -990,12 +1133,13 @@ Rules
   function tryLine(p){
     const i = current(p), st = p.plan && i !== -1 ? p.plan.steps[i] : null;
     const line = (cls, text, acts = '') => `<div class="tryline ${cls}" id="tryline" tabindex="-1"><p class="t">${text}</p>${acts ? `<div class="acts">${acts}</div>` : ''}</div>`;
-    if (p.making) return line('info', '<b>This is your app as it is now:</b> the starter app every new app begins with. The plan comes in the chat.');
-    if (proposed(p)) return line('info', '<b>This is your app as it is now.</b> The plan in the chat says what will change. Nothing is built until you say so.');
-    if (!p.plan) return line('info', '<b>Nothing is in progress.</b> Say in the chat what you want to change next.');
-    if (p.ship && !p.ship.done) return line('done', `<b>Putting v${p.ship.v} live.</b> The safety checks are running in Live.`, '<button type="button" class="btn pink small" data-action="to-live">Go to Live</button>');
-    if (i === -1) return line('done', `<b>All ${p.plan.steps.length} steps are tried.</b> Go to Live when you want the family to get v${(p.live || 0) + 1}.`, '<button type="button" class="btn pink small" data-action="to-live">Go to Live</button>');
-    if (st.s === 'ready') return line('ready', `<b>Step ${i + 1} is ready.</b> Try it: ${esc(st.y)}`, `<button type="button" class="btn small go" data-action="works" data-i="${i}">${CHECK} It works</button><button type="button" class="linkbtn" data-action="report" data-i="${i}">Something is wrong</button>`);
+    /* What the step asks, and nothing to press: the buttons are the guided path's, at the top (the product's D75). */
+    if (p.making) return line('info', '<b>This is your app as it is now:</b> the starter app every new app begins with. Your AI writes the plan with you.');
+    if (proposed(p)) return line('info', '<b>This is your app as it is now.</b> The plan under "Your plan" says what will change. Nothing is built until you tell your AI to start.');
+    if (!p.plan) return line('info', `<b>Nothing is in progress.</b> Tell ${AI().the} what you want to change next.`);
+    if (p.ship && !p.ship.done) return line('done', `<b>Putting v${p.ship.v} live.</b> The safety checks are running in Live.`);
+    if (i === -1) return line('done', `<b>All ${p.plan.steps.length} steps are tried.</b>`);
+    if (st.s === 'ready') return line('ready', `<b>Step ${i + 1}, to try:</b> ${esc(st.y)}`);
     if (st.s === 'building') return line('building', `<b>Building step ${i + 1}:</b> ${esc(lc(st.t))}. The test copy keeps working, so you can look around meanwhile.`);
     return line('info', `<b>Step ${i + 1} is next:</b> ${esc(lc(st.t))}.`);
   }
@@ -1083,7 +1227,7 @@ Rules
     } else if (sh && sh.done && p.live === sh.v){
       next = `<section class="strong lcard" id="shipcard" tabindex="-1"><h2>v${sh.v} is live.</h2><p>${p.count} ${esc(p.countWord)}, nothing lost. ${sh.v > 1 ? `v${sh.v - 1} is kept below, so you can go back any time.` : 'Every version you put live is kept below.'}</p><p>Next time, just tell ${AI().the} what you want to change.</p>${safetyList(sh.v, 6, true)}</section>`;
     } else if (allTried(p)){
-      next = `<section class="strong lcard" id="shipcard" tabindex="-1"><h2>v${nextV} is ready: ${esc(lc(p.plan.title))}</h2><p>You have tried all ${p.plan.steps.length} steps. Before anything changes, your data is backed up and the backup is restored and checked. Then v${nextV} starts, and if it does not answer, ${back(nextV)}.</p><div class="acts"><button type="button" class="btn pink" data-action="ship">Put v${nextV} live</button></div></section>`;
+      next = `<section class="strong lcard" id="shipcard" tabindex="-1"><h2>v${nextV} is ready: ${esc(lc(p.plan.title))}</h2><p>You have tried all ${p.plan.steps.length} steps. Before anything changes, your data is backed up and the backup is restored and checked. Then v${nextV} starts, and if it does not answer, ${back(nextV)}.</p><p>When you are ready: <b>Put v${nextV} live</b>, at the top.</p></section>`;
     } else if (p.plan && !p.making){
       const left = p.plan.steps.length - triedCount(p);
       const say = proposed(p) ? 'Not built yet. When the plan is approved and every step is tried, you put it live from here.' : `${left} step${left > 1 ? 's' : ''} left to try before v${nextV} can go live.`;
@@ -1288,7 +1432,7 @@ Rules
     const m = $('#main');
     document.body.classList.toggle('appview', S.view === 'project');
     if (S.view === 'home') m.innerHTML = viewHome();
-    if (S.view === 'project'){ m.innerHTML = viewProject(); renderHead(); renderTabs(); renderLeft(); renderRight(); }
+    if (S.view === 'project'){ m.innerHTML = viewProject(); renderGuide(); renderHead(); renderTabs(); renderLeft(); renderRight(); }
     if (S.view === 'backups') m.innerHTML = viewBackups();
     if (S.view === 'machine') m.innerHTML = viewMachine();
     if (S.view === 'services') m.innerHTML = viewServices();
@@ -1305,6 +1449,8 @@ Rules
   /* An app opens on its preview, or where its next action is. */
   function openApp(id, o = {}){
     closeMenu(); S.moreOpen = false;
+    /* Trying a step lasts until you leave the app, as in the panel; "Try step N" on the home screen opens it trying. */
+    const q = S.projects.find(x => x.id === id); if (q) q.trying = o.trying ?? null;
     S.view = 'project'; S.projectId = id;
     S.right = o.right || 'preview'; S.m = o.show || S.right;
     render(); window.scrollTo({top: 0}); $('#main').focus({preventScroll: true});
@@ -1374,28 +1520,31 @@ Rules
   }
   function stepWorks(p, i){
     p.plan.steps[i].s = 'tried';
+    p.trying = null;
     p.chat.push(['you', `Step ${i + 1} works.`]);
     const n = p.plan.steps.findIndex(x => x.s !== 'tried');
     if (n === -1){
       const v = (p.live || 0) + 1;
-      p.chat.push(['arch', `All ${p.plan.steps.length} steps are tried. You can put v${v} live from Live whenever you like. The safety checks take care of the backup.`]);
+      p.chat.push(['arch', `All ${p.plan.steps.length} steps are tried. You can put v${v} live whenever you like. The safety checks take care of the backup.`]);
+      /* The panel moves on by itself: to Live, with the next action at the top. */
+      if (here(p)){ S.right = 'live'; if (S.m !== 'chat') S.m = 'live'; }
       refreshAll(p);
-      announce(`All steps are tried. v${v} can go live from Live.`);
+      announce(`Every step is tried. Next: put v${v} live.`);
     } else {
       const sc = scriptOf(p, n);
       p.chat.push(['arch', `Good. Now step ${n + 1}: ${lc(p.plan.steps[n].t)}.`]);
       build(p, n, sc.tools, sc.tries);
     }
-    focusIfLost('#tryline');
+    focusGuide();
   }
-  function approvePlan(p){
+  function approvePlan(p, said){
     if (!proposed(p)) return;
     p.plan.steps.forEach(s => { s.s = 'next'; });
-    p.chat.push(['you', 'Looks good, start building.']);
+    p.chat.push(['you', said || 'Looks good, start building.']);
     p.log.push(['you', 'The plan is approved. Build it one step at a time.'], ['tool', 'Read the plan in plan.json']);
     const sc = scriptOf(p, 0);
     build(p, 0, sc.tools, sc.tries);
-    focusIfLost('#who-h');
+    focusIfLost('#guide-t');
   }
 
   /* ---------- The report builder ---------- */
@@ -1466,6 +1615,7 @@ Rules
     const got = ($('#r-got').value || '').trim();
     if (!got){ $('#r-err').textContent = `Tell ${AI().the} what happened, in your own words. One sentence is enough.`; $('#r-got').focus(); return; }
     const n = marks.length || 1;
+    p.trying = null;
     closeModal();
     p.chat.push(['you', `Step ${i + 1} does not work. ${got} (report with ${marks.length ? `${n} marked area${n > 1 ? 's' : ''}` : 'no marks'})`]);
     chat(p, 'saved', `Saved as reports/2026-09-28-step-${i + 1}.md with 1 picture`);
@@ -1486,9 +1636,10 @@ Rules
       p.versions.unshift({ v, when: 'Just now', what: p.plan.title + '.', commit: 'b7d2c19', migs: p.kind === 'guestbook' ? ['004_add_photo.sql: only adds'] : [] });
       if (!p.backups.length) p.backups.push({ when: 'Just now', size: '1 MB', ok: true });
       p.plan = null;
+      p.fresh = false;
       p.chat.push(['arch', `v${v} is live. Tell me what you want to change next.`]);
       refreshAll(p);
-      if (here(p)) announce(`v${v} is live.`);
+      if (here(p)){ announce(`v${v} is live. Everyone on your home network uses it now.`); focusGuide(); }
     }, t + 300);
   }
   function rollbackDialog(p, v){
@@ -1500,40 +1651,55 @@ Rules
   function doRollback(p, v){ closeModal(); toast(`Going back to v${v}: backup taken and checked, v${v} started and answering.`); later(() => { p.live = v; refreshAll(p); toast(`v${v} is live again. Nothing was lost.`); }, 1600); }
 
   /* ---------- A new app: it opens in planning ---------- */
+  /* As in the panel (the product's D77): a name, and the app opens in Plan, where you start its AI and tell it your idea. */
   function newAppDialog(){
-    openModal(`<h2 id="dialog-title">Start a new app</h2>
-      <p>Describe it in your own words. ${AI().The} asks a question or two and makes a short plan with you, and you try every step before anything goes live.</p>
-      <div class="field"><label for="na-name">Name</label><input id="na-name" placeholder="For example: Chore chart" maxlength="40"></div>
-      <div class="field"><label for="na-idea">What should it do?</label><textarea id="na-idea" placeholder="For example: a chore chart for the kids, where they tick off what they did and see their points for the week."></textarea></div>
-      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="make-plan">Make a plan</button></div>`);
+    openModal(`<h2 id="dialog-title">Make a new app</h2>
+      <p>It starts as a small guestbook, with a test copy and a live app of its own. Then you tell your AI what it should become.</p>
+      <div class="field"><label for="na-name">Its name</label><input id="na-name" placeholder="For example: Chore chart" maxlength="40"></div>
+      <div class="dialog-actions"><button type="button" class="btn line" data-action="close">Not now</button><button type="button" class="btn" data-action="make-plan">Make it</button></div>`);
   }
   function makePlan(){
     const name = ($('#na-name').value || '').trim() || 'Chore chart';
-    const idea = ($('#na-idea').value || '').trim() || 'A chore chart for the kids, where they tick off what they did and see their points for the week.';
     const id = 'app' + Date.now(); const port = 8100 + S.projects.length * 2;
-    const p = { id, kind: 'new', name, idea, live: 0, prodPort: port, devPort: port + 1, count: 0, countWord: 'entries', making: true, plan: null,
-      chat: [['you', idea], ['working', 'Making a plan']],
-      log: [['tool', 'Created the project from the starter template'], ['you', `plan mode: ${idea}`]],
+    const p = { id, kind: 'new', name, idea: '', live: 0, prodPort: port, devPort: port + 1, count: 0, countWord: 'entries', making: false, plan: null, ai: 'off', trying: null,
+      chat: [], log: [['tool', 'Created the project from the starter template']],
       brief: '', versions: [], backups: [], keys: [], ship: null };
     S.projects.push(p);
     closeModal(); lastFocus = null; lastKey = null;
     openApp(id, { show: 'chat' });
+    announce(`${name} is made. Next: start your AI.`);
+    focusGuide();
+  }
+  /* Your AI, started (the product's D77); in the demo it takes a moment, and then says it is ready. */
+  function startAI(p){
+    if (mcp()){ mcpDialog(); return; }
+    p.ai = 'starting'; refreshAll(p); announce('Starting your AI.');
+    later(() => {
+      p.ai = 'on';
+      p.chat.push(['arch', p.plan ? 'Ready. I have read the plan and where things stand.' : `Ready. Tell me what ${p.name} should become, in your own words.`]);
+      refreshAll(p);
+      if (here(p)){ announce('Your AI is running. Its terminal is under your plan.'); focusGuide(); }
+    }, 1500);
+  }
+  /* An idea told to the AI in its terminal: a plan in three steps, proposed, and nothing built until you say so. */
+  function planFor(p, idea){
+    if (p.kind === 'new' && !p.idea) p.idea = idea;
+    p.making = true; p.chat.push(['working', 'Making a plan']); p.log.push(['you', `plan mode: ${idea}`]);
+    refreshAll(p);
     later(() => {
       p.making = false;
-      p.plan = { title: `A first version of ${name}`, steps: [
-        { t: 'A first page for your idea', c: 'you can see it in the preview.', y: 'look at the preview. You should see a first page for your idea.', s: 'proposed' },
+      const first = p.kind === 'new' && !p.live;
+      const title = first ? `A first version of ${p.name}` : idea.split(/(?<=[.!?])\s/)[0].replace(/[.!?]+$/, '').slice(0, 60);
+      p.plan = { title, steps: [
+        { t: first ? 'A first page for your idea' : 'The first part of it', c: 'you can see it in the preview.', y: `look at the preview. You should see ${first ? 'a first page for your idea' : 'the first part of it'}.`, s: 'proposed' },
         { t: 'What people enter is kept', c: 'it is still there after a restart.', y: 'enter something, restart the test copy, and check that it is still there.', s: 'proposed' },
         { t: 'Make it yours', c: 'it looks and works the way you want.', y: 'look around, and check that it looks and works the way you want.', s: 'proposed' } ]};
-      p.brief = `# Brief: a first version of ${name}\n\n1. A first page for your idea.\n2. What people enter is kept.\n3. Make it yours.\n\nRules\n- Migrations only add.\n- Stop after each step.`;
+      p.brief = `# Brief: ${lc(title)}\n\n1. ${p.plan.steps[0].t}.\n2. What people enter is kept.\n3. Make it yours.\n\nRules\n- Migrations only add.\n- Stop after each step.`;
       dropWorking(p);
-      p.chat.push(['plan', 'Here is a plan in three steps, shown above. I stop after each one so that you can try it, and nothing is built until you say so. (In the demo, the plan is always these three steps.)']);
-      p.log.push(['tool', 'Read AGENTS.md and STATE.md'], ['tool', 'Wrote the plan to plan.json and STATE.md'], ['ai', 'Proposed 3 steps. Waiting for approval.']);
+      p.chat.push(['plan', 'Here is a plan in three steps, shown under "Your plan". I stop after each one so that you can try it, and nothing is built until you tell me to start. (In the demo, the plan is always these three steps.)']);
+      p.log.push(['tool', 'Read AGENTS.md and STATE.md'], ['tool', 'Wrote the plan to plan.json and STATE.md'], ['ai', 'Proposed 3 steps. Waiting for the go-ahead.']);
       refreshAll(p);
-      if (here(p)){
-        announce('The plan is ready. Read it, then press Looks good, start building.');
-        const a = document.activeElement, b = $('#approve');
-        if (b && b.getClientRects().length && (!a || a === document.body || a === $('#main'))) b.focus();
-      }
+      if (here(p)){ announce('The plan is ready. Read it, then tell your AI in its terminal when it may start.'); focusGuide(); }
     }, 1400);
   }
 
@@ -1599,7 +1765,13 @@ Rules
     if (S.moreOpen && !e.target.closest('#more')) setMore(false);
     const t = e.target.closest('[data-go],[data-open],[data-rtab],[data-mtab],[data-ltab],[data-file],[data-action]'); if (!t) return;
     if (t.dataset.go){ go(t.dataset.go); return; }
-    if (t.dataset.open){ openApp(t.dataset.open, { right: t.dataset.right, show: t.dataset.show }); return; }
+    if (t.dataset.open){
+      /* "Try step N" on the home screen opens the app already trying it (the product's D75). */
+      const q = S.projects.find(x => x.id === t.dataset.open);
+      openApp(t.dataset.open, { right: t.dataset.right, show: t.dataset.show, trying: t.dataset.try && q && q.plan ? current(q) : null });
+      if (t.dataset.try || t.dataset.right) focusGuide();
+      return;
+    }
     if (t.dataset.rtab){ goRight(t.dataset.rtab); return; }
     if (t.dataset.mtab){ if (t.dataset.mtab === 'chat'){ S.m = 'chat'; renderTabs(); toBottom(); } else goRight(t.dataset.mtab); return; }
     if (t.dataset.ltab){ S.left = t.dataset.ltab; renderTabs(); renderLeft(); return; }
@@ -1621,6 +1793,11 @@ Rules
     if (a === 'works') stepWorks(p, +t.dataset.i);
     if (a === 'report') reportDialog(p, +t.dataset.i);
     if (a === 'approve') approvePlan(p);
+    /* The guided path's next actions (the product's D75, D77). */
+    if (a === 'start-ai') startAI(p);
+    if (a === 'focus-ai'){ if (narrow()){ S.m = 'chat'; renderTabs(); toBottom(); } const s = $('#say'); if (s) s.focus(); }
+    if (a === 'guide-try'){ p.trying = +t.dataset.i; goRight('preview'); renderGuide(); focusGuide(); }
+    if (a === 'guide-new'){ p.fresh = true; refreshAll(p); focusGuide(); }
     if (a === 'to-live'){ goRight('live'); focusIfLost('[data-action="ship"]'); focusIfLost('#shipcard'); focusIfLost(narrow() ? '#mtab-live' : '#rtab-live'); }
     if (a === 'to-preview'){ goRight('preview'); focusIfLost(narrow() ? '#mtab-preview' : '#rtab-preview'); }
     if (a === 'clear-marks'){ document.querySelectorAll('#shot .mark').forEach(m => m.remove()); marks = []; activeMark = null; countMarks(); }
@@ -1644,7 +1821,12 @@ Rules
     if (a === 'logs') openModal(`<h2 id="dialog-title">Logs: ${esc(t.dataset.n)}</h2><div class="log-view">22:14:03 started, healthy<br>22:14:03 listening on the internal network<br>03:30:00 nightly backup: data exported<br>03:30:41 restore check: answered<br>07:02:18 health check: ok</div><div class="dialog-actions"><button type="button" class="btn" data-action="close">Close</button></div>`);
     if (a === 'see-updates'){ go('machine'); const u = $('#updates'); if (u){ u.scrollIntoView(); u.focus({preventScroll: true}); } }
     if (a === 'try-update') toast('In the real panel, this opens a short plan in the test copy. You try it, then put it live as usual.');
-    if (a === 'copy-next'){ const txt = t.dataset.text; (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copied. Paste it in your AI app.'), () => toast('Select the message and copy it.')); }
+    if (a === 'copy-next'){
+      const txt = t.dataset.text;
+      (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('Copied. Paste it in your AI app.'), () => toast('Select the message and copy it.'));
+      /* The demo stands in for your AI app: it reads the message and starts. */
+      if (t.dataset.then === 'approve') later(() => { toast('In the demo, your AI app starts building now.'); approvePlan(p, txt); }, 900);
+    }
     if (a === 'mcp-how') mcpDialog();
     if (a === 'profile'){ S.profile = t.dataset.p; keepFocus(renderMain); toast('Profile changed. In the demo, nothing else happens.'); }
     if (a === 'defaults') openModal(`<h2 id="dialog-title">Load safe defaults?</h2><p>This puts back:</p><ul><li>the profile, to Balanced;</li><li>memory limits per app;</li><li>the backup schedule, to every night at 03:30.</li></ul><p class="safe">Your apps, their data, their keys and your own services are not touched.</p><div class="dialog-actions"><button type="button" class="btn line" data-action="close">Cancel</button><button type="button" class="btn" data-action="do-defaults">Load safe defaults</button></div>`);
@@ -1660,6 +1842,9 @@ Rules
     if (e.target.id !== 'say-form') return; e.preventDefault();
     const inp = $('#say'), v = inp.value.trim(), p = proj(); if (!v) return; inp.value = '';
     if (S.advanced && S.left === 'build'){ blog(p, 'you', v); later(() => blog(p, 'note', 'This is the demo, so the builder follows a script. In the real panel, you can talk to Claude Code directly here.'), 600); }
+    /* In the AI's terminal: a plan waiting for its go-ahead starts; a first idea becomes a plan; anything else, the script says so. */
+    else if (proposed(p)){ approvePlan(p, v); }
+    else if (!p.plan && !p.making){ p.chat.push(['you', v]); p.fresh = false; planFor(p, v); }
     else { chat(p, 'you', v); later(() => chat(p, 'arch', 'This is the demo, so I follow a script and cannot answer freely. In the real panel, I would ask you about it and make a plan with you. A small change skips the plan and becomes one step.'), 600); }
   });
   document.addEventListener('change', e => { const m = e.target.dataset && e.target.dataset.mode; if (!m) return; S.aiMode = m; renderMain(); const r = document.querySelector(`input[data-mode="${m}"]`); r && r.focus(); if (m === 'mcp') mcpDialog(); });

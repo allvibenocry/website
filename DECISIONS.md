@@ -1246,3 +1246,61 @@ what was seen, is the product's D71.*
 **Why.** D32's rules applied only to a session opened on this repository, and
 the guard's exit code was once lost in a pipe (the product's mistake 42); a
 hook that git runs cannot be piped.
+
+## D35. The demo shows the panel's guided path and its AI's terminal
+
+*2026-09-30. The product's eighth brief, item 6. Local only: nothing is
+tagged, released or deployed (the brief's rule 19).*
+
+- **The guided path** (the product's D75): at the top of an app, where it is
+  (Plan, Try, Live, Done, with "Try: 2 of 3"), one sentence, and one next
+  action in the same place, the only pink on the page. It moves on by itself:
+  to the preview to try a step, to Live when the last step is tried, and to
+  the ending, "v3 is live. Everyone on your home network uses it now.", with
+  three choices: "Open the app", "Start something new" and "Something feels
+  wrong? Go back to v2", which is never a next action. The buttons that were
+  above the preview ("It works") moved to the top; the line above the preview
+  only says what the step asks. Elsewhere, at most one pink thing: on the home
+  screen only the first app that waits for you; in the side bar and the plan,
+  yellow and purple instead.
+- **Your AI** (the product's D77): the chat is replaced by the plan on the
+  left and, under it, a picture of the AI's own interface, marked as one ("A
+  picture of your AI's own interface, in plain text. In the panel, Claude
+  Code's own terminal is here, and you talk to it there."): plain text, what
+  was typed after "> ", no logo and no artwork. Before it starts, "Start your
+  AI" is the next action, and how it connects says only "Your own API key" or
+  "Your own AI app, through MCP": nothing about signing in with a Claude
+  account (the product's D52).
+- **A new app from the home screen** and the side bar: its name, "Make it",
+  and it opens in Plan with "Start your AI"; the idea is told to the AI in its
+  terminal, which proposes the plan; nothing is built until you tell it to
+  start.
+- **Everything else is kept**: advanced mode, the preview that does not move
+  when it is turned on, More with Backups, Service keys and App settings,
+  Machine health, your own AI app through MCP, and "Start over".
+- **docs/demo-claims.md** read again at product `5971e58` for the rows this
+  changed or added (the guided path DG1 to DG4, Your AI DY1 to DY3, and DW4,
+  DW8, DW10, DW11, DA2 to DA6, DN1, DN3, DT4), each with its source; none
+  without one.
+- **check-page's demo checks** gained the guided path at the start, while
+  trying, and the whole way from step 2 to "v3 is live" pressing only the next
+  action (one pink thing at every stage, moving on by itself, the ending's
+  three choices); a new app from its dialog to step 1 ready; the picture
+  marked and without artwork; the AI's words on every screen. They pass at
+  1440, 768, 390, 360 and 320 px in light and dark, and every page with them:
+  3 pages, 15 runs, clean.
+- **Each seen failing on a broken copy**: `scripts/broken-demo.mjs` serves
+  `site/` with one thing in `demo.html` broken and checks it at one width in
+  light and dark; a copy passes when the checks it names fail and no other
+  check does, apart from those it names as failing with it. 15 copies: 13 as
+  they should be at the first run; two were wrong in the script, not the page
+  (a broken "Try step 2" also stops the flow to your own AI app, and the
+  missing "through MCP" is found by the new app's check, while the AI's words
+  on every screen still name MCP in Settings), and both were right when run
+  again.
+- **Before and after**: every state of the demo at every width,
+  `out/screenshots/demo-brief8.html`, 261 pictures, not committed.
+
+**Why.** The demo is the owner's reference for the panel, and the product's
+seventh brief built the guided path, a new app and the AI's own terminal; a
+demo that still showed a chat would promise a panel that no longer exists.

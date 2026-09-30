@@ -37,39 +37,46 @@ const driver = (cdp, narrow) => ({
     await sleep(250);
   },
   wait: (expression, ms = 8000) => until(cdp, expression, ms),
+  /* Typed into the AI's terminal, the picture of it (D35), and sent. */
+  say: async (words) => {
+    await evaluate(cdp, `(() => { const i = document.querySelector('#say'); if (!i) return; i.value = ${JSON.stringify(words)}; document.querySelector('#say-form').requestSubmit(); })()`);
+    await sleep(250);
+  },
   /* The demo schedules each next step with setTimeout: stopped here, what is
      running stays where it is. Every state starts from a fresh load. */
   stopClock: () => evaluate(cdp, "window.setTimeout = () => 0"),
 });
 
-/* After: the new app view. */
+/* Both sides: the app view (D31, and since D35 with the guided path). */
 const app = async (d) => d.click('#nav [data-open="guestbook"]');
 const tab = (id) => async (d) => d.click(d.narrow ? `#mtab-${id}` : `#rtab-${id}`);
 const chat = async (d) => { if (d.narrow) await d.click("#mtab-chat"); };
 const advanced = async (d) => { await d.click("#mode-switch"); await d.click("#adv-ok"); await d.click("#adv-go"); };
 const more = (item) => async (d) => { await app(d); await d.click("#more-btn"); if (item) await d.click(`[data-action="${item}"]`); };
-const newApp = async (d) => { await d.click('#nav [data-action="new-app"]'); await d.click('[data-action="make-plan"]'); await d.wait("!!document.querySelector('#approve')"); };
+const own = async (d) => { await d.click('#nav [data-go="settings"]'); await d.click('input[data-mode="mcp"]'); await d.click('#dialog [data-action="close"]'); };
+
+/* After (D35): the guided path at the top, and the AI's terminal under the plan. */
+const trying = async (d) => { await app(d); await d.click('#guide [data-action="guide-try"]'); };
+const newApp = async (d) => { await d.click('#nav [data-action="new-app"]'); await d.click('[data-action="make-plan"]'); };
+const newAppAI = async (d) => { await newApp(d); await d.click('#guide [data-action="start-ai"]'); await d.wait("!!document.querySelector('#say')"); await chat(d); };
+const newAppPlanned = async (d) => { await newAppAI(d); await d.say("A chore chart for the kids, with points for the week."); await d.wait("document.querySelectorAll('#plan-box li.proposed').length === 3"); };
 const allTried = async (d) => {
+  await trying(d);
+  await d.click('#guide [data-action="works"]');
+  await d.wait("document.querySelector('#guide .guide-acts .btn.pink')?.textContent.trim() === 'Try step 3'");
+  await d.click('#guide [data-action="guide-try"]');
+  await d.click('#guide [data-action="works"]');
+};
+
+/* Before: the demo as D31 left it, with "It works" above the preview and one chat. */
+const oldNewApp = async (d) => { await d.click('#nav [data-action="new-app"]'); await d.click('[data-action="make-plan"]'); await d.wait("!!document.querySelector('#approve')"); };
+const oldAllTried = async (d) => {
   await app(d);
   await d.click('[data-action="works"][data-i="1"]');
   await d.wait("!!document.querySelector('[data-action=\"works\"][data-i=\"2\"]')");
   await d.click('[data-action="works"][data-i="2"]');
   await d.click('#tryline [data-action="to-live"]');
 };
-const own = async (d) => { await d.click('#nav [data-go="settings"]'); await d.click('input[data-mode="mcp"]'); await d.click('#dialog [data-action="close"]'); };
-
-/* Before: the old demo, with its app tabs. */
-const oldApp = app;
-const oldTab = (id) => async (d) => { await oldApp(d); await d.click(`[data-tab="${id}"]`); };
-const oldAdvanced = async (d) => { await oldApp(d); await advanced(d); };
-const oldAllTried = async (d) => {
-  await oldApp(d);
-  await d.click('[data-action="works"][data-i="1"]');
-  await d.wait("!!document.querySelector('[data-action=\"works\"][data-i=\"2\"]')");
-  await d.click('[data-action="works"][data-i="2"]');
-  await d.wait("!!document.querySelector('[data-action=\"ship\"]:not([disabled])')");
-};
-const oldPlan = async (d) => { await d.click('#nav [data-action="new-app"]'); await d.click('[data-action="make-plan"]'); await d.wait("!!document.querySelector('#create-go')"); };
 
 /**
  * Every state: its label, and for each side how to get there and how it is
@@ -77,69 +84,61 @@ const oldPlan = async (d) => { await d.click('#nav [data-action="new-app"]'); aw
  * picture it shares, or give a note where the old demo had nothing like it.
  */
 const STATES = [
-  { key: "home", label: "Home", before: { go: async () => {} }, after: { go: async () => {} } },
-  { key: "app-preview", label: "An app, simple mode: Preview, with \"It works\" and \"Something is wrong\" above it (before: the Build tab)",
-    before: { go: oldApp }, after: { go: app } },
-  { key: "app-chat", label: "An app, simple mode: Chat, \"Your AI\" with the plan as a checklist (one row of tabs only)", narrowOnly: true,
-    before: { same: "app-preview" }, after: { go: async (d) => { await app(d); await chat(d); } } },
-  { key: "app-live", label: "An app, simple mode: Live, with the earlier versions (before: the Versions tab)",
-    before: { go: oldTab("versions") }, after: { go: async (d) => { await app(d); await tab("live")(d); } } },
-  { key: "more", label: "More, next to the app's name",
-    before: { note: "The old demo had no More: the app's backups and service keys were tabs of their own, beside Build and Versions." }, after: { go: more(null), shot: "window" } },
-  { key: "more-backups", label: "More: Backups (before: the Backups tab)", before: { go: oldTab("backups") }, after: { go: more("more-backups"), shot: "window" } },
-  { key: "more-keys", label: "More: Service keys (before: the Service keys tab)", before: { go: oldTab("keys") }, after: { go: more("more-keys"), shot: "window" } },
-  { key: "more-settings", label: "More: App settings", before: { note: "New: the old demo had no settings for one app." }, after: { go: more("more-settings"), shot: "window" } },
-  { key: "report", label: "\"Something is wrong\": the report dialog",
-    before: { go: async (d) => { await oldApp(d); await d.click('[data-action="report"][data-i="1"]'); }, shot: "window" },
-    after: { go: async (d) => { await app(d); await d.click('[data-action="report"][data-i="1"]'); }, shot: "window" } },
+  { key: "home", label: "Home: \"Make a new app\", and one pink thing at most, the first app waiting", before: { go: async () => {} }, after: { go: async () => {} } },
+  { key: "app-preview", label: "An app: the guided path at the top, \"Try step 2\" (before: \"It works\" above the preview)",
+    before: { go: app }, after: { go: app } },
+  { key: "app-trying", label: "Trying step 2: \"Step 2 works\" at the top, the preview in view",
+    before: { same: "app-preview" }, after: { go: trying } },
+  { key: "app-plan", label: "An app, simple mode: the Plan tab, the plan and the picture of the AI's terminal under it (before: the Chat tab)", narrowOnly: true,
+    before: { go: async (d) => { await app(d); await chat(d); } }, after: { go: async (d) => { await app(d); await chat(d); } } },
+  { key: "app-live", label: "An app, simple mode: Live, with the earlier versions",
+    before: { go: async (d) => { await app(d); await tab("live")(d); } }, after: { go: async (d) => { await app(d); await tab("live")(d); } } },
+  { key: "more", label: "More, next to the app's name", before: { go: more(null), shot: "window" }, after: { go: more(null), shot: "window" } },
+  { key: "more-backups", label: "More: Backups", before: { go: more("more-backups"), shot: "window" }, after: { go: more("more-backups"), shot: "window" } },
+  { key: "more-keys", label: "More: Service keys", before: { go: more("more-keys"), shot: "window" }, after: { go: more("more-keys"), shot: "window" } },
+  { key: "more-settings", label: "More: App settings", before: { go: more("more-settings"), shot: "window" }, after: { go: more("more-settings"), shot: "window" } },
+  { key: "report", label: "\"Something is wrong\": the report dialog (after: from the guided path, while trying)",
+    before: { go: async (d) => { await app(d); await d.click('[data-action="report"][data-i="1"]'); }, shot: "window" },
+    after: { go: async (d) => { await trying(d); await d.click('#guide [data-action="report"][data-i="1"]'); }, shot: "window" } },
   { key: "advanced-dialog", label: "\"Show what's under the hood\": the warning and the consent",
-    before: { go: async (d) => { await oldApp(d); await d.click("#mode-switch"); }, shot: "window" },
+    before: { go: async (d) => { await app(d); await d.click("#mode-switch"); }, shot: "window" },
     after: { go: async (d) => { await app(d); await d.click("#mode-switch"); }, shot: "window" } },
-  { key: "adv-preview", label: "An app, advanced mode: Preview, and on the left Plan, the architect (before: the Build tab, advanced)",
-    before: { go: oldAdvanced }, after: { go: async (d) => { await app(d); await advanced(d); } } },
-  { key: "adv-plan", label: "An app, advanced mode: Chat, with Plan and Build (one row of tabs only)", narrowOnly: true,
-    before: { same: "adv-preview" }, after: { go: async (d) => { await app(d); await advanced(d); await chat(d); } } },
-  { key: "adv-build", label: "An app, advanced mode: Build, the builder's session (before: the helper's Builder tab)",
-    before: { go: async (d) => { await oldAdvanced(d); await d.click('[data-htab="builder"]'); } },
+  { key: "adv-preview", label: "An app, advanced mode: Preview, and on the left the architect",
+    before: { go: async (d) => { await app(d); await advanced(d); } }, after: { go: async (d) => { await app(d); await advanced(d); } } },
+  { key: "adv-plan", label: "An app, advanced mode: the Plan tab, with Plan and Build", narrowOnly: true,
+    before: { go: async (d) => { await app(d); await advanced(d); await chat(d); } }, after: { go: async (d) => { await app(d); await advanced(d); await chat(d); } } },
+  { key: "adv-build", label: "An app, advanced mode: Build, the builder's session",
+    before: { go: async (d) => { await app(d); await advanced(d); await chat(d); await d.click("#ltab-build"); } },
     after: { go: async (d) => { await app(d); await advanced(d); await chat(d); await d.click("#ltab-build"); } } },
-  { key: "adv-code", label: "An app, advanced mode: Code, a file tree and the chosen file with its changes (before: the Files tab)",
-    before: { go: async (d) => { await oldAdvanced(d); await d.click('[data-tab="files"]'); } },
-    after: { go: async (d) => { await app(d); await advanced(d); await tab("code")(d); } } },
-  { key: "adv-live", label: "An app, advanced mode: Live, with commits and migrations (before: the Versions tab, advanced)",
-    before: { go: async (d) => { await oldAdvanced(d); await d.click('[data-tab="versions"]'); } },
-    after: { go: async (d) => { await app(d); await advanced(d); await tab("live")(d); } } },
-  { key: "adv-brief", label: "Advanced mode: the instructions for the builder, the brief (before: the helper's Instructions tab)",
-    before: { go: async (d) => { await oldAdvanced(d); await d.click('[data-htab="brief"]'); } },
-    after: { go: async (d) => { await app(d); await advanced(d); await chat(d); await d.click('[data-action="brief"]'); }, shot: "window" } },
-  { key: "new-app", label: "Start a new app: the dialog",
+  { key: "adv-code", label: "An app, advanced mode: Code",
+    before: { go: async (d) => { await app(d); await advanced(d); await tab("code")(d); } }, after: { go: async (d) => { await app(d); await advanced(d); await tab("code")(d); } } },
+  { key: "new-app", label: "Make a new app: the dialog, its name only (before: a name and the idea)",
     before: { go: (d) => d.click('#nav [data-action="new-app"]'), shot: "window" }, after: { go: (d) => d.click('#nav [data-action="new-app"]'), shot: "window" } },
-  { key: "new-app-planning", label: "A new app, in planning, with \"Looks good, start building\" (before: the plan in a dialog)",
-    before: { go: oldPlan, shot: "window" }, after: { go: newApp } },
-  { key: "new-app-preview", label: "A new app, in planning: the preview shows the starter app (one row of tabs only)", narrowOnly: true,
-    before: { same: "new-app-planning" }, after: { go: async (d) => { await newApp(d); await tab("preview")(d); } } },
-  { key: "new-app-building", label: "A new app: building its first step",
-    before: { go: async (d) => { await oldPlan(d); await d.stopClock(); await d.click("#create-go"); } },
-    after: { go: async (d) => { await newApp(d); await d.stopClock(); await d.click("#approve"); } } },
-  { key: "putting-live", label: "Putting v3 live: the safety checks as progress (before: on the Build tab)",
+  { key: "new-app-plan", label: "A new app: in Plan, \"Start your AI\", and the AI's two ways to connect (before: the plan already proposed, \"Looks good, start building\")",
+    before: { go: oldNewApp }, after: { go: async (d) => { await newApp(d); await chat(d); } } },
+  { key: "new-app-ai", label: "A new app: its AI started, a picture of its own interface in plain text under the plan",
+    before: { note: "New: the old demo's AI was always there, as a chat." }, after: { go: newAppAI } },
+  { key: "new-app-planned", label: "A new app: the idea told to the AI in its terminal, and its plan proposed; \"Go to your AI\"",
+    before: { same: "new-app-plan" }, after: { go: newAppPlanned } },
+  { key: "new-app-building", label: "A new app: building its first step, after the go-ahead typed in the terminal (before: \"Looks good, start building\" pressed)",
+    before: { go: async (d) => { await oldNewApp(d); await d.stopClock(); await d.click("#approve"); } },
+    after: { go: async (d) => { await newAppPlanned(d); await d.stopClock(); await d.say("Yes, start."); } } },
+  { key: "all-tried", label: "Every step tried: Live, by itself, \"Put v3 live\" at the top (before: \"Go to Live\" pressed)",
+    before: { go: oldAllTried }, after: { go: allTried } },
+  { key: "putting-live", label: "Putting v3 live: the safety checks as progress",
     before: { go: async (d) => { await oldAllTried(d); await d.stopClock(); await d.click('[data-action="ship"]'); } },
-    after: { go: async (d) => { await allTried(d); await d.stopClock(); await d.click('[data-action="ship"]'); } } },
-  { key: "v3-live", label: "\"v3 is live\" (before: on the Build tab)",
-    before: { go: async (d) => { await oldAllTried(d); await d.click('[data-action="ship"]'); await d.wait("document.querySelector('#ship h2')?.textContent === 'v3 is live.'"); } },
-    after: { go: async (d) => { await allTried(d); await d.click('[data-action="ship"]'); await d.wait("document.querySelector('#shipcard h2')?.textContent === 'v3 is live.'"); } } },
+    after: { go: async (d) => { await allTried(d); await d.stopClock(); await d.click('#guide [data-action="ship"]'); } } },
+  { key: "v3-live", label: "\"v3 is live\": Done, and its three choices (before: in Live only)",
+    before: { go: async (d) => { await oldAllTried(d); await d.click('[data-action="ship"]'); await d.wait("document.querySelector('#shipcard h2')?.textContent === 'v3 is live.'"); } },
+    after: { go: async (d) => { await allTried(d); await d.click('#guide [data-action="ship"]'); await d.wait("document.querySelector('#shipcard h2')?.textContent === 'v3 is live.'"); } } },
   { key: "go-back", label: "Going back to an earlier version: the dialog",
-    before: { go: async (d) => { await oldTab("versions")(d); await d.click('[data-action="rollback"][data-v="1"]'); }, shot: "window" },
+    before: { go: async (d) => { await app(d); await tab("live")(d); await d.click('[data-action="rollback"][data-v="1"]'); }, shot: "window" },
     after: { go: async (d) => { await app(d); await tab("live")(d); await d.click('[data-action="rollback"][data-v="1"]'); }, shot: "window" } },
-  { key: "recipes", label: "The recipe box: a simple recipe list in the preview (before: its Build tab)",
-    before: { go: (d) => d.click('#nav [data-open="recipes"]') }, after: { go: (d) => d.click('#nav [data-open="recipes"]') } },
+  { key: "recipes", label: "The recipe box: its AI building step 2", before: { go: (d) => d.click('#nav [data-open="recipes"]') }, after: { go: (d) => d.click('#nav [data-open="recipes"]') } },
   { key: "machine", label: "Machine health", before: { go: (d) => d.click('#nav [data-go="machine"]') }, after: { go: (d) => d.click('#nav [data-go="machine"]') } },
-  { key: "backups", label: "Backups of all your apps", before: { go: (d) => d.click('#nav [data-go="backups"]') }, after: { go: (d) => d.click('#nav [data-go="backups"]') } },
-  { key: "services", label: "Your own services (advanced mode)",
-    before: { go: async (d) => { await d.click('#nav [data-go="services"]'); await d.click("#adv-ok"); await d.click("#adv-go"); } },
-    after: { go: async (d) => { await d.click('#nav [data-go="services"]'); await d.click("#adv-ok"); await d.click("#adv-go"); } } },
-  { key: "settings", label: "Settings: the AI in this panel", before: { go: (d) => d.click('#nav [data-go="settings"]') }, after: { go: (d) => d.click('#nav [data-go="settings"]') } },
-  { key: "settings-own", label: "Settings: your own AI app", before: { go: own }, after: { go: own } },
-  { key: "app-own", label: "An app with your own AI app: what it posted and did, and the box to continue there",
-    before: { go: async (d) => { await own(d); await oldApp(d); } }, after: { go: async (d) => { await own(d); await app(d); await chat(d); } } },
+  { key: "settings", label: "Settings: how your AI connects", before: { go: (d) => d.click('#nav [data-go="settings"]') }, after: { go: (d) => d.click('#nav [data-go="settings"]') } },
+  { key: "app-own", label: "An app with your own AI app: what it posted, and the box to continue there",
+    before: { go: async (d) => { await own(d); await app(d); await chat(d); } }, after: { go: async (d) => { await own(d); await app(d); await chat(d); } } },
 ];
 
 /* ---------------------------------------------------------------- pictures -- */
